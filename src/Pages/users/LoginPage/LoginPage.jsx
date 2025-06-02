@@ -28,7 +28,7 @@ const LoginPage = () => {
 
     try {
       // TODO: Replace with actual API call to Java backend
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('https://kz017zc2-8090.inc1.devtunnels.ms/api/v1/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,10 +1,14 @@
 import React from 'react'
-import LoginPage from './Pages/users/LoginPage/LoginPage'
+import AdminSidebar from './components/Admin/AdminSidebar/AdminSidebar'
+import AdminHeader from './components/Admin/AdminHeader/AdminHeader'
 
 const App = () => {
+  
   return (
     <div>
-      <LoginPage/>
+    <AdminHeader/>
+    <AdminSidebar/>
+      
     </div>
   )
 }
