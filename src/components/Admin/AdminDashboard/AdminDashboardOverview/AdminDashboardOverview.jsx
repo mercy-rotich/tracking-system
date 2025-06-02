@@ -18,7 +18,7 @@ const AdminDashboardOverview = () => {
   };
 
   return (
-    <div className="dashborad-main-content">
+    <div className="dashboard-main-content">
       <div className="dashboard-overview">
         {/* Dashboard Header */}
         <div className="dashboard-header">

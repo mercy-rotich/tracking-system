@@ -4,7 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './Pages/users/LoginPage/LoginPage';
 import AdminLayout from './components/Admin/AdminLayout';
-
+import AdminDashboardOverview from './components/Admin/AdminDashboard/AdminDashboardOverview/AdminDashboardOverview';
 
 
 function App() {
@@ -16,23 +16,26 @@ function App() {
             {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />
             
-            
-            {/* Protected routes */}
-            <Route path="/dashboard" element={
+            {/* Protected Admin routes */}
+            <Route path="/admin" element={
               <ProtectedRoute>
-                <AdminLayout/>
+                <AdminLayout />
               </ProtectedRoute>
-            } />
+            }>
+              {/* Nested admin routes */}
+              <Route path="dashboard" element={<AdminDashboardOverview />} />
+              
+              
+            </Route>
             
-            
-            
-            
+            {/* Redirect old dashboard route to admin/dashboard */}
+            <Route path="/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
             
             {/* Default route */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
             
             {/* Catch all route */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
           </Routes>
         </div>
       </Router>

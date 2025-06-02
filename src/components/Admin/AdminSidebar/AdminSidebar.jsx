@@ -1,26 +1,31 @@
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './AdminSidebar.css';
 
-const AdminSidebar = ({ activeTab, onTabChange, isOpen, onToggle }) => {
+const AdminSidebar = ({ isOpen, onToggle }) => {
   const [pendingCount] = useState(24);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const navigationItems = [
-    { id: 'overview', label: 'Dashboard Overview', icon: 'fas fa-tachometer-alt' },
-    { id: 'curricula', label: 'All Curricula', icon: 'fas fa-book', badge: pendingCount },
-    { id: 'users', label: 'User Management', icon: 'fas fa-users' },
-    { id: 'roles', label: 'Roles & Permissions', icon: 'fas fa-user-cog' },
-    { id: 'monitoring', label: 'System Monitoring', icon: 'fas fa-chart-line' },
-    { id: 'reports', label: 'Reports & Analytics', icon: 'fas fa-file-download' }
+    { id: 'admin/dashboard', label: 'Dashboard Overview', icon: 'fas fa-tachometer-alt', path: '/admin/dashboard' },
+    { id: 'curricula', label: 'All Curricula', icon: 'fas fa-book', badge: pendingCount, path: '/admin/curricula' },
+    { id: 'users', label: 'User Management', icon: 'fas fa-users', path: '/admin/users' },
+    { id: 'roles', label: 'Roles & Permissions', icon: 'fas fa-user-cog', path: '/admin/roles' },
+    { id: 'monitoring', label: 'System Monitoring', icon: 'fas fa-chart-line', path: '/admin/monitoring' },
+    { id: 'reports', label: 'Reports & Analytics', icon: 'fas fa-file-download', path: '/admin/reports' }
   ];
 
   const systemToolsItems = [
-    { id: 'notifications', label: 'Notifications Center', icon: 'fas fa-bell' },
-    { id: 'audit', label: 'Audit Logs', icon: 'fas fa-shield-alt' },
-    { id: 'settings', label: 'System Settings', icon: 'fas fa-cog' }
+    { id: 'notifications', label: 'Notifications Center', icon: 'fas fa-bell', path: '/admin/notifications' },
+    { id: 'audit', label: 'Audit Logs', icon: 'fas fa-shield-alt', path: '/admin/audit' },
+    { id: 'settings', label: 'System Settings', icon: 'fas fa-cog', path: '/admin/settings' }
   ];
 
-  const handleItemClick = (itemId) => {
-    onTabChange(itemId);
+  const handleItemClick = (item) => {
+    // Navigate to the specified path
+    navigate(item.path);
+    
     // Close mobile sidebar after selection
     if (window.innerWidth < 768) {
       onToggle();
@@ -30,6 +35,16 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onToggle }) => {
   const handleLogout = () => {
     // Handle logout logic here
     console.log('Logout clicked');
+    // Clear any authentication tokens
+    localStorage.removeItem('authToken');
+    sessionStorage.removeItem('authToken');
+    // Navigate to login page
+    navigate('/login');
+  };
+
+  // Check if current path matches item path for active state
+  const isActiveItem = (itemPath) => {
+    return location.pathname === itemPath;
   };
 
   return (
@@ -65,8 +80,8 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onToggle }) => {
               {navigationItems.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => handleItemClick(item.id)}
-                  className={`sidebar-link ${activeTab === item.id ? 'active' : ''}`}
+                  onClick={() => handleItemClick(item)}
+                  className={`sidebar-link ${isActiveItem(item.path) ? 'active' : ''}`}
                 >
                   <i className={`${item.icon} sidebar-icon`}></i>
                   <span className="sidebar-text">{item.label}</span>
@@ -85,8 +100,8 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onToggle }) => {
               {systemToolsItems.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => handleItemClick(item.id)}
-                  className={`sidebar-link ${activeTab === item.id ? 'active' : ''}`}
+                  onClick={() => handleItemClick(item)}
+                  className={`sidebar-link ${isActiveItem(item.path) ? 'active' : ''}`}
                 >
                   <i className={`${item.icon} sidebar-icon`}></i>
                   <span className="sidebar-text">{item.label}</span>
