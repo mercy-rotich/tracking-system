@@ -1,0 +1,135 @@
+/* MetricsCards.css - Metrics Cards Component Styles */
+
+.metrics-cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  
+  @media (min-width: 768px) {
+    .metrics-cards {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .metrics-cards {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+  
+  /* Individual Metric Card */
+  .metric-card {
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    padding: 1.5rem;
+    border-left: 4px solid;
+    transition: all 0.3s ease;
+  }
+  
+  .metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Border Colors */
+  .border-green-500 {
+    border-left-color: #10b981;
+  }
+  
+  .border-yellow-500 {
+    border-left-color: #f59e0b;
+  }
+  
+  .border-blue-500 {
+    border-left-color: #3b82f6;
+  }
+  
+  .border-purple-500 {
+    border-left-color: #8b5cf6;
+  }
+  
+  /* Metric Card Content */
+  .metric-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .metric-text {
+    flex: 1;
+  }
+  
+  .metric-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+  }
+  
+  .metric-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+  }
+  
+  .metric-trend {
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  
+  .metric-trend i {
+    margin-right: 0.25rem;
+  }
+  
+  /* Trend Colors */
+  .trend-positive {
+    color: #059669;
+  }
+  
+  .trend-warning {
+    color: #dc2626;
+  }
+  
+  .trend-info {
+    color: #059669;
+  }
+  
+  .trend-neutral {
+    color: #6b7280;
+  }
+  
+  /* Metric Icon */
+  .metric-icon {
+    padding: 0.75rem;
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .metric-icon i {
+    font-size: 1.25rem;
+  }
+  
+  /* Icon Background Colors */
+  .metric-icon.green {
+    background-color: #00BF63;
+  }
+  
+  .metric-icon.yellow {
+    background-color: #f59e0b;
+  }
+  
+  .metric-icon.blue {
+    background-color: #3b82f6;
+  }
+  
+  .metric-icon.purple {
+    background-color: #8b5cf6;
+  }
