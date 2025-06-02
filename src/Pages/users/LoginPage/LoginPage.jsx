@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
 import './LoginPage.css';
-import logo_image from '../../../assets/logo.jpg'
+import logo_image from '../../../assets/logo.jpg';
 
 const LoginPage = () => {
+  const { login, isAuthenticated, loading } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -10,6 +13,11 @@ const LoginPage = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Redirect if already authenticated
+  if (!loading && isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -23,42 +31,57 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Basic validation
+    if (!formData.username.trim() || !formData.password.trim()) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
 
     try {
-      // TODO: Replace with actual API call to Java backend
-      const response = await fetch('https://kz017zc2-8090.inc1.devtunnels.ms/api/v1/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: formData.username,
-          password: formData.password,
-          rememberMe: formData.rememberMe
-        }),
+      await login({
+        username: formData.username.trim(),
+        password: formData.password,
+        rememberMe: formData.rememberMe
       });
-
-      if (!response.ok) {
-        throw new Error('Invalid credentials');
-      }
-
-      const data = await response.json();
       
-      // Handle successful login
-      // Store session token
-      localStorage.setItem('sessionToken', data.token);
-      
-      // Redirect to dashboard or handle navigation
-      window.location.href = '/dashboard';
+      // Navigation will be handled by the ProtectedRoute/AuthContext
+      // The user will be automatically redirected to dashboard
       
     } catch (error) {
-      setError(error.message || 'Login failed. Please try again.');
+      console.error('Login error:', error);
+      
+      // Handle specific error types
+      if (error.message.includes('credentials')) {
+        setError('Invalid username or password. Please try again.');
+      } else if (error.message.includes('network') || error.message.includes('fetch')) {
+        setError('Network error. Please check your connection and try again.');
+      } else if (error.message.includes('server')) {
+        setError('Server error. Please try again later or contact support.');
+      } else {
+        setError(error.message || 'Login failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Show loading state while auth is initializing
+  if (loading) {
+    return (
+      <div className="login-container">
+        <div className="loading-overlay">
+          <div className="loading-spinner">
+            <i className="fas fa-spinner fa-spin"></i>
+            <p>Initializing...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="login-container">
@@ -70,7 +93,7 @@ const LoginPage = () => {
             <div className="university-header">
               <div className="logo-container">
                 <div className="logo-circle">
-                  <img src={logo_image} alt="" />
+                  <img src={logo_image} alt="Meru University Logo" />
                 </div>
               </div>
               <div className="university-info">
@@ -102,7 +125,7 @@ const LoginPage = () => {
           <div className="mobile-header">
             <div className="mobile-logo-container">
               <div className="mobile-logo-circle">
-                <img src={logo_image} alt="" />
+                <img src={logo_image} alt="Meru University Logo" />
               </div>
             </div>
             <div className="mobile-university-info">
@@ -114,16 +137,16 @@ const LoginPage = () => {
           <h2 className="form-title">Sign In</h2>
           
           {error && (
-            <div className="error-message">
+            <div className="error-message" role="alert">
               <i className="fas fa-exclamation-circle"></i>
               {error}
             </div>
           )}
           
-          <div className="login-form">
+          <form className="login-form" onSubmit={handleSubmit} noValidate>
             <div className="form-group">
               <label htmlFor="username" className="form-label">
-                Username or Email
+                Username 
               </label>
               <input
                 type="text"
@@ -131,16 +154,18 @@ const LoginPage = () => {
                 name="username"
                 value={formData.username}
                 onChange={handleInputChange}
-                className="form-input"
-                placeholder="Enter your username or email"
+                className={`form-input ${error && !formData.username.trim() ? 'error' : ''}`}
+                placeholder="Enter your username"
                 required
                 disabled={isLoading}
+                autoComplete="username"
+                aria-describedby={error ? "error-message" : undefined}
               />
             </div>
             
             <div className="form-group">
               <label htmlFor="password" className="form-label">
-                Password
+                Password *
               </label>
               <input
                 type="password"
@@ -148,10 +173,12 @@ const LoginPage = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="form-input"
+                className={`form-input ${error && !formData.password.trim() ? 'error' : ''}`}
                 placeholder="Enter your password"
                 required
                 disabled={isLoading}
+                autoComplete="current-password"
+                aria-describedby={error ? "error-message" : undefined}
               />
             </div>
             
@@ -180,24 +207,25 @@ const LoginPage = () => {
             
             <div className="submit-group">
               <button
-                onClick={handleSubmit}
+                type="submit"
                 className={`submit-button ${isLoading ? 'loading' : ''}`}
                 disabled={isLoading}
+                aria-describedby={isLoading ? "loading-message" : undefined}
               >
                 {isLoading ? (
                   <>
-                    <i className="fas fa-spinner fa-spin"></i>
-                    Signing In...
+                    <i className="fas fa-spinner fa-spin" aria-hidden="true"></i>
+                    <span id="loading-message">Signing In...</span>
                   </>
                 ) : (
                   <>
-                    <i className="fas fa-sign-in-alt"></i>
+                    <i className="fas fa-sign-in-alt" aria-hidden="true"></i>
                     Sign In
                   </>
                 )}
               </button>
             </div>
-          </div>
+          </form>
           
           <div className="help-section">
             <div className="divider">
@@ -216,7 +244,7 @@ const LoginPage = () => {
           
           <div className="info-card">
             <div className="info-content">
-              <i className="fas fa-info-circle info-icon"></i>
+              <i className="fas fa-info-circle info-icon" aria-hidden="true"></i>
               <span>Use your university credentials to access the Curriculum Tracking System</span>
             </div>
           </div>
