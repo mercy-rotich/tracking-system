@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './Pages/users/LoginPage/LoginPage';
 import AdminLayout from './components/Admin/AdminLayout';
 import AdminDashboardOverview from './components/Admin/AdminDashboard/AdminDashboardOverview/AdminDashboardOverview';
+import PasswordResetSystem from './Pages/users/PasswordResetSystem';
 
 
 function App() {
@@ -12,9 +13,11 @@ function App() {
     <AuthProvider>
       <Router>
         <div className="App">
+          
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/reset-password" element={<PasswordResetSystem/>}/>
             
             {/* Protected Admin routes */}
             <Route path="/admin" element={
