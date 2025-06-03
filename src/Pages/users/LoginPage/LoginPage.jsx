@@ -13,6 +13,7 @@ const LoginPage = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Redirect if already authenticated
   if (!loading && isAuthenticated) {
@@ -67,6 +68,10 @@ const LoginPage = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   // Show loading state while auth is initializing
@@ -167,19 +172,30 @@ const LoginPage = () => {
               <label htmlFor="password" className="form-label">
                 Password *
               </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className={`form-input ${error && !formData.password.trim() ? 'error' : ''}`}
-                placeholder="Enter your password"
-                required
-                disabled={isLoading}
-                autoComplete="current-password"
-                aria-describedby={error ? "error-message" : undefined}
-              />
+              <div className="password-input-container">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className={`form-input ${error && !formData.password.trim() ? 'error' : ''}`}
+                  placeholder="Enter your password"
+                  required
+                  disabled={isLoading}
+                  autoComplete="current-password"
+                  aria-describedby={error ? "error-message" : undefined}
+                />
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={togglePasswordVisibility}
+                  disabled={isLoading}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                </button>
+              </div>
             </div>
             
             <div className="form-options">

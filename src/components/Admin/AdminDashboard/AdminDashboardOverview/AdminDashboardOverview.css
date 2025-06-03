@@ -13,8 +13,8 @@
   transition: margin-left 0.3s ease-in-out;
   min-height: 100vh; /* Changed from height to min-height for better responsiveness */
   background-color: #f9fafb;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 
 @media (min-width: 768px) {
@@ -26,7 +26,7 @@
 
 /* Dashboard Overview */
 .dashboard-overview {
-  max-width: 1280px;
+  max-width: 1550px;
   margin: 0 auto;
 }
 
