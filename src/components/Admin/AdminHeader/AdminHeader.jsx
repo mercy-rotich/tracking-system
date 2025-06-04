@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import logo_image from '../../../assets/logo.jpg'
 import './AdminHeader.css';
 
 const AdminHeader = ({ onSearchSubmit, user, systemHealth, notifications }) => {
@@ -82,10 +83,12 @@ const AdminHeader = ({ onSearchSubmit, user, systemHealth, notifications }) => {
           {/* Logo and Brand */}
           <div className="header-brand">
             <div className="brand-logo">
-              <div className="logo-circle">
-                <div className="logo-inner">
-                  <span className="logo-text">M</span>
-                </div>
+              <div className="logo-container">
+                <img 
+                  src={logo_image} 
+                  alt="MUST Logo" 
+                  className="logo-image"
+                />
               </div>
               <div className="brand-text">
                 <span className="brand-name">MUST</span>
