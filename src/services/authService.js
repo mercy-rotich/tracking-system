@@ -4,19 +4,21 @@ class AuthService {
     this.baseURL = import.meta.env.VITE_BASE_URL;
     this.refreshTokenInterval = null;
     this.sessionCheckInterval = null;
-    this.activityCheckInterval = null;
     this.isRefreshing = false;
     this.failedQueue = [];
     this.lastActivity = Date.now();
     this.refreshBuffer = 5 * 60 * 1000; // 5 minutes before expiry
-    this.maxInactivityTime = 30 * 60 * 1000; // 30 minutes of inactivity
+    // Removed maxInactivityTime and activityCheckInterval since we don't want inactivity logout
     this.activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
     
     // Start monitoring user activity immediately
     this.initializeActivityMonitoring();
+    
+    // Add page exit listeners
+    this.initializePageExitHandlers();
   }
 
-  // Initialize user activity monitoring
+  // Initialize user activity monitoring (simplified - no inactivity checks)
   initializeActivityMonitoring() {
     const updateActivity = () => {
       this.lastActivity = Date.now();
@@ -36,6 +38,64 @@ class AuthService {
         this.checkAndRefreshToken();
       }
     });
+  }
+
+  // Initialize handlers for page exit (new method)
+  initializePageExitHandlers() {
+    // Handle page unload (when user closes tab/window or navigates away)
+    window.addEventListener('beforeunload', (event) => {
+      console.log('🚪 Page is about to unload, logging out...');
+      // Perform synchronous logout
+      this.logoutSync();
+    });
+
+    // Handle page visibility change to hidden (backup for mobile browsers)
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        console.log('🙈 Page hidden, preparing for potential exit...');
+        // Don't logout immediately, just prepare
+        // This helps with tab switching but doesn't logout
+      }
+    });
+
+    // Handle page focus loss (optional - for when user switches to another app)
+    window.addEventListener('blur', () => {
+      console.log('👋 Window lost focus');
+      // Don't logout on blur - user might just be switching apps
+    });
+
+    // Handle page focus gain
+    window.addEventListener('focus', () => {
+      console.log('👁️ Window gained focus, checking token...');
+      this.checkAndRefreshToken();
+    });
+  }
+
+  // Synchronous logout for page unload events
+  logoutSync() {
+    try {
+      const token = this.getToken();
+      
+      if (token) {
+        // Use sendBeacon for reliable logout during page unload
+        const logoutData = JSON.stringify({ token });
+        navigator.sendBeacon(`${this.baseURL}/auth/logout`, logoutData);
+      }
+    } catch (error) {
+      console.error('Sync logout error:', error);
+    } finally {
+      // Clear storage immediately
+      localStorage.removeItem('sessionToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('tokenExpiry');
+      localStorage.removeItem('user');
+      localStorage.removeItem('loginTime');
+      
+      // Stop all background services
+      this.stopBackgroundServices();
+      
+      console.log('🔐 Sync logout completed');
+    }
   }
 
   // Enhanced login method with improved token management
@@ -140,7 +200,7 @@ class AuthService {
       
       console.log('💾 Tokens stored successfully');
 
-      // Start all monitoring services
+      // Start background services (without inactivity monitoring)
       this.startBackgroundServices();
 
       return {
@@ -156,19 +216,17 @@ class AuthService {
     }
   }
 
-  // Start all background services
+  // Start background services (removed activity-based refresh)
   startBackgroundServices() {
     this.startTokenRefresh();
     this.startSessionCheck();
-    this.startActivityBasedRefresh();
-    console.log('🚀 Background authentication services started');
+    console.log('🚀 Background authentication services started (no inactivity monitoring)');
   }
 
-  // Stop all background services
+  // Stop background services (simplified)
   stopBackgroundServices() {
     this.stopTokenRefresh();
     this.stopSessionCheck();
-    this.stopActivityBasedRefresh();
     console.log('🛑 Background authentication services stopped');
   }
 
@@ -300,35 +358,6 @@ class AuthService {
     }
   }
 
-  // Activity-based refresh - refresh token when user is active and token is near expiry
-  startActivityBasedRefresh() {
-    this.stopActivityBasedRefresh(); // Clear any existing interval
-    
-    this.activityCheckInterval = setInterval(async () => {
-      const timeSinceActivity = Date.now() - this.lastActivity;
-      
-      // Only refresh if user has been active recently
-      if (timeSinceActivity < this.maxInactivityTime) {
-        if (this.isAuthenticated() && this.shouldRefreshToken()) {
-          console.log('🔄 Activity-based token refresh triggered');
-          await this.checkAndRefreshToken();
-        }
-      } else {
-        console.log(`😴 User inactive for ${Math.round(timeSinceActivity / 60000)} minutes`);
-      }
-    }, 2 * 60 * 1000); // Check every 2 minutes
-
-    console.log('👆 Activity-based refresh monitoring started');
-  }
-
-  stopActivityBasedRefresh() {
-    if (this.activityCheckInterval) {
-      clearInterval(this.activityCheckInterval);
-      this.activityCheckInterval = null;
-      console.log('👆 Activity-based refresh monitoring stopped');
-    }
-  }
-
   // Enhanced session validation
   async validateSession() {
     const token = this.getToken();
@@ -376,7 +405,7 @@ class AuthService {
           }
         }
         
-        // Only logout if we can't recover
+        // Only logout if we can't recover (but not due to inactivity)
         this.logout(true);
       }
     }, 5 * 60 * 1000); // Check every 5 minutes
@@ -405,7 +434,7 @@ class AuthService {
     return this.getToken();
   }
 
-  // Enhanced authentication check
+  // Enhanced authentication check (simplified - no inactivity check)
   isAuthenticated() {
     try {
       const token = this.getToken();
@@ -430,7 +459,7 @@ class AuthService {
     }
   }
 
-  // Enhanced logout
+  // Enhanced logout (can be called manually or on page exit)
   async logout(force = false) {
     try {
       const token = this.getToken();
@@ -492,12 +521,12 @@ class AuthService {
       return JSON.parse(userStr);
     } catch (error) {
       console.error('❌ Error parsing user data:', error);
-      localStorage.removeItem('user');
+      localStorage.removeUser('user');
       return null;
     }
   }
 
-  // Debug methods
+  // Debug methods (updated)
   debugStorage() {
     const loginTime = localStorage.getItem('loginTime');
     const tokenExpiry = localStorage.getItem('tokenExpiry');
@@ -516,9 +545,9 @@ class AuthService {
       timeSinceActivity: `${Math.round((Date.now() - this.lastActivity) / 60000)} minutes`,
       backgroundServices: {
         tokenRefresh: !!this.refreshTokenInterval,
-        sessionCheck: !!this.sessionCheckInterval,
-        activityCheck: !!this.activityCheckInterval
-      }
+        sessionCheck: !!this.sessionCheckInterval
+      },
+      logoutPolicy: 'Only on page exit - no inactivity timeout'
     });
   }
 
@@ -530,9 +559,9 @@ class AuthService {
       lastActivity: new Date(this.lastActivity).toISOString(),
       servicesRunning: {
         tokenRefresh: !!this.refreshTokenInterval,
-        sessionCheck: !!this.sessionCheckInterval,
-        activityCheck: !!this.activityCheckInterval
-      }
+        sessionCheck: !!this.sessionCheckInterval
+      },
+      logoutPolicy: 'Page exit only'
     };
   }
 }
@@ -543,5 +572,6 @@ const authService = new AuthService();
 window.debugAuth = () => authService.debugStorage();
 window.authStatus = () => authService.getAuthStatus();
 window.forceRefresh = () => authService.refreshToken();
+window.manualLogout = () => authService.logout();
 
 export default authService;

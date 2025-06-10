@@ -1,11 +1,92 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './AdminSidebar.css';
 
-const AdminSidebar = ({ isOpen, onToggle }) => {
+const AdminSidebar = () => {
   const [pendingCount] = useState(24);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isOpen, setIsOpen] = useState(true); // Default to open on desktop
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Check if device is mobile
+  useEffect(() => {
+    const checkIfMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      
+      // On mobile, default to closed; on desktop, default to open
+      if (mobile) {
+        setIsOpen(false);
+      } else {
+        setIsOpen(true);
+      }
+    };
+    
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+    
+    return () => window.removeEventListener('resize', checkIfMobile);
+  }, []);
+
+  // Toggle sidebar
+  const toggleSidebar = () => {
+    setIsOpen(!isOpen);
+  };
+
+  // Close sidebar when clicking outside on mobile
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isMobile && isOpen && !event.target.closest('.sidebar') && !event.target.closest('.sidebar-toggle-btn')) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isMobile && isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isMobile, isOpen]);
+
+  // Prevent body scroll when mobile sidebar is open
+  useEffect(() => {
+    if (isMobile && isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobile, isOpen]);
+
+  // Update main content margin and toggle button position based on sidebar state
+  useEffect(() => {
+    const mainContent = document.querySelector('.main-content');
+    const toggleBtn = document.querySelector('.sidebar-toggle-btn');
+    
+    if (mainContent) {
+      if (!isMobile && !isOpen) {
+        mainContent.classList.add('sidebar-collapsed');
+      } else {
+        mainContent.classList.remove('sidebar-collapsed');
+      }
+    }
+    
+    if (toggleBtn) {
+      if (!isMobile && !isOpen) {
+        toggleBtn.classList.add('sidebar-collapsed');
+      } else {
+        toggleBtn.classList.remove('sidebar-collapsed');
+      }
+    }
+  }, [isMobile, isOpen]);
 
   const navigationItems = [
     { id: 'admin/dashboard', label: 'Dashboard Overview', icon: 'fas fa-tachometer-alt', path: '/admin/dashboard' },
@@ -27,8 +108,8 @@ const AdminSidebar = ({ isOpen, onToggle }) => {
     navigate(item.path);
     
     // Close mobile sidebar after selection
-    if (window.innerWidth < 768) {
-      onToggle();
+    if (isMobile) {
+      setIsOpen(false);
     }
   };
 
@@ -40,6 +121,11 @@ const AdminSidebar = ({ isOpen, onToggle }) => {
     sessionStorage.removeItem('authToken');
     // Navigate to login page
     navigate('/login');
+    
+    // Close sidebar on mobile
+    if (isMobile && isOpen) {
+      setIsOpen(false);
+    }
   };
 
   // Check if current path matches item path for active state
@@ -49,23 +135,52 @@ const AdminSidebar = ({ isOpen, onToggle }) => {
 
   return (
     <>
+      {/* Toggle Button - Always visible with proper class management */}
+      <button 
+        className={`sidebar-toggle-btn ${isOpen ? 'toggle-on' : 'toggle-off'}`}
+        onClick={toggleSidebar}
+        aria-label="Toggle navigation menu"
+        type="button"
+      >
+        <i 
+          className={isOpen ? 'fas fa-toggle-on' : 'fas fa-toggle-off'}
+          aria-hidden="true"
+        ></i>
+      </button>
+
       {/* Mobile Overlay */}
-      {isOpen && (
+      {isMobile && isOpen && (
         <div 
-          className="sidebar-overlay md:hidden"
-          onClick={onToggle}
+          className="sidebar-overlay"
+          onClick={toggleSidebar}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              toggleSidebar();
+            }
+          }}
+          aria-label="Close sidebar"
         />
       )}
 
       {/* Sidebar */}
-      <aside className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
-        {/* Mobile Close Button */}
-        <button 
-          className="sidebar-close-btn md:hidden"
-          onClick={onToggle}
-        >
-          <i className="fas fa-times"></i>
-        </button>
+      <aside 
+        className={`sidebar ${isOpen ? 'sidebar-open' : ''} ${isMobile ? 'sidebar-mobile' : 'sidebar-desktop'} ${!isMobile && !isOpen ? 'sidebar-collapsed' : ''}`}
+        role="navigation"
+        aria-label="Admin navigation"
+      >
+        {/* Mobile Close Button - Only on very small screens */}
+        {isMobile && (
+          <button 
+            className="sidebar-close-btn"
+            onClick={toggleSidebar}
+            aria-label="Close navigation"
+            type="button"
+          >
+            <i className="fas fa-times"></i>
+          </button>
+        )}
 
         {/* User Info Section */}
         <div className="sidebar-header">
@@ -82,11 +197,15 @@ const AdminSidebar = ({ isOpen, onToggle }) => {
                   key={item.id}
                   onClick={() => handleItemClick(item)}
                   className={`sidebar-link ${isActiveItem(item.path) ? 'active' : ''}`}
+                  type="button"
+                  aria-current={isActiveItem(item.path) ? 'page' : undefined}
                 >
-                  <i className={`${item.icon} sidebar-icon`}></i>
+                  <i className={`${item.icon} sidebar-icon`} aria-hidden="true"></i>
                   <span className="sidebar-text">{item.label}</span>
                   {item.badge && (
-                    <span className="sidebar-badge">{item.badge}</span>
+                    <span className="sidebar-badge" aria-label={`${item.badge} pending items`}>
+                      {item.badge}
+                    </span>
                   )}
                 </button>
               ))}
@@ -102,8 +221,10 @@ const AdminSidebar = ({ isOpen, onToggle }) => {
                   key={item.id}
                   onClick={() => handleItemClick(item)}
                   className={`sidebar-link ${isActiveItem(item.path) ? 'active' : ''}`}
+                  type="button"
+                  aria-current={isActiveItem(item.path) ? 'page' : undefined}
                 >
-                  <i className={`${item.icon} sidebar-icon`}></i>
+                  <i className={`${item.icon} sidebar-icon`} aria-hidden="true"></i>
                   <span className="sidebar-text">{item.label}</span>
                 </button>
               ))}
@@ -112,8 +233,13 @@ const AdminSidebar = ({ isOpen, onToggle }) => {
           
           {/* Logout Section */}
           <div className="sidebar-logout-section">
-            <button onClick={handleLogout} className="sidebar-link logout-link">
-              <i className="fas fa-sign-out-alt sidebar-icon"></i>
+            <button 
+              onClick={handleLogout} 
+              className="sidebar-link logout-link"
+              type="button"
+              aria-label="Logout from admin panel"
+            >
+              <i className="fas fa-sign-out-alt sidebar-icon" aria-hidden="true"></i>
               <span className="sidebar-text">Logout</span>
             </button>
           </div>

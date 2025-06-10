@@ -1,3 +1,105 @@
+/* Hamburger Menu Button - Visible on all screen sizes */
+.sidebar-toggle-btn {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 1002;
+  background: none !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.sidebar-toggle-btn:hover {
+  transform: scale(1.05);
+  background: none !important;
+  border: none !important;
+}
+
+.sidebar-toggle-btn:active,
+.sidebar-toggle-btn:focus {
+  background: none !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  transform: scale(0.95);
+}
+
+/* Remove all default button styles */
+.sidebar-toggle-btn:visited,
+.sidebar-toggle-btn:focus-visible {
+  background: none !important;
+  border: none !important;
+  outline: none !important;
+}
+
+/* Toggle icon styles */
+.sidebar-toggle-btn i {
+  font-size: 1.5rem;
+  color: #1f2937;
+  transition: all 0.2s ease;
+  background: none !important;
+  border: none !important;
+}
+
+.sidebar-toggle-btn:hover i {
+  color: #00BF63;
+  transform: scale(1.1);
+}
+
+/* Toggle states - simplified approach */
+.sidebar-toggle-btn.toggle-on i {
+  color: #00BF63;
+}
+
+.sidebar-toggle-btn.toggle-off i {
+  color: #1f2937;
+}
+
+/* Adjust toggle button position when sidebar is open on desktop */
+@media (min-width: 768px) {
+  .sidebar-toggle-btn {
+    
+    transition: left 0.3s ease-in-out;
+  }
+  
+  .sidebar-toggle-btn.sidebar-collapsed {
+    left: 1rem;
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+  .sidebar-toggle-btn {
+    background: none;
+  }
+  
+  .sidebar-toggle-btn:hover {
+    transform: scale(1.05);
+  }
+  
+  .sidebar-toggle-btn:active {
+    transform: scale(0.95);
+  }
+  
+  .sidebar-toggle-btn i {
+    font-size: 1.75rem;
+  }
+}
+@media (min-width: 480px) {
+  .sidebar-toggle-btn{
+    margin-top: -0.3rem;
+  }
+  }
+
 /* Sidebar Styles */
 .sidebar {
   position: fixed;
@@ -5,27 +107,36 @@
   left: 0;
   height: 100vh;
   width: 256px;
+  padding-top: 1.2rem;
   background-color: #1f2937;
   color: white;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  z-index: 40;
-  transform: translateX(-100%);
-  transition: transform 0.3s ease-in-out;
+  z-index: 1000;
   overflow-y: auto;
   overflow-x: hidden;
+  transition: transform 0.3s ease-in-out;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
-/* Show sidebar on desktop */
-@media (min-width: 768px) {
-  .sidebar {
-    position: fixed; /* Keep it fixed on desktop too */
-    transform: translateX(0);
-    z-index: 40;
-  }
+/* Desktop sidebar - always visible by default, can be collapsed */
+.sidebar-desktop {
+  transform: translateX(0);
+}
+
+.sidebar-desktop.sidebar-collapsed {
+  transform: translateX(-100%);
+}
+
+/* Mobile sidebar - hidden by default */
+.sidebar-mobile {
+  transform: translateX(-100%);
+  width: 280px;
+  max-width: 85vw;
 }
 
 /* Mobile sidebar open state */
-.sidebar-open {
+.sidebar-mobile.sidebar-open {
   transform: translateX(0);
 }
 
@@ -36,11 +147,12 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 30;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 999;
+  backdrop-filter: blur(2px);
 }
 
-/* Close button for mobile */
+/* Close button for mobile - keep but make it more subtle */
 .sidebar-close-btn {
   position: absolute;
   top: 1rem;
@@ -48,26 +160,45 @@
   background: none;
   border: none;
   color: white;
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   cursor: pointer;
   padding: 0.5rem;
   border-radius: 0.375rem;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  z-index: 1001;
+  display: none; /* Hide by default, show only on very small screens */
+}
+
+@media (max-width: 480px) {
+  .sidebar-close-btn {
+    display: block;
+    
+  }
 }
 
 .sidebar-close-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: none;
+  transform: scale(1.05);
+}
+
+.sidebar-close-btn:active {
+  transform: scale(0.95);
 }
 
 /* Header section */
 .sidebar-header {
   padding: 1.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 0.5rem; /* Account for toggle button space */
 }
 
-@media (max-width: 767px) {
-  .sidebar-header {
-    padding-top: 3rem; /* Account for close button */
+.sidebar-mobile .sidebar-header {
+  padding-top: 1.5rem;
+}
+
+@media (max-width: 480px) {
+  .sidebar-mobile .sidebar-header {
+    padding-top: 4rem; /* Account for close button on very small screens */
   }
 }
 
@@ -76,12 +207,14 @@
   font-weight: 600;
   color: #f0b41c;
   margin: 0;
+  line-height: 1.4;
 }
 
 .sidebar-subtitle {
   font-size: 0.875rem;
   color: #9ca3af;
   margin: 0.25rem 0 0 0;
+  line-height: 1.3;
 }
 
 /* Navigation */
@@ -93,7 +226,7 @@
 }
 
 .sidebar-section {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .sidebar-section-title {
@@ -103,7 +236,7 @@
   color: #9ca3af;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.75rem 0;
 }
 
 .sidebar-items {
@@ -117,52 +250,70 @@
   display: flex;
   align-items: center;
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.875rem 1rem;
   font-size: 0.875rem;
   font-weight: 500;
   color: white;
   background: none;
   border: none;
-  border-radius: 0.375rem;
+  border-radius: 0.5rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   text-align: left;
   position: relative;
+  min-height: 44px; /* Better touch targets */
 }
 
 .sidebar-link:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.12);
+  transform: translateX(2px);
+}
+
+.sidebar-link:active {
+  transform: translateX(1px);
 }
 
 .sidebar-link.active {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(240, 180, 28, 0.2);
   border-left: 4px solid #f0b41c;
+  color: #f0b41c;
+}
+
+.sidebar-link.active .sidebar-icon {
+  color: #f0b41c;
 }
 
 .sidebar-icon {
-  margin-right: 0.75rem;
-  font-size: 1rem;
-  width: 1rem;
+  margin-right: 0.875rem;
+  font-size: 1.125rem;
+  width: 1.25rem;
   text-align: center;
+  transition: color 0.2s ease;
 }
 
 .sidebar-text {
   flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sidebar-badge {
   background-color: #ef4444;
   color: white;
   border-radius: 9999px;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem 0.6rem;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
   margin-left: auto;
+  min-width: 1.5rem;
+  text-align: center;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 /* Logout section */
 .sidebar-logout-section {
-  margin-top: 1.5rem;
+  margin-top: auto;
   padding-top: 1.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -172,68 +323,115 @@
 }
 
 .logout-link:hover {
-  background-color: rgba(239, 68, 68, 0.1);
+  background-color: rgba(239, 68, 68, 0.15);
   color: #ef4444;
 }
 
-/* Main content adjustment - Add this to push content beside sidebar */
-.main-content {
-  margin-left: 0;
-  transition: margin-left 0.3s ease-in-out;
+.logout-link:hover .sidebar-icon {
+  color: #ef4444;
 }
 
+/* Main content adjustment */
+.main-content {
+  transition: margin-left 0.3s ease-in-out;
+  min-height: 100vh;
+  padding-top: 4rem; /* Account for toggle button */
+}
+
+/* Desktop - account for sidebar */
 @media (min-width: 768px) {
   .main-content {
-    margin-left: 256px; /* Same as sidebar width */
-  }
-}
-
-/* Responsive adjustments */
-@media (max-width: 767px) {
-  .sidebar {
-    width: 280px;
-    max-width: 85vw;
-  }
-}
-
-@media (max-width: 480px) {
-  .sidebar {
-    width: 100vw;
-    max-width: none;
+    margin-left: 256px;
   }
   
-  .sidebar-header {
-    padding: 3rem 1rem 1rem 1rem;
+  .main-content.sidebar-collapsed {
+    margin-left: 0;
+  }
+}
+
+/* Mobile - no margin adjustment needed */
+@media (max-width: 767px) {
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+    padding-top: 4rem; /* Account for toggle button */
+  }
+}
+
+/* Tablet and small desktop adjustments */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .sidebar {
+    width: 240px;
+  }
+  
+  .main-content {
+    margin-left: 240px;
+  }
+  
+  .main-content.sidebar-collapsed {
+    margin-left: 0;
+  }
+  
+  .sidebar-toggle-btn {
+    left: 15.5rem; /* Adjusted for smaller sidebar */
+    
+  }
+  
+  .sidebar-toggle-btn.sidebar-collapsed {
+    left: 1rem;
+    
+  }
+}
+
+/* Mobile specific styles */
+@media (max-width: 767px) {
+  .sidebar-mobile {
+    width: min(320px, 90vw);
   }
   
   .sidebar-link {
     padding: 1rem;
     font-size: 1rem;
+    min-height: 48px;
   }
   
   .sidebar-icon {
     font-size: 1.25rem;
-    margin-right: 1rem;
+    width: 1.5rem;
+  }
+  
+  .sidebar-header {
+    padding: 1.5rem 1rem;
+  }
+  
+  .sidebar-title {
+    font-size: 1.25rem;
+  }
+  
+  .sidebar-subtitle {
+    font-size: 0.95rem;
   }
 }
 
-/* Focus states for accessibility */
-.sidebar-link:focus {
-  outline: 2px solid #f0b41c;
-  outline-offset: 2px;
+/* Very small mobile devices */
+@media (max-width: 380px) {
+  .sidebar-mobile {
+    width: 100vw;
+    max-width: none;
+  }
+  
+  .sidebar-close-btn {
+    top: 0.75rem;
+    right: 0.75rem;
+    padding: 0.5rem;
+  }
+  
+  .sidebar-header {
+    padding: 3.5rem 1rem 1rem;
+  }
 }
 
-.sidebar-close-btn:focus {
-  outline: 2px solid #f0b41c;
-  outline-offset: 2px;
-}
-
-/* Smooth scrolling for sidebar content */
-.sidebar {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-}
-
+/* Scrollbar styles */
 .sidebar::-webkit-scrollbar {
   width: 6px;
 }
@@ -251,17 +449,20 @@
   background-color: rgba(255, 255, 255, 0.5);
 }
 
-/* Animation for badges */
-.sidebar-badge {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+/* Focus states for accessibility */
+.sidebar-link:focus,
+.sidebar-close-btn:focus {
+  outline: 2px solid #f0b41c;
+  outline-offset: 2px;
 }
 
+/* Animation for badges */
 @keyframes pulse {
   0%, 100% {
     opacity: 1;
   }
   50% {
-    opacity: .8;
+    opacity: 0.8;
   }
 }
 
@@ -272,30 +473,26 @@
   }
   
   .sidebar-link:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.25);
   }
   
   .sidebar-link.active {
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(240, 180, 28, 0.3);
     border-left-width: 6px;
   }
 }
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-  .sidebar {
-    transition: none;
-  }
-  
-  .sidebar-link {
+  .sidebar,
+  .sidebar-link,
+  .main-content,
+  .sidebar-close-btn,
+  .sidebar-toggle-btn {
     transition: none;
   }
   
   .sidebar-badge {
     animation: none;
-  }
-
-  .main-content {
-    transition: none;
   }
 }
