@@ -6,6 +6,7 @@ import LoginPage from './Pages/users/LoginPage/LoginPage';
 import AdminLayout from './components/Admin/AdminLayout';
 import AdminDashboardOverview from './components/Admin/AdminDashboard/AdminDashboardOverview/AdminDashboardOverview';
 import PasswordResetSystem from './Pages/users/PasswordResetSystem';
+import AdminCurriculaPage from './components/Admin/AdminAllCurricula/AdminAllCurricula';
 
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
             }>
               {/* Nested admin routes */}
               <Route path="dashboard" element={<AdminDashboardOverview />} />
+              <Route path="admin-all-curricula" element={<AdminCurriculaPage />} />
               
               
             </Route>

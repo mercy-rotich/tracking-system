@@ -90,7 +90,7 @@ const AdminSidebar = () => {
 
   const navigationItems = [
     { id: 'admin/dashboard', label: 'Dashboard Overview', icon: 'fas fa-tachometer-alt', path: '/admin/dashboard' },
-    { id: 'curricula', label: 'All Curricula', icon: 'fas fa-book', badge: pendingCount, path: '/admin/curricula' },
+    { id: 'curricula', label: 'All Curricula', icon: 'fas fa-book', badge: pendingCount, path: '/admin/admin-all-curricula' },
     { id: 'users', label: 'User Management', icon: 'fas fa-users', path: '/admin/users' },
     { id: 'roles', label: 'Roles & Permissions', icon: 'fas fa-user-cog', path: '/admin/roles' },
     { id: 'monitoring', label: 'System Monitoring', icon: 'fas fa-chart-line', path: '/admin/monitoring' },
