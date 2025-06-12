@@ -17,17 +17,3 @@ export const getStatusBadge = (status) => {
   );
 };
 
-export const getDifficultyBadge = (difficulty) => {
-  const difficultyConfig = {
-    Beginner: { class: 'difficulty-beginner', color: '#00BF63' },
-    Intermediate: { class: 'difficulty-intermediate', color: '#f0b41c' },
-    Advanced: { class: 'difficulty-advanced', color: '#1a3a6e' }
-  };
-  
-  const config = difficultyConfig[difficulty] || difficultyConfig.Beginner;
-  return (
-    <span className={`difficulty-badge ${config.class}`} style={{ backgroundColor: config.color }}>
-      {difficulty}
-    </span>
-  );
-};
