@@ -670,3 +670,30 @@
   color: white;
   border-color: #00BF63;
 }
+
+.curricula-page .filter-buttons{
+  display: flex;
+    gap: 0.5rem;
+}
+.curricula-page .filter-btn {
+  padding: 0.75rem 1.5rem;
+  border: 2px solid #e2e8f0;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
+}
+.curricula-page .filter-btn:hover {
+  border-color: #667eea;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.curricula-page .filter-btn.active {
+  background: #00BF63;
+  color: white;
+  border-color: #00BF63;
+}
