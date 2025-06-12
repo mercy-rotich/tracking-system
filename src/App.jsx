@@ -6,7 +6,7 @@ import LoginPage from './Pages/users/LoginPage/LoginPage';
 import AdminLayout from './components/Admin/AdminLayout';
 import AdminDashboardOverview from './components/Admin/AdminDashboard/AdminDashboardOverview/AdminDashboardOverview';
 import PasswordResetSystem from './Pages/users/PasswordResetSystem';
-import AdminCurriculaPage from './components/Admin/AdminAllCurricula/AdminAllCurricula';
+import AdminCurriculaPage from './Pages/Admin/AdminCurriculaPage/AdminCurriculaPage';
 
 
 function App() {
