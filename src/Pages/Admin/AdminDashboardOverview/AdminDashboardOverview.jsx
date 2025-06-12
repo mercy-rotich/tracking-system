@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import MetricsCards from '../MetricCards/MetricCards';
-import WorkflowBottlenecks from '../WorkflowBottlenecks/WorkflowBottlenecks';
-import QuickActions from '../QuickActions/QuickActions';
-import RecentActivity from '../RecentActivity/RecentActivity';
-import SystemAlerts from '../SystemAlerts/SystemAlerts';
-import authService from '../../../../services/authService';
+import MetricsCards from '../../../components/Admin/AdminDashboard/MetricCards/MetricCards';
+import WorkflowBottlenecks from '../../../components/Admin/AdminDashboard/WorkflowBottlenecks/WorkflowBottlenecks';
+import QuickActions from '../../../components/Admin/AdminDashboard/QuickActions/QuickActions';
+import RecentActivity from '../../../components/Admin/AdminDashboard/RecentActivity/RecentActivity';
+import SystemAlerts from '../../../components/Admin/AdminDashboard/SystemAlerts/SystemAlerts';
+import authService from '../../../services/authService';
 import './AdminDashboardOverview.css';
 
 // Get base URL from environment variables
