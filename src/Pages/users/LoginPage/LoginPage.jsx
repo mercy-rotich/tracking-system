@@ -15,7 +15,6 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // Redirect if already authenticated
   if (!loading && isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -26,14 +25,14 @@ const LoginPage = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
-    // Clear error when user starts typing
+    
     if (error) setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Basic validation
+  
     if (!formData.username.trim() || !formData.password.trim()) {
       setError('Please fill in all required fields');
       return;
@@ -49,13 +48,11 @@ const LoginPage = () => {
         rememberMe: formData.rememberMe
       });
       
-      // Navigation will be handled by the ProtectedRoute/AuthContext
-      // The user will be automatically redirected to dashboard
+      
       
     } catch (error) {
       console.error('Login error:', error);
       
-      // Handle specific error types
       if (error.message.includes('credentials')) {
         setError('Invalid username or password. Please try again.');
       } else if (error.message.includes('network') || error.message.includes('fetch')) {
@@ -74,7 +71,7 @@ const LoginPage = () => {
     setShowPassword(!showPassword);
   };
 
-  // Show loading state while auth is initializing
+  
   if (loading) {
     return (
       <div className="login-container">

@@ -15,7 +15,7 @@ const AdminLayout = () => {
       <AdminHeader onToggleSidebar={toggleSidebar} />
       <AdminSidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
       <main className="admin-main-content">
-        {/* This Outlet will render the nested route components */}
+       
         <Outlet />
       </main>
     </div>

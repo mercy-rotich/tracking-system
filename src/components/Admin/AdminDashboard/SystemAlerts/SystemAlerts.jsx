@@ -33,10 +33,10 @@ const SystemAlerts = () => {
   const activeAlertsCount = alerts.length;
 
   const handleAlertAction = (alertId, actionType) => {
-    // TODO: Implement specific actions based on alert type
+    
     console.log(`Handling ${actionType} for alert ${alertId}`);
     
-    // Example: Mark alert as addressed or take specific action
+   
     switch (actionType) {
       case 'Take Action':
         console.log('Taking action on critical delay...');

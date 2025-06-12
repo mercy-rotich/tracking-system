@@ -1,37 +1,10 @@
 /* LoginPage.css */
 
 /* Import Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap');
 
-/* CSS Custom Properties (Variables) */
+
 :root {
-  /* MUST Brand Colors */
-  --must-blue: #1a3a6e;
-  --must-blue-dark: #142d5a;
-  --must-gold: #f0b41c;
-  --must-gold-dark: #d99e0a;
-  --must-teal: #00BF63;
-  --must-teal-dark: #00a855;
-  --must-teal-light: #33cc7a;
-  
-  /* Neutral Colors */
-  --white: #ffffff;
-  --gray-50: #f9fafb;
-  --gray-100: #f3f4f6;
-  --gray-200: #e5e7eb;
-  --gray-300: #d1d5db;
-  --gray-400: #9ca3af;
-  --gray-500: #6b7280;
-  --gray-600: #4b5563;
-  --gray-700: #374151;
-  --gray-800: #1f2937;
-  --gray-900: #111827;
-  
-  /* System Colors */
-  --error: #ef4444;
-  --error-light: #fef2f2;
-  --success: #10b981;
-  --warning: #f59e0b;
+ 
   
   /* Typography */
   --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;

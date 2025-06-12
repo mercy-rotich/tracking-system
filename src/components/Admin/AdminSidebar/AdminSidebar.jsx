@@ -5,17 +5,17 @@ import './AdminSidebar.css';
 const AdminSidebar = () => {
   const [pendingCount] = useState(24);
   const [isMobile, setIsMobile] = useState(false);
-  const [isOpen, setIsOpen] = useState(true); // Default to open on desktop
+  const [isOpen, setIsOpen] = useState(true); 
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Check if device is mobile
+  
   useEffect(() => {
     const checkIfMobile = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       
-      // On mobile, default to closed; on desktop, default to open
+      
       if (mobile) {
         setIsOpen(false);
       } else {
@@ -29,12 +29,12 @@ const AdminSidebar = () => {
     return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
 
-  // Toggle sidebar
+  
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
   };
 
-  // Close sidebar when clicking outside on mobile
+ 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (isMobile && isOpen && !event.target.closest('.sidebar') && !event.target.closest('.sidebar-toggle-btn')) {
@@ -104,38 +104,33 @@ const AdminSidebar = () => {
   ];
 
   const handleItemClick = (item) => {
-    // Navigate to the specified path
+   
     navigate(item.path);
     
-    // Close mobile sidebar after selection
+    
     if (isMobile) {
       setIsOpen(false);
     }
   };
 
   const handleLogout = () => {
-    // Handle logout logic here
     console.log('Logout clicked');
-    // Clear any authentication tokens
     localStorage.removeItem('authToken');
     sessionStorage.removeItem('authToken');
-    // Navigate to login page
     navigate('/login');
     
-    // Close sidebar on mobile
     if (isMobile && isOpen) {
       setIsOpen(false);
     }
   };
 
-  // Check if current path matches item path for active state
   const isActiveItem = (itemPath) => {
     return location.pathname === itemPath;
   };
 
   return (
     <>
-      {/* Toggle Button - Always visible with proper class management */}
+      {/* Toggle Button  */}
       <button 
         className={`sidebar-toggle-btn ${isOpen ? 'toggle-on' : 'toggle-off'}`}
         onClick={toggleSidebar}

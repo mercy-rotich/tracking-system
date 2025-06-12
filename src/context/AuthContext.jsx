@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
           await authService.validateSession();
         } catch (error) {
           console.warn('Session validation failed during initialization:', error);
-          // Don't force logout here, let the user try to use the app
+        
         }
       } else {
         // Clear any stale data

@@ -1,7 +1,7 @@
 
 import React from 'react';
 
-// Enhanced MetricCard component - reusable across different contexts
+
 const MetricCard = ({ 
   title, 
   value, 
@@ -9,7 +9,7 @@ const MetricCard = ({
   icon, 
   color, 
   borderColor,
-  onClick // Added for potential interactivity
+  onClick
 }) => {
   const getTrendIcon = (type) => {
     switch (type) {
@@ -76,7 +76,7 @@ const MetricCard = ({
   );
 };
 
-// CurriculaStats component - uses MetricCard with curricula-specific data
+
 const CurriculaStats = ({ stats, onStatClick }) => {
   const metricsData = [
     {

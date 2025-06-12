@@ -51,7 +51,6 @@
   }
 }
 
-/* Alternative: Use body classes to control header */
 .sidebar-hidden .header {
   left: 0 !important;
   width: 100% !important;

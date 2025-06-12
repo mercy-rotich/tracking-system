@@ -24,13 +24,13 @@ const AdminCurriculaPage = () => {
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
   const [viewMode, setViewMode] = useState('grid');
 
-  // Initialize with mock data
+  
   useEffect(() => {
     setCurricula(mockCurriculaData);
     setFilteredCurricula(mockCurriculaData);
   }, []);
 
-  // Filter and sort curricula
+  
   useEffect(() => {
     let filtered = curricula.filter(curriculum => {
       const matchesSearch = curriculum.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -42,7 +42,7 @@ const AdminCurriculaPage = () => {
       return matchesSearch && matchesStatus && matchesCategory;
     });
 
-    // Sort curricula
+    
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'newest':

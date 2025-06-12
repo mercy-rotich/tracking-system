@@ -10,7 +10,7 @@ const AdminHeader = ({ onSearchSubmit, user, systemHealth, notifications }) => {
   const notificationRef = useRef(null);
   const profileRef = useRef(null);
 
-  // Close dropdowns when clicking outside
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {

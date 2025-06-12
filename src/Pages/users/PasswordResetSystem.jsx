@@ -11,12 +11,12 @@ import InvalidTokenMessage from '../../components/PasswordReset/InvalidTokenMess
 const PasswordResetSystem = () => {
   const token = getTokenFromUrl();
   
-  const [step, setStep] = useState('forgot'); // 'forgot', 'emailSent', 'reset', 'success'
+  const [step, setStep] = useState('forgot');
   const [email, setEmail] = useState('');
   const [isValidatingToken, setIsValidatingToken] = useState(false);
   const [isTokenValid, setIsTokenValid] = useState(null);
 
-  // Validate token when component mounts if token exists
+
   useEffect(() => {
     if (token) {
       setIsValidatingToken(true);
@@ -48,7 +48,7 @@ const PasswordResetSystem = () => {
     setStep('success');
   };
 
-  // Show loading spinner while validating token
+  
   if (token && isValidatingToken) {
     return (
       <div className="password-reset-container">
@@ -60,7 +60,6 @@ const PasswordResetSystem = () => {
     );
   }
 
-  // Show invalid token message if token is invalid
   if (token && isTokenValid === false) {
     return (
       <div className="password-reset-container">

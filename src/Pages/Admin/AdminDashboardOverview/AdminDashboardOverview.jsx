@@ -7,7 +7,7 @@ import SystemAlerts from '../../../components/Admin/AdminDashboard/SystemAlerts/
 import authService from '../../../services/authService';
 import './AdminDashboardOverview.css';
 
-// Get base URL from environment variables
+
 const API_BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:8090/api/v1';
 
 const AdminDashboardOverview = () => {
@@ -27,7 +27,7 @@ const AdminDashboardOverview = () => {
   };
 
   const handleExportReport = () => {
-    // TODO: Implement export functionality
+  
     console.log('Exporting report...');
   };
 
@@ -73,10 +73,10 @@ const AdminDashboardOverview = () => {
         return;
       }
 
-      // Debug: Log the token being used
+     
       console.log('🎫 Using token for API call:', token ? `${token.substring(0, 20)}...` : 'null');
 
-      // Use environment variable for API URL
+     
       const response = await fetch(`${API_BASE_URL}/users/create`, {
         method: 'POST',
         headers: {

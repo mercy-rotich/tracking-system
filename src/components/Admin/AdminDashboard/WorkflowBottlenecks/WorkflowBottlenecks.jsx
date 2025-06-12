@@ -31,13 +31,13 @@ const WorkflowBottlenecks = () => {
   ]);
 
   const handleSendReminder = (action, committeeId) => {
-    // TODO: Implement API call to send reminder
+    
     console.log(`Sending reminder to ${action}...`);
     
-    // Show success feedback (you might want to use a toast notification library)
+    
     alert(`Reminder sent successfully to ${action}!`);
     
-    // Optional: Update state to reflect the action was taken
+    
     setBottlenecks(prev => prev.map(item => 
       item.id === committeeId 
         ? { ...item, lastReminderSent: new Date().toISOString() }
@@ -46,7 +46,7 @@ const WorkflowBottlenecks = () => {
   };
 
   const handleViewDetails = () => {
-    // TODO: Navigate to detailed workflow view
+    
     console.log('Navigating to workflow details...');
   };
 
