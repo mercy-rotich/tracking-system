@@ -1,0 +1,304 @@
+
+
+:root {
+  --must-teal: #00BF63;
+  --must-teal-dark: #00a855;
+  --must-teal-light: #33cc7a;
+}
+
+
+
+
+
+.school-navigation .hierarchical-navigation {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: fadeInUp 0.6s ease forwards;
+}
+
+.school-navigation .navigation-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-radius: 16px;
+  border-left: 4px solid var(--must-teal);
+}
+
+.school-navigation .navigation-section:last-child {
+  margin-bottom: 0;
+}
+
+.school-navigation .nav-section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.school-navigation .nav-section-title i {
+  color: var(--must-teal);
+  font-size: 1.1rem;
+  width: 24px;
+  text-align: center;
+}
+
+/* School Tabs */
+.school-navigation .navigation-tabs {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.school-navigation .nav-tab {
+  padding: 0.75rem 1.5rem;
+  border: 1px solid #e2e8f0;
+  background: white;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #64748b;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  white-space: nowrap;
+}
+
+.school-navigation .nav-tab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--must-teal), var(--must-teal-light));
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.school-navigation .nav-tab i {
+  font-size: 0.9rem;
+  width: 16px;
+  text-align: center;
+}
+
+.school-navigation .nav-tab.active {
+  background: var(--must-teal);
+  color: white;
+  border-color: var(--must-teal);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 191, 99, 0.3);
+}
+
+.school-navigation .nav-tab.active::before {
+  transform: scaleX(1);
+}
+
+.school-navigation .nav-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid var(--must-teal);
+}
+
+.school-navigation .nav-tab:hover:not(.active) {
+  background: #f1f5f9;
+  border-color: var(--must-teal-light);
+  transform: translateY(-1px);
+  color: var(--must-teal-dark);
+  box-shadow: 0 4px 12px rgba(0, 191, 99, 0.15);
+}
+
+.school-navigation .nav-tab:hover:not(.active)::before {
+  transform: scaleX(1);
+}
+
+/* Program and Department Chips */
+.school-navigation .navigation-chips {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.school-navigation .nav-chip {
+  padding: 0.5rem 1.5rem;
+  background: white;
+  color: var(--must-teal);
+  border: 1px solid #d1d5db;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.school-navigation .nav-chip i {
+  font-size: 0.8rem;
+  width: 14px;
+  text-align: center;
+}
+
+.school-navigation .nav-chip.active {
+  background: var(--must-teal);
+  color: white;
+  border-color: var(--must-teal);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 191, 99, 0.3);
+}
+
+.school-navigation .nav-chip:hover:not(.active) {
+  border-color: var(--must-teal);
+  background: rgba(0, 191, 99, 0.05);
+  transform: translateY(-1px);
+  color: var(--must-teal-dark);
+  box-shadow: 0 4px 12px rgba(0, 191, 99, 0.15);
+}
+
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .school-navigation .hierarchical-navigation {
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .school-navigation .navigation-section {
+    padding: 1rem;
+  }
+
+  .school-navigation .navigation-tabs {
+    justify-content: center;
+  }
+
+  .school-navigation .navigation-chips {
+    justify-content: center;
+  }
+
+  .school-navigation .nav-tab {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.85rem;
+  }
+
+  .school-navigation .nav-chip {
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .school-navigation .filter-tags {
+    justify-content: center;
+  }
+
+  
+}
+
+@media (max-width: 480px) {
+  .school-navigation .navigation-tabs {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .school-navigation .nav-tab {
+    min-width: 200px;
+    justify-content: center;
+  }
+
+  .school-navigation .navigation-chips {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .school-navigation .nav-chip {
+    min-width: 180px;
+    justify-content: center;
+  }
+
+  .school-navigation .filter-tags {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .school-navigation .filter-tag {
+    min-width: 160px;
+    justify-content: center;
+  }
+}
+
+/* Loading Animation */
+.school-navigation .loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid var(--must-teal);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Entrance Animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+.school-navigation .nav-tab:focus,
+.school-navigation .nav-chip:focus,
+.school-navigation .filter-tag button:focus
+{
+  outline: 2px solid var(--must-teal);
+  outline-offset: 2px;
+}
+
+@media (prefers-contrast: high) {
+  .school-navigation .nav-tab,
+  .school-navigation .nav-chip,
+  .school-navigation .filter-tag {
+    border-width: 2px;
+    border-style: solid;
+  }
+  
+  .school-navigation .nav-tab.active,
+  .school-navigation .nav-chip.active {
+    border-color: white;
+  }
+}
+

@@ -3,7 +3,8 @@ import CurriculumCard from './CurriculumCard';
 
 const CurriculaGrid = ({ 
   curricula, 
-  totalCount, 
+  totalCount,
+  filteredCount,
   isLoading, 
   onEdit, 
   onDelete, 
@@ -23,16 +24,40 @@ const CurriculaGrid = ({
   return (
     <div className="content-section">
       <div className="content-header">
-        <span className="results-count">
-          Showing {curricula.length} of {totalCount} curricula
-        </span>
+        <div className="results-summary">
+          <span className="results-count">
+            Showing {curricula.length} of {filteredCount} curricula
+          </span>
+          {filteredCount !== totalCount && (
+            <span className="total-count">
+              (Total: {totalCount})
+            </span>
+          )}
+        </div>
+        
+        {curricula.length > 0 && (
+          <div className="results-actions">
+            <button className="btn btn-sm btn-outline">
+              <i className="fas fa-download"></i>
+              Export Results
+            </button>
+          </div>
+        )}
       </div>
 
       {curricula.length === 0 ? (
         <div className="empty-state">
           <i className="fas fa-book-open"></i>
           <h3>No curricula found</h3>
-          <p>Try adjusting your search criteria or add a new curriculum.</p>
+          <p>Try adjusting your search criteria or filters, or add a new curriculum.</p>
+          <div className="empty-state-suggestions">
+            <h4>Suggestions:</h4>
+            <ul>
+              <li>Clear active filters</li>
+              <li>Try different search terms</li>
+              <li>Check if you have the right school/program selected</li>
+            </ul>
+          </div>
         </div>
       ) : (
         <div className="curricula-grid">
@@ -47,6 +72,18 @@ const CurriculaGrid = ({
               onReject={onReject}
             />
           ))}
+        </div>
+      )}
+
+      {/* Pagination could go here if needed */}
+      {curricula.length > 0 && (
+        <div className="pagination-info">
+          <p>
+            Displaying {curricula.length} curriculum{curricula.length !== 1 ? 'a' : ''}
+            {filteredCount < totalCount && (
+              <span> (filtered from {totalCount} total)</span>
+            )}
+          </p>
         </div>
       )}
     </div>

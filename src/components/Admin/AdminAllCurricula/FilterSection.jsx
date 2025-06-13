@@ -10,7 +10,7 @@ const FiltersSection = ({
   viewMode, setViewMode 
 }) => {
   
-  // Define filterOptions at the component level where it's used
+
   const filterOptions = [
     { value: 'all', label: 'All' },
     { value: 'approved', label: 'Approved' }, 
