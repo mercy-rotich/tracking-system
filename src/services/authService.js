@@ -7,25 +7,23 @@ class AuthService {
     this.isRefreshing = false;
     this.failedQueue = [];
     this.lastActivity = Date.now();
-    this.refreshBuffer = 5 * 60 * 1000; // 5 minutes before expiry
-    // Removed maxInactivityTime and activityCheckInterval since we don't want inactivity logout
+    this.refreshBuffer = 5 * 60 * 1000; 
     this.activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
     
-    // Start monitoring user activity immediately
+   
     this.initializeActivityMonitoring();
     
-    // Add page exit listeners
+   
     this.initializePageExitHandlers();
   }
 
-  // Initialize user activity monitoring (simplified - no inactivity checks)
+  
   initializeActivityMonitoring() {
     const updateActivity = () => {
       this.lastActivity = Date.now();
       console.log('🔄 User activity detected at:', new Date().toISOString());
     };
 
-    // Add event listeners for user activity
     this.activityEvents.forEach(event => {
       document.addEventListener(event, updateActivity, true);
     });
@@ -182,12 +180,11 @@ class AuthService {
         throw new Error(`Login response missing required token. Available fields: ${Object.keys(data).join(', ')}`);
       }
 
-      // Convert relative expiry to absolute timestamp if needed
       if (tokenExpiry && typeof tokenExpiry === 'number' && tokenExpiry < Date.now()) {
-        // Assume it's seconds from now
+        
         tokenExpiry = new Date(Date.now() + (tokenExpiry * 1000)).toISOString();
       } else if (tokenExpiry && typeof tokenExpiry === 'number') {
-        // Assume it's milliseconds timestamp
+       
         tokenExpiry = new Date(tokenExpiry).toISOString();
       }
       
@@ -200,7 +197,7 @@ class AuthService {
       
       console.log('💾 Tokens stored successfully');
 
-      // Start background services (without inactivity monitoring)
+     
       this.startBackgroundServices();
 
       return {
@@ -216,21 +213,19 @@ class AuthService {
     }
   }
 
-  // Start background services (removed activity-based refresh)
+
   startBackgroundServices() {
     this.startTokenRefresh();
     this.startSessionCheck();
     console.log('🚀 Background authentication services started (no inactivity monitoring)');
   }
 
-  // Stop background services (simplified)
   stopBackgroundServices() {
     this.stopTokenRefresh();
     this.stopSessionCheck();
     console.log('🛑 Background authentication services stopped');
   }
 
-  // Enhanced token refresh with better error handling and retry logic
   async refreshToken() {
     if (this.isRefreshing) {
       return new Promise((resolve, reject) => {
@@ -305,7 +300,7 @@ class AuthService {
     }
   }
 
-  // Check if token should be refreshed
+  
   shouldRefreshToken() {
     const tokenExpiry = localStorage.getItem('tokenExpiry');
     if (!tokenExpiry) return false;
@@ -314,7 +309,7 @@ class AuthService {
     const currentTime = Date.now();
     const timeUntilExpiry = expiryTime - currentTime;
     
-    // Refresh if within the buffer time
+    
     return timeUntilExpiry < this.refreshBuffer;
   }
 
@@ -337,15 +332,14 @@ class AuthService {
     return true;
   }
 
-  // Enhanced periodic token refresh
   startTokenRefresh() {
-    this.stopTokenRefresh(); // Clear any existing interval
+    this.stopTokenRefresh(); 
     
     this.refreshTokenInterval = setInterval(async () => {
       if (this.isAuthenticated()) {
         await this.checkAndRefreshToken();
       }
-    }, 60000); // Check every minute
+    }, 60000);
 
     console.log('⏰ Token refresh monitoring started (every 60 seconds)');
   }
@@ -358,7 +352,7 @@ class AuthService {
     }
   }
 
-  // Enhanced session validation
+ 
   async validateSession() {
     const token = this.getToken();
     if (!token) throw new Error('No token available');
@@ -383,9 +377,8 @@ class AuthService {
     return response.json();
   }
 
-  // Enhanced session checking with automatic refresh
   startSessionCheck() {
-    this.stopSessionCheck(); // Clear any existing interval
+    this.stopSessionCheck(); 
     
     this.sessionCheckInterval = setInterval(async () => {
       try {
@@ -394,7 +387,7 @@ class AuthService {
       } catch (error) {
         console.error('❌ Session validation failed:', error);
         
-        // Try to refresh token before logging out
+        
         if (localStorage.getItem('refreshToken')) {
           try {
             await this.refreshToken();
@@ -405,10 +398,10 @@ class AuthService {
           }
         }
         
-        // Only logout if we can't recover (but not due to inactivity)
+        
         this.logout(true);
       }
-    }, 5 * 60 * 1000); // Check every 5 minutes
+    }, 5 * 60 * 1000); 
 
     console.log('🔍 Session validation monitoring started (every 5 minutes)');
   }
@@ -421,7 +414,7 @@ class AuthService {
     }
   }
 
-  // Method to manually trigger refresh (useful for API interceptors)
+  // Method to manually trigger refresh 
   async ensureValidToken() {
     if (!this.isAuthenticated()) {
       throw new Error('Not authenticated');
@@ -433,8 +426,6 @@ class AuthService {
 
     return this.getToken();
   }
-
-  // Enhanced authentication check (simplified - no inactivity check)
   isAuthenticated() {
     try {
       const token = this.getToken();
@@ -459,7 +450,7 @@ class AuthService {
     }
   }
 
-  // Enhanced logout (can be called manually or on page exit)
+  
   async logout(force = false) {
     try {
       const token = this.getToken();
@@ -476,14 +467,14 @@ class AuthService {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      // Clear storage
+      
       localStorage.removeItem('sessionToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('tokenExpiry');
       localStorage.removeItem('user');
       localStorage.removeItem('loginTime');
       
-      // Stop all background services
+     
       this.stopBackgroundServices();
       
       console.log('🔐 Logged out and cleared all data');
@@ -503,7 +494,6 @@ class AuthService {
     return this.getToken();
   }
 
-  // Original methods (kept for compatibility)
   getToken() {
     try {
       const token = localStorage.getItem('sessionToken');
@@ -526,7 +516,7 @@ class AuthService {
     }
   }
 
-  // Debug methods (updated)
+  
   debugStorage() {
     const loginTime = localStorage.getItem('loginTime');
     const tokenExpiry = localStorage.getItem('tokenExpiry');
@@ -568,7 +558,7 @@ class AuthService {
 
 const authService = new AuthService();
 
-// Enhanced global debug functions
+
 window.debugAuth = () => authService.debugStorage();
 window.authStatus = () => authService.getAuthStatus();
 window.forceRefresh = () => authService.refreshToken();

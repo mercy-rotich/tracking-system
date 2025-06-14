@@ -1,0 +1,464 @@
+
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f9fafb;
+    color: #1f2937;
+}
+
+/* Color Variables */
+.system-monitoring-must-green { background-color: #00BF63; }
+.system-monitoring-must-green-text { color: #00BF63; }
+.system-monitoring-must-dark { background-color: #2D1A12; }
+.system-monitoring-must-gold { color: #f0b41c; }
+.system-monitoring-must-gold-bg { background-color: #f0b41c; }
+.system-monitoring-must-blue { color: #1a3a6e; }
+.system-monitoring-must-blue-bg { background-color: #1a3a6e; }
+
+/* Main content wrapper */
+.system-monitoring-header-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+    .system-monitoring-header-content {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0;
+    }
+}
+
+.system-monitoring-header-text {
+    flex: 1;
+}
+
+.system-monitoring-dashboard-title {
+    font-size: 1.875rem;
+    font-weight: bold;
+    color: #1f2937;
+    margin: 0 0 0.25rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.system-monitoring-dashboard-subtitle {
+    color: #6b7280;
+    margin: 0;
+}
+
+.system-monitoring-header-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+@media (min-width: 768px) {
+    .system-monitoring-header-actions {
+        margin-top: 0;
+    }
+}
+
+/* Status Indicators */
+
+/* Button Styles */
+.system-monitoring-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.system-monitoring-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.system-monitoring-btn i {
+    margin-right: 0.5rem;
+}
+
+.system-monitoring-btn-primary {
+    background-color: #00BF63;
+    color: white;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.system-monitoring-btn-primary:hover:not(:disabled) {
+    background-color: #00a855;
+}
+
+.system-monitoring-btn-secondary {
+    background-color: #1a3a6e;
+    color: white;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.system-monitoring-btn-secondary:hover {
+    background-color: #153458;
+}
+
+/* Grid Layouts */
+.system-monitoring-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.monitoring-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+@media (min-width: 1024px) {
+.monitoring-grid {
+        grid-template-columns: 2fr 1fr;
+    }
+}
+
+.system-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+    .system-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* Card Styles */
+.system-monitoring-card {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.system-monitoring-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+}
+
+.system-monitoring-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.system-monitoring-card-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.system-monitoring-card-icon {
+    font-size: 1.25rem;
+    color: #6b7280;
+}
+
+/* Metric Card Specific */
+.system-monitoring-metric-card {
+    text-align: center;
+}
+
+.system-monitoring-metric-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin: 1rem 0;
+}
+
+.system-monitoring-metric-label {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.system-monitoring-metric-change {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.system-monitoring-metric-up {
+    color: #00BF63;
+}
+
+.system-monitoring-metric-down {
+    color: #ef4444;
+}
+
+/* Progress Bars */
+.system-monitoring-progress-bar {
+    width: 100%;
+    height: 0.5rem;
+    background-color: #e5e7eb;
+    border-radius: 0.25rem;
+    overflow: hidden;
+    margin: 0.5rem 0;
+}
+
+.system-monitoring-progress-fill {
+    height: 100%;
+    border-radius: 0.25rem;
+    transition: width 0.3s ease;
+}
+
+.system-monitoring-progress-healthy {
+    background-color: #00BF63;
+}
+
+.system-monitoring-progress-warning {
+    background-color: #f0b41c;
+}
+
+.system-monitoring-progress-critical {
+    background-color: #ef4444;
+}
+
+/* System Resource Bars */
+.system-monitoring-resource-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background-color: #f9fafb;
+    border-radius: 0.5rem;
+}
+
+.system-monitoring-resource-info {
+    flex: 1;
+}
+
+.system-monitoring-resource-name {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+}
+
+.system-monitoring-resource-details {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.system-monitoring-resource-usage {
+    text-align: right;
+    min-width: 100px;
+}
+
+.system-monitoring-resource-percentage {
+    font-weight: 600;
+    font-size: 1.125rem;
+}
+
+/* Alert Items */
+.system-monitoring-alert-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-left: 4px solid;
+    background-color: #f9fafb;
+    border-radius: 0 0.5rem 0.5rem 0;
+    margin-bottom: 0.75rem;
+}
+
+.system-monitoring-alert-critical {
+    border-left-color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.05);
+}
+
+.system-monitoring-alert-warning {
+    border-left-color: #f0b41c;
+    background-color: rgba(240, 180, 28, 0.05);
+}
+
+.system-monitoring-alert-info {
+    border-left-color: #1a3a6e;
+    background-color: rgba(26, 58, 110, 0.05);
+}
+
+.system-monitoring-alert-icon {
+    font-size: 1.25rem;
+    margin-top: 0.125rem;
+}
+
+.system-monitoring-alert-content {
+    flex: 1;
+}
+
+.system-monitoring-alert-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: #1f2937;
+}
+
+.system-monitoring-alert-message {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+
+.system-monitoring-alert-time {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+/* Chart Container */
+.system-monitoring-chart-container {
+    height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border-radius: 0.5rem;
+    border: 2px dashed #cbd5e1;
+    color: #64748b;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* Service Status Grid */
+.system-monitoring-service-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.system-monitoring-service-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background-color: #f9fafb;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+}
+
+.system-monitoring-service-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.system-monitoring-service-name {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.system-monitoring-service-status {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.system-monitoring-status-online {
+    background-color: #00BF63;
+}
+
+.system-monitoring-status-offline {
+    background-color: #ef4444;
+}
+
+.system-monitoring-status-maintenance {
+    background-color: #f0b41c;
+}
+
+/* Status Indicator Styles */
+.system-monitoring-status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.system-monitoring-status-healthy {
+    background-color: rgba(0, 191, 99, 0.1);
+    color: #00BF63;
+}
+
+.system-monitoring-status-warning {
+    background-color: rgba(240, 180, 28, 0.1);
+    color: #f0b41c;
+}
+
+.system-monitoring-status-critical {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767px) {
+    .system-monitoring-dashboard-main-content {
+        padding: 1rem 0.5rem;
+    }
+
+    .system-monitoring-dashboard-title {
+        font-size: 1.5rem;
+    }
+
+    .system-monitoring-header-actions {
+        flex-direction: column;
+    }
+
+    .system-monitoring-metrics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .system-monitoring-metric-value {
+        font-size: 2rem;
+    }
+}
+
+/* Animation for real-time updates */
+@keyframes system-monitoring-pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.system-monitoring-real-time-indicator {
+    animation: system-monitoring-pulse 2s infinite;
+}
+
+/* Loading states */
+.system-monitoring-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: system-monitoring-loading 1.5s infinite;
+}
+
+@keyframes system-monitoring-loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}

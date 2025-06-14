@@ -7,6 +7,7 @@ import AdminLayout from './components/Admin/AdminLayout';
 import AdminDashboardOverview from './Pages/Admin/AdminDashboardOverview/AdminDashboardOverview';
 import PasswordResetSystem from './Pages/users/PasswordResetSystem';
 import AdminCurriculaPage from './Pages/Admin/AdminCurriculaPage/AdminCurriculaPage';
+import SystemMonitoringPage from './Pages/Admin/SystemMonitoringPage/SystemMonitoringPage';
 
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
               {/* Nested admin routes */}
               <Route path="dashboard" element={<AdminDashboardOverview />} />
               <Route path="admin-all-curricula" element={<AdminCurriculaPage />} />
+              <Route path="admin-system-monitoring" element={<SystemMonitoringPage />} />
               
               
             </Route>
