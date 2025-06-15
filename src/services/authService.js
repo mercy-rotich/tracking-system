@@ -28,41 +28,37 @@ class AuthService {
       document.addEventListener(event, updateActivity, true);
     });
 
-    // Also monitor visibility changes (tab switching)
+    
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) {
         updateActivity();
-        // Check if token needs refresh when user returns to tab
+        
         this.checkAndRefreshToken();
       }
     });
   }
 
-  // Initialize handlers for page exit (new method)
+ 
   initializePageExitHandlers() {
-    // Handle page unload (when user closes tab/window or navigates away)
+   
     window.addEventListener('beforeunload', (event) => {
       console.log('🚪 Page is about to unload, logging out...');
-      // Perform synchronous logout
+      
       this.logoutSync();
     });
 
-    // Handle page visibility change to hidden (backup for mobile browsers)
+    
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         console.log('🙈 Page hidden, preparing for potential exit...');
-        // Don't logout immediately, just prepare
-        // This helps with tab switching but doesn't logout
+       
       }
     });
-
-    // Handle page focus loss (optional - for when user switches to another app)
     window.addEventListener('blur', () => {
       console.log('👋 Window lost focus');
-      // Don't logout on blur - user might just be switching apps
+      
     });
 
-    // Handle page focus gain
     window.addEventListener('focus', () => {
       console.log('👁️ Window gained focus, checking token...');
       this.checkAndRefreshToken();
@@ -75,28 +71,26 @@ class AuthService {
       const token = this.getToken();
       
       if (token) {
-        // Use sendBeacon for reliable logout during page unload
+        
         const logoutData = JSON.stringify({ token });
         navigator.sendBeacon(`${this.baseURL}/auth/logout`, logoutData);
       }
     } catch (error) {
       console.error('Sync logout error:', error);
     } finally {
-      // Clear storage immediately
+      
       localStorage.removeItem('sessionToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('tokenExpiry');
       localStorage.removeItem('user');
       localStorage.removeItem('loginTime');
       
-      // Stop all background services
       this.stopBackgroundServices();
       
       console.log('🔐 Sync logout completed');
     }
   }
 
-  // Enhanced login method with improved token management
   async login(credentials) {
     try {
       console.log('🔐 Starting login process with credentials:', {
@@ -123,7 +117,7 @@ class AuthService {
 
       const data = await response.json();
       
-      // Extract tokens and user data (your existing logic)
+      // Extract tokens and user data
       let sessionToken = null;
       let refreshToken = null;
       let tokenExpiry = null;
@@ -284,7 +278,7 @@ class AuthService {
     } catch (error) {
       console.error('❌ Token refresh failed:', error);
       
-      // Reject all queued requests
+      
       this.failedQueue.forEach(({ reject }) => reject(error));
       this.failedQueue = [];
       
