@@ -8,6 +8,7 @@ import AdminDashboardOverview from './Pages/Admin/AdminDashboardOverview/AdminDa
 import PasswordResetSystem from './Pages/users/PasswordResetSystem';
 import AdminCurriculaPage from './Pages/Admin/AdminCurriculaPage/AdminCurriculaPage';
 import SystemMonitoringPage from './Pages/Admin/SystemMonitoringPage/SystemMonitoringPage';
+import UserManagementPage from './Pages/Admin/UserManagemetPage/UserManagement';
 
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
               <Route path="dashboard" element={<AdminDashboardOverview />} />
               <Route path="admin-all-curricula" element={<AdminCurriculaPage />} />
               <Route path="admin-system-monitoring" element={<SystemMonitoringPage />} />
+              <Route path="admin-user-management" element={<UserManagementPage />} />
               
               
             </Route>
