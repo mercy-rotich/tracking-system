@@ -8,8 +8,7 @@ import authService from '../../../services/authService';
 import './AdminDashboardOverview.css';
 
 
-const API_BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:8090/api/v1';
-
+const API_BASE_URL = import.meta.env.VITE_BASE_URL;
 const AdminDashboardOverview = () => {
   const [showCreateUserModal, setShowCreateUserModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

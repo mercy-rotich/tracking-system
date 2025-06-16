@@ -93,7 +93,7 @@ const AdminSidebar = () => {
     { id: 'curricula', label: 'All Curricula', icon: 'fas fa-book', badge: pendingCount, path: '/admin/admin-all-curricula' },
     { id: 'users', label: 'User Management', icon: 'fas fa-users', path: '/admin/admin-user-management' },
     { id: 'monitoring', label: 'System Monitoring', icon: 'fas fa-chart-line', path: '/admin/admin-system-monitoring' },
-    { id: 'reports', label: 'Reports & Analytics', icon: 'fas fa-file-download', path: '/admin/reports' }
+    { id: 'reports', label: 'Reports & Analytics', icon: 'fas fa-file-download', path: '/admin/admin-reports' }
   ];
 
   const systemToolsItems = [

@@ -9,6 +9,7 @@ import PasswordResetSystem from './Pages/users/PasswordResetSystem';
 import AdminCurriculaPage from './Pages/Admin/AdminCurriculaPage/AdminCurriculaPage';
 import SystemMonitoringPage from './Pages/Admin/SystemMonitoringPage/SystemMonitoringPage';
 import UserManagementPage from './Pages/Admin/UserManagemetPage/UserManagement';
+import Reports from './Pages/Admin/ReportsPage/Reports';
 
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
               <Route path="admin-all-curricula" element={<AdminCurriculaPage />} />
               <Route path="admin-system-monitoring" element={<SystemMonitoringPage />} />
               <Route path="admin-user-management" element={<UserManagementPage />} />
+              <Route path="admin-reports" element={<Reports />} />
               
               
             </Route>
