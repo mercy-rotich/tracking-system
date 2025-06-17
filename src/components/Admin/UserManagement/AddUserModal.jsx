@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import authService from '../../../services/authService';
+
+const API_BASE_URL = import.meta.env.VITE_BASE_URL;
 
 const AddUserModal = ({ onClose, onAddUser }) => {
   const [formData, setFormData] = useState({
@@ -13,6 +16,8 @@ const AddUserModal = ({ onClose, onAddUser }) => {
   });
 
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [notification, setNotification] = useState({ show: false, message: '', type: '' });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -48,7 +53,7 @@ const AddUserModal = ({ onClose, onAddUser }) => {
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
     if (!formData.username.trim()) newErrors.username = 'Username is required';
     if (!formData.password) newErrors.password = 'Password is required';
-    else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+    else if (formData.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
     if (!formData.confirmPassword) newErrors.confirmPassword = 'Confirm password is required';
     else if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
 
@@ -56,186 +61,361 @@ const AddUserModal = ({ onClose, onAddUser }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const showNotification = (message, type) => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => {
+      setNotification({ show: false, message: '', type: '' });
+    }, 5000);
+  };
+
+  const getAuthToken = () => {
+    return authService.getToken();
+  };
+
+  const resetForm = () => {
+    setFormData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      username: '',
+      password: '',
+      confirmPassword: '',
+      school: '',
+      roles: []
+    });
+    setErrors({});
+  };
+
+  const handleSubmit = async (e) => {
     if (e) e.preventDefault();
-    if (validateForm()) {
-      onAddUser(formData);
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const token = getAuthToken();
+      
+      if (!token) {
+        showNotification('Authentication token not found. Please log in again.', 'error');
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('🎫 Using token for API call:', token ? `${token.substring(0, 20)}...` : 'null');
+
+      // Prepare API payload (matching the expected format from dashboard overview)
+      const apiPayload = {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName
+      };
+
+      const response = await fetch(`${API_BASE_URL}/users/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(apiPayload)
+      });
+
+      console.log('📡 API response status:', response.status);
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ User created successfully:', result);
+        
+        showNotification('User created successfully! Login details have been sent to their email.', 'success');
+        
+        // Call the parent callback with the created user data
+        if (onAddUser) {
+          onAddUser(result.data || result);
+        }
+        
+        // Close modal after a short delay to show success message
+        setTimeout(() => {
+          onClose();
+          resetForm();
+        }, 2000);
+        
+      } else {
+        const errorData = await response.json();
+        console.error('❌ API error response:', errorData);
+        
+        if (response.status === 401) {
+          showNotification('Session expired. Please log in again.', 'error');
+        } else {
+          showNotification(errorData.message || 'Failed to create user. Please try again.', 'error');
+        }
+      }
+    } catch (error) {
+      console.error('💥 Error creating user:', error);
+      showNotification('Network error. Please check your connection and try again.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    if (!isLoading) {
+      onClose();
+      resetForm();
     }
   };
 
   const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose();
+    if (e.target === e.currentTarget && !isLoading) {
+      handleCloseModal();
     }
   };
 
   return (
-    <div className="user-management-modal user-management-modal-show" onClick={handleBackdropClick}>
-      <div className="user-management-modal-backdrop"></div>
-      <div className="user-management-modal-content">
-        <div className="user-management-modal-header">
-          <h3>Add New User</h3>
-          <button className="user-management-modal-close" onClick={onClose}>
+    <div className="modal-overlay" onClick={handleBackdropClick}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        
+        {/* Notification */}
+        {notification.show && (
+          <div className={`notification ${notification.type}`}>
+            <div className="notification-content">
+              <i className={`fas ${notification.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}`}></i>
+              <span>{notification.message}</span>
+              <button 
+                className="notification-close"
+                onClick={() => setNotification({ show: false, message: '', type: '' })}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="modal-header">
+          <h2 className="modal-title">Add New User</h2>
+          <button 
+            className="modal-close" 
+            onClick={handleCloseModal}
+            disabled={isLoading}
+          >
             <i className="fas fa-times"></i>
           </button>
         </div>
-        <div className="user-management-modal-body">
-          <div className="user-management-form-grid">
-            <div className="user-management-form-group">
-              <label htmlFor="firstName">First Name *</label>
+        
+        <form onSubmit={handleSubmit} className="user-form">
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="firstName">First Name</label>
               <input
                 type="text"
                 id="firstName"
                 name="firstName"
-                className={`user-management-form-control ${errors.firstName ? 'user-management-form-control-error' : ''}`}
+                className={errors.firstName ? 'form-error' : ''}
                 value={formData.firstName}
                 onChange={handleInputChange}
+                required
+                placeholder="Enter first name"
+                disabled={isLoading}
               />
-              {errors.firstName && <span className="user-management-error-message">{errors.firstName}</span>}
+              {errors.firstName && <span className="error-message">{errors.firstName}</span>}
             </div>
-            <div className="user-management-form-group">
-              <label htmlFor="lastName">Last Name *</label>
+            
+            <div className="form-group">
+              <label htmlFor="lastName">Last Name</label>
               <input
                 type="text"
                 id="lastName"
                 name="lastName"
-                className={`user-management-form-control ${errors.lastName ? 'user-management-form-control-error' : ''}`}
+                className={errors.lastName ? 'form-error' : ''}
                 value={formData.lastName}
                 onChange={handleInputChange}
+                required
+                placeholder="Enter last name"
+                disabled={isLoading}
               />
-              {errors.lastName && <span className="user-management-error-message">{errors.lastName}</span>}
+              {errors.lastName && <span className="error-message">{errors.lastName}</span>}
             </div>
-            <div className="user-management-form-group">
-              <label htmlFor="email">Email Address *</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                className={`user-management-form-control ${errors.email ? 'user-management-form-control-error' : ''}`}
-                value={formData.email}
-                onChange={handleInputChange}
-              />
-              {errors.email && <span className="user-management-error-message">{errors.email}</span>}
-            </div>
-            <div className="user-management-form-group">
-              <label htmlFor="username">Username *</label>
-              <input
-                type="text"
-                id="username"
-                name="username"
-                className={`user-management-form-control ${errors.username ? 'user-management-form-control-error' : ''}`}
-                value={formData.username}
-                onChange={handleInputChange}
-              />
-              {errors.username && <span className="user-management-error-message">{errors.username}</span>}
-            </div>
-            <div className="user-management-form-group">
-              <label htmlFor="password">Password *</label>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="username">Username</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              className={errors.username ? 'form-error' : ''}
+              value={formData.username}
+              onChange={handleInputChange}
+              required
+              placeholder="Enter username"
+              disabled={isLoading}
+            />
+            {errors.username && <span className="error-message">{errors.username}</span>}
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              className={errors.email ? 'form-error' : ''}
+              value={formData.email}
+              onChange={handleInputChange}
+              required
+              placeholder="Enter email address"
+              disabled={isLoading}
+            />
+            {errors.email && <span className="error-message">{errors.email}</span>}
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="password">Password</label>
               <input
                 type="password"
                 id="password"
                 name="password"
-                className={`user-management-form-control ${errors.password ? 'user-management-form-control-error' : ''}`}
+                className={errors.password ? 'form-error' : ''}
                 value={formData.password}
                 onChange={handleInputChange}
+                required
+                placeholder="Enter password"
+                minLength="8"
+                disabled={isLoading}
               />
-              {errors.password && <span className="user-management-error-message">{errors.password}</span>}
+              {errors.password && <span className="error-message">{errors.password}</span>}
+              <small className="form-help">Password must be at least 8 characters long</small>
             </div>
-            <div className="user-management-form-group">
-              <label htmlFor="confirmPassword">Confirm Password *</label>
+            
+            <div className="form-group">
+              <label htmlFor="confirmPassword">Confirm Password</label>
               <input
                 type="password"
                 id="confirmPassword"
                 name="confirmPassword"
-                className={`user-management-form-control ${errors.confirmPassword ? 'user-management-form-control-error' : ''}`}
+                className={errors.confirmPassword ? 'form-error' : ''}
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
+                required
+                placeholder="Confirm password"
+                disabled={isLoading}
               />
-              {errors.confirmPassword && <span className="user-management-error-message">{errors.confirmPassword}</span>}
-            </div>
-            <div className="user-management-form-group">
-              <label htmlFor="school">School/Department</label>
-              <select
-                id="school"
-                name="school"
-                className="user-management-form-control"
-                value={formData.school}
-                onChange={handleInputChange}
-              >
-                <option value="">Select School/Department</option>
-                <option value="engineering">School of Engineering</option>
-                <option value="medicine">School of Medicine</option>
-                <option value="business">School of Business</option>
-                <option value="science">School of Science</option>
-                <option value="qa">Quality Assurance</option>
-                <option value="senate">University Senate</option>
-              </select>
-            </div>
-            <div className="user-management-form-group">
-              <label>Assign Roles</label>
-              <div className="user-management-checkbox-group">
-                <label className="user-management-checkbox-label">
-                  <input
-                    type="checkbox"
-                    value="ADMIN"
-                    checked={formData.roles.includes('ADMIN')}
-                    onChange={handleRoleChange}
-                  />
-                  <span className="user-management-checkbox-custom"></span>
-                  Admin
-                </label>
-                <label className="user-management-checkbox-label">
-                  <input
-                    type="checkbox"
-                    value="DEAN"
-                    checked={formData.roles.includes('DEAN')}
-                    onChange={handleRoleChange}
-                  />
-                  <span className="user-management-checkbox-custom"></span>
-                  Dean of School
-                </label>
-                <label className="user-management-checkbox-label">
-                  <input
-                    type="checkbox"
-                    value="QA"
-                    checked={formData.roles.includes('QA')}
-                    onChange={handleRoleChange}
-                  />
-                  <span className="user-management-checkbox-custom"></span>
-                  Quality Assurance
-                </label>
-                <label className="user-management-checkbox-label">
-                  <input
-                    type="checkbox"
-                    value="DEPT_REP"
-                    checked={formData.roles.includes('DEPT_REP')}
-                    onChange={handleRoleChange}
-                  />
-                  <span className="user-management-checkbox-custom"></span>
-                  Department Rep
-                </label>
-                <label className="user-management-checkbox-label">
-                  <input
-                    type="checkbox"
-                    value="SENATE"
-                    checked={formData.roles.includes('SENATE')}
-                    onChange={handleRoleChange}
-                  />
-                  <span className="user-management-checkbox-custom"></span>
-                  Senate
-                </label>
-              </div>
+              {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}
             </div>
           </div>
-        </div>
-        <div className="user-management-modal-footer">
-          <button type="button" className="user-management-btn user-management-btn-outline" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="button" className="user-management-btn user-management-btn-primary" onClick={handleSubmit}>
-            Create User
-          </button>
-        </div>
+{/*           
+          <div className="form-group">
+            <label htmlFor="school">School/Department</label>
+            <select
+              id="school"
+              name="school"
+              value={formData.school}
+              onChange={handleInputChange}
+              disabled={isLoading}
+            >
+              <option value="">Select School/Department</option>
+              <option value="engineering">School of Engineering</option>
+              <option value="medicine">School of Medicine</option>
+              <option value="business">School of Business</option>
+              <option value="science">School of Science</option>
+              <option value="qa">Quality Assurance</option>
+              <option value="senate">University Senate</option>
+            </select>
+          </div>
+          
+          <div className="form-group">
+            <label>Assign Roles</label>
+            <div className="checkbox-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  value="ADMIN"
+                  checked={formData.roles.includes('ADMIN')}
+                  onChange={handleRoleChange}
+                  disabled={isLoading}
+                />
+                <span className="checkbox-custom"></span>
+                Admin
+              </label>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  value="DEAN"
+                  checked={formData.roles.includes('DEAN')}
+                  onChange={handleRoleChange}
+                  disabled={isLoading}
+                />
+                <span className="checkbox-custom"></span>
+                Dean of School
+              </label>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  value="QA"
+                  checked={formData.roles.includes('QA')}
+                  onChange={handleRoleChange}
+                  disabled={isLoading}
+                />
+                <span className="checkbox-custom"></span>
+                Quality Assurance
+              </label>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  value="DEPT_REP"
+                  checked={formData.roles.includes('DEPT_REP')}
+                  onChange={handleRoleChange}
+                  disabled={isLoading}
+                />
+                <span className="checkbox-custom"></span>
+                Department Rep
+              </label>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  value="SENATE"
+                  checked={formData.roles.includes('SENATE')}
+                  onChange={handleRoleChange}
+                  disabled={isLoading}
+                />
+                <span className="checkbox-custom"></span>
+                Senate
+              </label>
+            </div>
+          </div> */}
+
+          <div className="modal-actions">
+            <button 
+              type="button" 
+              className="btn btn-cancel"
+              onClick={handleCloseModal}
+              disabled={isLoading}
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              className="btn btn-primary"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <i className="fas fa-spinner fa-spin"></i>
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-user-plus"></i>
+                  Add User
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

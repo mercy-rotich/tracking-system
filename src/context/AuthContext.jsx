@@ -29,11 +29,11 @@ export const AuthProvider = ({ children }) => {
         setUser(currentUser);
         setIsAuthenticated(true);
         
-        // Start monitoring services
+        
         authService.startTokenRefresh();
         authService.startSessionCheck();
         
-        // Validate session with backend - but don't fail initialization if this fails
+       
         try {
           await authService.validateSession();
         } catch (error) {
@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
         
         }
       } else {
-        // Clear any stale data
+        
         setUser(null);
         setIsAuthenticated(false);
         authService.logout(true);

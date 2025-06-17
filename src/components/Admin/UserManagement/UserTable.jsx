@@ -1,9 +1,13 @@
-import React, { useState, useMemo } from 'react';
-
+import React, { useState, useMemo, useEffect } from 'react';
 
 const UsersTable = ({ users, filters, onEdit, onManageRoles, onDelete }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  // Reset to first page when users array changes (new user added)
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [users.length]);
 
   // Filter users based on search and filter criteria
   const filteredUsers = useMemo(() => {
@@ -127,83 +131,98 @@ const UsersTable = ({ users, filters, onEdit, onManageRoles, onDelete }) => {
   return (
     <div className="user-management-table-section">
       <div className="user-management-table-header">
-        <h2>All Users</h2>
+        <h2>All Users ({filteredUsers.length})</h2>
       </div>
       
       <div className="user-management-table-container">
-        <table className="user-management-users-table">
-          <thead>
-            <tr>
-              <th>User</th>
-              <th>Roles</th>
-              <th>Status</th>
-              <th>School/Department</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedUsers.map(user => (
-              <tr key={user.id}>
-                <td>
-                  <div className="user-management-user-info">
-                    <div className="user-management-user-avatar">{user.avatar}</div>
-                    <div className="user-management-user-details">
-                      <h4>{user.firstName} {user.lastName}</h4>
-                      <p>{user.email}</p>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  {user.roles.map(role => (
-                    <span key={role} className={`user-management-role-badge ${getRoleBadgeClass(role)}`}>
-                      {getRoleDisplayName(role)}
-                    </span>
-                  ))}
-                </td>
-                <td>
-                  <span className={`user-management-status-badge user-management-${user.status}`}>
-                    <i className="fas fa-circle"></i>
-                    {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
-                  </span>
-                </td>
-                <td>{user.department}</td>
-                <td>
-                  <div className="user-management-action-buttons">
-                    <button 
-                      className="user-management-action-btn user-management-roles"
-                      onClick={() => onManageRoles(user)}
-                    >
-                      Manage Roles
-                    </button>
-                    <button 
-                      className="user-management-action-btn user-management-edit"
-                      onClick={() => onEdit(user)}
-                    >
-                      Edit
-                    </button>
-                    <button 
-                      className="user-management-action-btn user-management-delete"
-                      onClick={() => onDelete(user)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
+        {filteredUsers.length === 0 ? (
+          <div className="no-users-message">
+            <i className="fas fa-users"></i>
+            <p>No users found matching your criteria.</p>
+          </div>
+        ) : (
+          <table className="user-management-users-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Roles</th>
+                <th>Status</th>
+                <th>School/Department</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {paginatedUsers.map(user => (
+                <tr key={user.id}>
+                  <td>
+                    <div className="user-management-user-info">
+                      <div className="user-management-user-avatar">{user.avatar}</div>
+                      <div className="user-management-user-details">
+                        <h4>{user.firstName} {user.lastName}</h4>
+                        <p>{user.email}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    {user.roles && user.roles.length > 0 ? (
+                      user.roles.map(role => (
+                        <span key={role} className={`user-management-role-badge ${getRoleBadgeClass(role)}`}>
+                          {getRoleDisplayName(role)}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="user-management-role-badge user-management-dept">
+                        No Roles
+                      </span>
+                    )}
+                  </td>
+                  <td>
+                    <span className={`user-management-status-badge user-management-${user.status}`}>
+                      <i className="fas fa-circle"></i>
+                      {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                    </span>
+                  </td>
+                  <td>{user.department || 'N/A'}</td>
+                  <td>
+                    <div className="user-management-action-buttons">
+                      <button 
+                        className="user-management-action-btn user-management-roles"
+                        onClick={() => onManageRoles(user)}
+                      >
+                        Manage Roles
+                      </button>
+                      <button 
+                        className="user-management-action-btn user-management-edit"
+                        onClick={() => onEdit(user)}
+                      >
+                        Edit
+                      </button>
+                      <button 
+                        className="user-management-action-btn user-management-delete"
+                        onClick={() => onDelete(user)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
       
-      {/* Pagination */}
-      <div className="user-management-pagination">
-        <div className="user-management-pagination-info">
-          Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredUsers.length)} of {filteredUsers.length} users
+      {/* Pagination - only show if there are users */}
+      {filteredUsers.length > 0 && (
+        <div className="user-management-pagination">
+          <div className="user-management-pagination-info">
+            Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredUsers.length)} of {filteredUsers.length} users
+          </div>
+          <div className="user-management-pagination-controls">
+            {renderPaginationButtons()}
+          </div>
         </div>
-        <div className="user-management-pagination-controls">
-          {renderPaginationButtons()}
-        </div>
-      </div>
+      )}
     </div>
   );
 };
