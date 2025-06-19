@@ -20,7 +20,7 @@
 @media (min-width: 768px) {
   .dashboard-main-content {
     margin-left: 256px; 
-    padding: 5rem 2rem 2rem 2rem; /* Updated padding to include top padding */
+    padding: 5rem 2rem 2rem 2rem; 
   }
 }
 
