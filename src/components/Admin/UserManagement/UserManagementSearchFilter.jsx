@@ -23,7 +23,7 @@ const UserManagementSearchFilter = ({
   return (
     <div className="user-management-search-filter-section">
       <div className="user-management-search-filter-grid">
-        <div className="user-management-form-group">
+        <div className="user-management-search-form-group">
           <label htmlFor="search">Search Users</label>
           <div className="user-management-search-input">
             <i className="fas fa-search"></i>

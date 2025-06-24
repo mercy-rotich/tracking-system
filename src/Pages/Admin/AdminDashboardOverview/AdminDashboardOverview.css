@@ -1,4 +1,4 @@
-.must-green { background-color: #00BF63; }
+.must-green { background-color: #00D666; }
 .must-green-text { color: #00BF63; }
 .must-dark { background-color: #2D1A12; }
 .must-gold { color: #f0b41c; }
@@ -159,7 +159,7 @@
 /* Responsive adjustments for main content */
 @media (max-width: 767px) {
   .dashborad-main-content {
-    padding: 5rem 0.5rem 1rem 0.5rem; /* Updated mobile padding */
+    padding: 5rem 0.5rem 1rem 0.5rem; 
   }
   
   .dashboard-title {

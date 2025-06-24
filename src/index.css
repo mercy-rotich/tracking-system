@@ -1,37 +1,57 @@
-/* In your main CSS file */
+
 @import '@fortawesome/fontawesome-free/css/all.css';
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap');
-:root{
-   /* MUST Brand Colors */
-   --must-blue: #1a3a6e;
-   --must-blue-dark: #142d5a;
-   --must-gold: #f0b41c;
-   --must-gold-dark: #d99e0a;
-   --must-teal: #00BF63;
-   --must-teal-dark: #00a855;
-   --must-teal-light: #33cc7a;
-   
-   /* Neutral Colors */
-   --white: #ffffff;
-   --gray-50: #f9fafb;
-   --gray-100: #f3f4f6;
-   --gray-200: #e5e7eb;
-   --gray-300: #d1d5db;
-   --gray-400: #9ca3af;
-   --gray-500: #6b7280;
-   --gray-600: #4b5563;
-   --gray-700: #374151;
-   --gray-800: #1f2937;
-   --gray-900: #111827;
-   
-   /* System Colors */
-   --error: #ef4444;
-   --error-light: #fef2f2;
-   --success: #10b981;
-   --warning: #f59e0b;
-}
+:root {
+  /* MUST Brand Colors  */
+  --must-blue: #1a3a6e;
+  --must-blue-dark: #142d5a;
+  --must-blue-light: #2d4a7a;
+  
+  --must-gold: #f0b41c;
+  --must-gold-dark: #d99e0a;
+  --must-gold-light: #f2c547;
+  
 
+  --must-green: #00D666;          
+  --must-green-dark: #03c25c;      
+  --must-green-darker: #009944;    
+  --must-green-light: #33E088;     
+  --must-green-lighter: #B3F5CC;    
+ 
+  --must-teal: #00A855;           
+  --must-teal-dark: #008844;
+  --must-teal-light: #33BB77;
+  
+  /* Neutral Colors */
+  --white: #ffffff;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  
+  /* System Colors */
+  --error: #ef4444;
+  --error-light: #fef2f2;
+  --error-dark: #dc2626;
+  --success: var(--must-green);
+  --success-light: var(--must-green-lighter);
+  --warning: #f59e0b;
+  --warning-light: #fef3c7;
+  
+  /* High Contrast Text Colors */
+  --text-on-green: #ffffff;        
+  --text-on-green-light: #0f7a3c;  
+  --text-primary: var(--gray-900);
+  --text-secondary: var(--gray-700);
+  --text-tertiary: var(--gray-500);
+}
 *{
     margin: 0;
     padding: 0;

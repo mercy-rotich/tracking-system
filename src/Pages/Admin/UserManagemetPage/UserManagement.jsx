@@ -4,6 +4,7 @@ import UserManagementSearchFilter from '../../../components/Admin/UserManagement
 import StatusSection from '../../../components/Admin/UserManagement/StatusSection';
 import UsersTable from '../../../components/Admin/UserManagement/UserTable';
 import AddUserModal from '../../../components/Admin/UserManagement/AddUserModal';
+import EditUserModal from '../../../components/Admin/UserManagement/EditUserModal';
 import ManageRolesModal from '../../../components/Admin/UserManagement/ManageRolesModal';
 import ConfirmModal from '../../../components/Admin/UserManagement/ConfirmModal';
 import Notification from '../../../components/Admin/UserManagement/Notification';
@@ -15,8 +16,10 @@ const API_BASE_URL = import.meta.env.VITE_BASE_URL;
 const UserManagementPage = () => {
   const [modals, setModals] = useState({
     addUser: false,
+    editUser: false,
     manageRoles: false,
-    confirm: false
+    confirm: false,
+    deleteRole: false
   });
   
   const [notification, setNotification] = useState({
@@ -41,18 +44,20 @@ const UserManagementPage = () => {
     pendingAccess: 0
   });
 
-  // Helper function to format user data consistently
   const formatUserData = (userData) => {
     return userData.map(user => ({
       id: user.id,
-      firstName: user.firstName || user.first_name || 'Unknown',
-      lastName: user.lastName || user.last_name || 'User',
+      firstName: user.firstName || 'Unknown',
+      lastName: user.lastName || 'User',
       email: user.email || 'No email',
       username: user.username || user.email || 'No username',
+      phoneNumber: user.phoneNumber || null,
       roles: Array.isArray(user.roles) ? user.roles : (user.roles ? [user.roles] : []),
-      status: user.status || user.isActive ? 'active' : 'inactive',
+      status: user.enabled ? 'active' : 'inactive',
       department: user.department || user.school || user.organization || 'N/A',
-      avatar: `${(user.firstName || user.first_name || 'U')[0]}${(user.lastName || user.last_name || '')[0]}`
+      avatar: `${(user.firstName || 'U')[0]}${(user.lastName || '')[0]}`,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
     }));
   };
 
@@ -71,9 +76,10 @@ const UserManagementPage = () => {
         return;
       }
 
-      console.log('📡 Fetching users from:', `${API_BASE_URL}/users`);
+      const endpoint = `${API_BASE_URL}/users/get-all-users`;
+      console.log('📡 Fetching users from:', endpoint);
 
-      const response = await fetch(`${API_BASE_URL}/users`, {
+      const response = await fetch(endpoint, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -88,14 +94,11 @@ const UserManagementPage = () => {
         const result = await response.json();
         console.log('✅ Raw API response:', result);
         
-        // Handle different possible response structures
         let usersData = [];
         if (result.data && Array.isArray(result.data)) {
           usersData = result.data;
         } else if (Array.isArray(result)) {
           usersData = result;
-        } else if (result.users && Array.isArray(result.users)) {
-          usersData = result.users;
         } else {
           console.warn('⚠️ Unexpected API response structure:', result);
           usersData = [];
@@ -121,50 +124,19 @@ const UserManagementPage = () => {
         
         if (response.status === 401) {
           showNotification('Session expired. Please log in again.', 'error');
-          // Optionally redirect to login
-          // authService.logout();
-          // window.location.href = '/login';
         } else if (response.status === 403) {
           showNotification('You do not have permission to view users.', 'error');
         } else {
           showNotification(errorData.message || `Failed to fetch users (${response.status})`, 'error');
         }
         
-        // Use sample data as fallback for development
-        console.log('🔄 Using sample data as fallback');
-        const sampleUsers = [
-          {
-            id: 1,
-            firstName: 'John',
-            lastName: 'Mwangi',
-            email: 'john.mwangi@university.ac.ke',
-            username: 'jmwangi',
-            roles: ['ADMIN', 'QA'],
-            status: 'active',
-            department: 'Quality Assurance',
-            avatar: 'JM'
-          },
-          {
-            id: 2,
-            firstName: 'Sarah',
-            lastName: 'Achieng',
-            email: 's.achieng@university.ac.ke',
-            username: 'sachieng',
-            roles: ['DEAN'],
-            status: 'active',
-            department: 'School of Engineering',
-            avatar: 'SA'
-          }
-        ];
-        
-        setUsers(sampleUsers);
-        updateStats(sampleUsers);
+        setUsers([]);
+        updateStats([]);
       }
     } catch (error) {
       console.error('💥 Network error fetching users:', error);
       showNotification('Network error. Please check your connection and try again.', 'error');
       
-      // Fallback to empty state
       setUsers([]);
       updateStats([]);
     } finally {
@@ -172,7 +144,6 @@ const UserManagementPage = () => {
     }
   };
 
-  // Update stats based on users data
   const updateStats = (usersData) => {
     const totalUsers = usersData.length;
     const activeUsers = usersData.filter(user => user.status === 'active').length;
@@ -225,26 +196,26 @@ const UserManagementPage = () => {
     setFilters({ search: '', role: '', status: '' });
   };
 
-  // Updated handleAddUser to add user to state
   const handleAddUser = (userData) => {
     console.log('➕ Adding user to state:', userData);
     
-    // Create a properly formatted user object
     const newUser = {
       id: userData.id || Date.now(),
       firstName: userData.firstName,
       lastName: userData.lastName,
       email: userData.email,
       username: userData.username,
+      phoneNumber: userData.phoneNumber || null,
       roles: userData.roles || [],
-      status: userData.status || 'active',
+      status: userData.enabled !== undefined ? (userData.enabled ? 'active' : 'inactive') : 'active',
       department: userData.department || userData.school || 'N/A',
-      avatar: `${userData.firstName?.[0] || 'U'}${userData.lastName?.[0] || ''}`
+      avatar: `${userData.firstName?.[0] || 'U'}${userData.lastName?.[0] || ''}`,
+      createdAt: userData.createdAt,
+      updatedAt: userData.updatedAt
     };
     
-    // Add the new user to the users array
     setUsers(prevUsers => {
-      const updatedUsers = [...prevUsers, newUser];
+      const updatedUsers = [newUser, ...prevUsers];
       updateStats(updatedUsers);
       console.log('📊 Updated users count:', updatedUsers.length);
       return updatedUsers;
@@ -252,6 +223,21 @@ const UserManagementPage = () => {
     
     showNotification('User created successfully and added to table!', 'success');
     closeModal('addUser');
+  };
+
+  const handleUpdateUser = (updatedUser) => {
+    console.log('🔄 Updating user in state:', updatedUser);
+    
+    setUsers(prevUsers => {
+      const updatedUsers = prevUsers.map(user => 
+        user.id === updatedUser.id ? updatedUser : user
+      );
+      updateStats(updatedUsers);
+      return updatedUsers;
+    });
+    
+    showNotification('User updated successfully!', 'success');
+    closeModal('editUser');
   };
 
   const handleUpdateRoles = (userId, roles) => {
@@ -269,46 +255,82 @@ const UserManagementPage = () => {
     closeModal('manageRoles');
   };
 
-  const handleDeleteUser = async (userId) => {
+  const handleDeleteRole = async (userId, role) => {
     try {
       const token = authService.getToken();
       
-      const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+      if (!token) {
+        showNotification('Authentication token not found. Please log in again.', 'error');
+        return;
+      }
+
+      const endpoint = `${API_BASE_URL}/users/${userId}/roles/${role}/delete`;
+      console.log('🗑️ Deleting role from:', endpoint);
+
+      const response = await fetch(endpoint, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        },
+        }
       });
 
-      if (response.ok || response.status === 404) {
+      if (response.ok) {
+        
         setUsers(prevUsers => {
-          const updatedUsers = prevUsers.filter(user => user.id !== userId);
+          const updatedUsers = prevUsers.map(user => {
+            if (user.id === userId) {
+              const updatedRoles = user.roles.filter(r => r !== role);
+              return { ...user, roles: updatedRoles };
+            }
+            return user;
+          });
           updateStats(updatedUsers);
           return updatedUsers;
         });
         
-        showNotification('User deleted successfully!', 'success');
+        showNotification(`${role} role removed successfully!`, 'success');
       } else {
-        const errorData = await response.json();
-        showNotification(errorData.message || 'Failed to delete user', 'error');
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        console.error('❌ Role deletion failed:', errorData);
+        showNotification(errorData.message || 'Failed to remove role', 'error');
       }
     } catch (error) {
-      console.error('Error deleting user:', error);
+      console.error('💥 Network error deleting role:', error);
+      showNotification('Network error. Please check your connection and try again.', 'error');
+    }
+  };
+
+  // Delete entire user 
+  const handleDeleteUser = async (userId) => {
+    try {
+      const token = authService.getToken();
+      
+      // const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+      //   method: 'DELETE',
+      //   headers: {
+      //     'Authorization': `Bearer ${token}`,
+      //     'Content-Type': 'application/json'
+      //   }
+      // });
+
       setUsers(prevUsers => {
         const updatedUsers = prevUsers.filter(user => user.id !== userId);
         updateStats(updatedUsers);
         return updatedUsers;
       });
-      showNotification('User removed from list (check network connection)', 'warning');
+      
+      showNotification('User removed from list (API endpoint not available)', 'warning');
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      showNotification('Error deleting user', 'error');
     }
     
     closeModal('confirm');
   };
 
   const handleEditUser = (user) => {
-    console.log('✏️ Editing user:', user);
-    showNotification('Edit functionality coming soon!', 'info');
+    openModal('editUser', user);
   };
 
   const handleManageRoles = (user) => {
@@ -316,10 +338,14 @@ const UserManagementPage = () => {
   };
 
   const handleDeleteClick = (user) => {
-    openModal('confirm', user);
+   
+    if (user.roles && user.roles.length > 0) {
+      openModal('deleteRole', user);
+    } else {
+      showNotification('User has no roles to delete', 'info');
+    }
   };
 
-  // Add refresh function
   const handleRefresh = () => {
     fetchUsers();
   };
@@ -365,6 +391,7 @@ const UserManagementPage = () => {
         )}
       </div>
 
+      {/* Add User Modal */}
       {modals.addUser && (
         <AddUserModal
           onClose={() => closeModal('addUser')}
@@ -372,6 +399,16 @@ const UserManagementPage = () => {
         />
       )}
 
+      {/* Edit User Modal */}
+      {modals.editUser && selectedUser && (
+        <EditUserModal
+          user={selectedUser}
+          onClose={() => closeModal('editUser')}
+          onUpdateUser={handleUpdateUser}
+        />
+      )}
+
+      {/* Manage Roles Modal */}
       {modals.manageRoles && selectedUser && (
         <ManageRolesModal
           user={selectedUser}
@@ -380,6 +417,16 @@ const UserManagementPage = () => {
         />
       )}
 
+      {/* Delete Role Modal */}
+      {modals.deleteRole && selectedUser && (
+        <DeleteRoleModal
+          user={selectedUser}
+          onClose={() => closeModal('deleteRole')}
+          onDeleteRole={handleDeleteRole}
+        />
+      )}
+
+      {/* Confirm Modal  */}
       {modals.confirm && selectedUser && (
         <ConfirmModal
           user={selectedUser}

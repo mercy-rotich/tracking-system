@@ -115,6 +115,8 @@ const AddUserModal = ({ onClose, onAddUser }) => {
         lastName: formData.lastName
       };
 
+      console.log('📤 Sending user data:', apiPayload);
+
       const response = await fetch(`${API_BASE_URL}/users/create`, {
         method: 'POST',
         headers: {
@@ -133,15 +135,23 @@ const AddUserModal = ({ onClose, onAddUser }) => {
         showNotification('User created successfully! Login details have been sent to their email.', 'success');
         
         // Call the parent callback with the created user data
-        if (onAddUser) {
-          onAddUser(result.data || result);
+        // The result should contain the user data in result.data
+        if (onAddUser && result.data) {
+          console.log('🔄 Calling onAddUser with:', result.data);
+          onAddUser(result.data);
+        } else if (onAddUser && result) {
+          // Fallback if data is at root level
+          console.log('🔄 Calling onAddUser with result:', result);
+          onAddUser(result);
+        } else {
+          console.warn('⚠️ No user data returned from API or no callback provided');
         }
         
         // Close modal after a short delay to show success message
         setTimeout(() => {
           onClose();
           resetForm();
-        }, 2000);
+        }, 1500); // Reduced delay for better UX
         
       } else {
         const errorData = await response.json();
@@ -149,6 +159,8 @@ const AddUserModal = ({ onClose, onAddUser }) => {
         
         if (response.status === 401) {
           showNotification('Session expired. Please log in again.', 'error');
+        } else if (response.status === 409) {
+          showNotification('Username or email already exists. Please choose different values.', 'error');
         } else {
           showNotification(errorData.message || 'Failed to create user. Please try again.', 'error');
         }
@@ -307,86 +319,6 @@ const AddUserModal = ({ onClose, onAddUser }) => {
               {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}
             </div>
           </div>
-{/*           
-          <div className="form-group">
-            <label htmlFor="school">School/Department</label>
-            <select
-              id="school"
-              name="school"
-              value={formData.school}
-              onChange={handleInputChange}
-              disabled={isLoading}
-            >
-              <option value="">Select School/Department</option>
-              <option value="engineering">School of Engineering</option>
-              <option value="medicine">School of Medicine</option>
-              <option value="business">School of Business</option>
-              <option value="science">School of Science</option>
-              <option value="qa">Quality Assurance</option>
-              <option value="senate">University Senate</option>
-            </select>
-          </div>
-          
-          <div className="form-group">
-            <label>Assign Roles</label>
-            <div className="checkbox-group">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  value="ADMIN"
-                  checked={formData.roles.includes('ADMIN')}
-                  onChange={handleRoleChange}
-                  disabled={isLoading}
-                />
-                <span className="checkbox-custom"></span>
-                Admin
-              </label>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  value="DEAN"
-                  checked={formData.roles.includes('DEAN')}
-                  onChange={handleRoleChange}
-                  disabled={isLoading}
-                />
-                <span className="checkbox-custom"></span>
-                Dean of School
-              </label>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  value="QA"
-                  checked={formData.roles.includes('QA')}
-                  onChange={handleRoleChange}
-                  disabled={isLoading}
-                />
-                <span className="checkbox-custom"></span>
-                Quality Assurance
-              </label>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  value="DEPT_REP"
-                  checked={formData.roles.includes('DEPT_REP')}
-                  onChange={handleRoleChange}
-                  disabled={isLoading}
-                />
-                <span className="checkbox-custom"></span>
-                Department Rep
-              </label>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  value="SENATE"
-                  checked={formData.roles.includes('SENATE')}
-                  onChange={handleRoleChange}
-                  disabled={isLoading}
-                />
-                <span className="checkbox-custom"></span>
-                Senate
-              </label>
-            </div>
-          </div> */}
 
           <div className="modal-actions">
             <button 
