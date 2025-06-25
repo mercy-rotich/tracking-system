@@ -42,7 +42,13 @@ const CurriculumCard = ({
       </div>
 
       <div className="card-content">
-        
+        <div className="card-meta">
+          <span className="card-author">
+            <i className="fas fa-clock"></i>
+            Updated {getTimeSince(curriculum.lastModified)}
+          </span>
+          <span className="card-category">{curriculum.id}</span>
+        </div>
       </div>
 
       <div className="card-actions">

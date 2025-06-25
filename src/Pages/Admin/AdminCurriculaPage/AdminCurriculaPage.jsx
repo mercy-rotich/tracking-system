@@ -10,7 +10,6 @@ import DeleteConfirmationModal from '../../../components/Admin/AdminAllCurricula
 import { mockCurriculaData,mockSchools,mockPrograms } from '../../../components/Admin/AdminAllCurricula/MockData';
 import SchoolNavigation from '../../../components/Admin/AdminAllCurricula/SchoolNavigation';
 
-
 const AdminCurriculaPage = () => {
   const [curricula, setCurricula] = useState(mockCurriculaData);
   const [filteredCurricula, setFilteredCurricula] = useState(mockCurriculaData);
@@ -22,18 +21,15 @@ const AdminCurriculaPage = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   
-  
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCurriculum, setSelectedCurriculum] = useState(null);
   
-  
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
-  const [viewMode, setViewMode] = useState('grid');
+  const [viewMode, setViewMode] = useState('list'); // Changed default to 'list'
 
-  
   const getSchoolName = (schoolId) => {
     const school = mockSchools.find(s => s.id === schoolId);
     return school ? school.name : 'Unknown School';
@@ -60,13 +56,11 @@ const AdminCurriculaPage = () => {
     return departments.sort();
   };
 
-  
   useEffect(() => {
     setCurricula(mockCurriculaData);
     setFilteredCurricula(mockCurriculaData);
   }, []);
 
-  
   useEffect(() => {
     let filtered = curricula;
 
@@ -79,33 +73,40 @@ const AdminCurriculaPage = () => {
       );
     }
 
-    
     if (selectedSchool !== 'all') {
       filtered = filtered.filter(curriculum => curriculum.schoolId === selectedSchool);
     }
 
-    
     if (selectedProgram !== 'all') {
       filtered = filtered.filter(curriculum => curriculum.programId === selectedProgram);
     }
 
-    
     if (selectedDepartment !== 'all') {
       filtered = filtered.filter(curriculum => curriculum.department === selectedDepartment);
     }
 
-    
     if (statusFilter !== 'all') {
       filtered = filtered.filter(curriculum => curriculum.status === statusFilter);
     }
-    
-    
+
+    // Sort the curricula
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.createdDate) - new Date(a.createdDate);
+        case 'oldest':
+          return new Date(a.createdDate) - new Date(b.createdDate);
+        case 'title':
+          return a.title.localeCompare(b.title);
+        case 'department':
+          return a.department.localeCompare(b.department);
+        default:
+          return 0;
+      }
+    });
 
     setFilteredCurricula(filtered);
   }, [curricula, searchTerm, selectedSchool, selectedProgram, selectedDepartment, statusFilter, sortBy]);
-
-
-
 
   useEffect(() => {
     if (selectedSchool !== 'all') {
@@ -118,9 +119,6 @@ const AdminCurriculaPage = () => {
       setSelectedDepartment('all');
     }
   }, [selectedProgram]);
-
-
-
 
   const showNotification = (message, type) => {
     setNotification({ show: true, message, type });
@@ -172,7 +170,7 @@ const AdminCurriculaPage = () => {
   const handleSaveCurriculum = (formData) => {
     if (showAddModal) {
       const newCurriculum = {
-        id: curricula.length + 1,
+        id: `CUR-${String(curricula.length + 1).padStart(3, '0')}`,
         ...formData,
         createdDate: new Date().toISOString().split('T')[0],
         lastModified: new Date().toISOString().split('T')[0],
@@ -210,29 +208,26 @@ const AdminCurriculaPage = () => {
 
   return (
     <div className='curricula-main-page'>
-    <div className="curricula-page">
-      <NotificationBanner 
-        notification={notification}
-        onClose={() => setNotification({ show: false, message: '', type: '' })}
-      />
+      <div className="curricula-page">
+        <NotificationBanner 
+          notification={notification}
+          onClose={() => setNotification({ show: false, message: '', type: '' })}
+        />
 
-      <PageHeader onAddNew={() => setShowAddModal(true)} />
+        <PageHeader onAddNew={() => setShowAddModal(true)} />
 
-      <StatsGrid stats={stats} />
+        <StatsGrid stats={stats} />
 
-      
+        <FiltersSection
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+        />
 
-      <FiltersSection
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-      />
-
-<SchoolNavigation
+        <SchoolNavigation
           schools={mockSchools}
           programs={mockPrograms}
           departments={getAvailableDepartments()}
@@ -252,8 +247,7 @@ const AdminCurriculaPage = () => {
           setViewMode={setViewMode}
         />
 
-
-<CurriculaGrid
+        <CurriculaGrid
           curricula={filteredCurricula.map(curriculum => ({
             ...curriculum,
             schoolName: getSchoolName(curriculum.schoolId),
@@ -262,14 +256,14 @@ const AdminCurriculaPage = () => {
           totalCount={curricula.length}
           filteredCount={filteredCurricula.length}
           isLoading={isLoading}
+          viewMode={viewMode} // Pass viewMode prop
           onEdit={handleEdit}
           onDelete={handleDelete}
           onApprove={handleApprove}
           onReject={handleReject}
         />
 
-
-{(showAddModal || showEditModal) && (
+        {(showAddModal || showEditModal) && (
           <CurriculumModal
             isOpen={showAddModal || showEditModal}
             isEdit={showEditModal}
@@ -285,7 +279,7 @@ const AdminCurriculaPage = () => {
           />
         )}
 
-{showDeleteModal && selectedCurriculum && (
+        {showDeleteModal && selectedCurriculum && (
           <DeleteConfirmationModal
             isOpen={showDeleteModal}
             curriculum={selectedCurriculum}
@@ -296,7 +290,7 @@ const AdminCurriculaPage = () => {
             }}
           />
         )}
-    </div>
+      </div>
     </div>
   );
 };

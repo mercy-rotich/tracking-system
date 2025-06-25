@@ -598,7 +598,6 @@ body {
   }
 }
 
-/* Animation Classes */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -623,7 +622,6 @@ body {
   animation: spin 1s linear infinite;
 }
 
-/* Focus Styles for Accessibility */
 .form-input:focus-visible,
 .form-checkbox:focus-visible,
 .submit-button:focus-visible,
@@ -633,7 +631,6 @@ body {
   outline-offset: 2px;
 }
 
-/* High Contrast Mode Support */
 @media (prefers-contrast: high) {
   :root {
     --gray-300: #999999;
@@ -649,7 +646,6 @@ body {
   }
 }
 
-/* Reduced Motion Support */
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;

@@ -1,5 +1,7 @@
 import React from 'react';
 import CurriculumCard from './CurriculumCard';
+import CurriculaList from './CurriculaList';
+import CurriculaByDepartment from './CurriculaByDepartment';
 
 const CurriculaGrid = ({ 
   curricula, 
@@ -9,8 +11,12 @@ const CurriculaGrid = ({
   onEdit, 
   onDelete, 
   onApprove, 
-  onReject 
+  onReject,
+  viewMode = 'card' 
 }) => {
+  // Safety check for curricula prop
+  const safeCurricula = curricula || [];
+  
   if (isLoading) {
     return (
       <div className="content-section">
@@ -21,12 +27,45 @@ const CurriculaGrid = ({
     );
   }
 
+  // List view 
+  if (viewMode === 'list') {
+    return (
+      <CurriculaList
+        curricula={safeCurricula}
+        totalCount={totalCount}
+        filteredCount={filteredCount}
+        isLoading={isLoading}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onApprove={onApprove}
+        onReject={onReject}
+      />
+    );
+  }
+
+  // Card view
+  if (viewMode === 'card') {
+    return (
+      <CurriculaByDepartment
+        curricula={safeCurricula}
+        totalCount={totalCount}
+        filteredCount={filteredCount}
+        isLoading={isLoading}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onApprove={onApprove}
+        onReject={onReject}
+      />
+    );
+  }
+
+  // Grid view
   return (
     <div className="content-section">
       <div className="content-header">
         <div className="results-summary">
           <span className="results-count">
-            Showing {curricula.length} of {filteredCount} curricula
+            Showing {safeCurricula.length} of {filteredCount} curricula
           </span>
           {filteredCount !== totalCount && (
             <span className="total-count">
@@ -34,8 +73,8 @@ const CurriculaGrid = ({
             </span>
           )}
         </div>
-        
-        {curricula.length > 0 && (
+
+        {safeCurricula.length > 0 && (
           <div className="results-actions">
             <button className="btn btn-sm btn-outline">
               <i className="fas fa-download"></i>
@@ -45,23 +84,15 @@ const CurriculaGrid = ({
         )}
       </div>
 
-      {curricula.length === 0 ? (
+      {safeCurricula.length === 0 ? (
         <div className="empty-state">
           <i className="fas fa-book-open"></i>
           <h3>No curricula found</h3>
           <p>Try adjusting your search criteria or filters, or add a new curriculum.</p>
-          <div className="empty-state-suggestions">
-            <h4>Suggestions:</h4>
-            <ul>
-              <li>Clear active filters</li>
-              <li>Try different search terms</li>
-              <li>Check if you have the right school/program selected</li>
-            </ul>
-          </div>
         </div>
       ) : (
         <div className="curricula-grid">
-          {curricula.map((curriculum) => (
+          {safeCurricula.map((curriculum) => (
             <CurriculumCard
               key={curriculum.id}
               curriculum={curriculum}
@@ -75,11 +106,10 @@ const CurriculaGrid = ({
         </div>
       )}
 
-      {/* Pagination could go here if needed */}
-      {curricula.length > 0 && (
+      {safeCurricula.length > 0 && (
         <div className="pagination-info">
           <p>
-            Displaying {curricula.length} curriculum{curricula.length !== 1 ? 'a' : ''}
+            Displaying {safeCurricula.length} curriculum{safeCurricula.length !== 1 ? 'a' : ''}
             {filteredCount < totalCount && (
               <span> (filtered from {totalCount} total)</span>
             )}
