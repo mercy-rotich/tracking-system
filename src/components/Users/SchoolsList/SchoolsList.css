@@ -1,0 +1,133 @@
+
+
+.user-schools-section {
+    background: var(--user-bg-card);
+    border: 1px solid var(--user-border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--user-shadow-sm);
+    transition: all 0.3s ease;
+  }
+  
+  .user-schools-section:hover {
+    box-shadow: var(--user-shadow-md);
+  }
+  
+  .user-section-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--user-border-color);
+    background: var(--user-bg-secondary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .user-section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--user-text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+  }
+  
+  .user-section-title i {
+    color: var(--user-primary-green-dark);
+    font-size: 1rem;
+  }
+  
+  .user-schools-count {
+    background: var(--user-primary-green-dark);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    box-shadow: var(--user-shadow-sm);
+  }
+  
+  .user-schools-list {
+    padding: 1rem;
+  }
+  
+  .user-schools-empty {
+    padding: 3rem 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .user-empty-state {
+    text-align: center;
+    color: var(--user-text-muted);
+  }
+  
+  .user-empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--user-text-muted);
+  }
+  
+  .user-empty-state h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--user-text-secondary);
+    margin-bottom: 0.5rem;
+  }
+  
+  .user-empty-state p {
+    font-size: 0.9rem;
+    color: var(--user-text-muted);
+  }
+  
+  /* Animation for school items */
+  .user-schools-list > * {
+    animation: userSlideUp 0.3s ease-out;
+  }
+  
+  .user-schools-list > *:nth-child(1) { animation-delay: 0.1s; }
+  .user-schools-list > *:nth-child(2) { animation-delay: 0.2s; }
+  .user-schools-list > *:nth-child(3) { animation-delay: 0.3s; }
+  .user-schools-list > *:nth-child(4) { animation-delay: 0.4s; }
+  .user-schools-list > *:nth-child(5) { animation-delay: 0.5s; }
+  
+  /* Mobile Responsive */
+  @media (max-width: 768px) {
+    .user-section-header {
+      padding: 1rem;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: flex-start;
+    }
+    
+    .user-schools-count {
+      align-self: flex-end;
+    }
+    
+    .user-schools-list {
+      padding: 0.5rem;
+    }
+    
+    .user-schools-empty {
+      padding: 2rem 1rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .user-section-header {
+      padding: 0.75rem;
+    }
+    
+    .user-section-title {
+      font-size: 1rem;
+    }
+    
+    .user-empty-state i {
+      font-size: 2rem;
+    }
+    
+    .user-empty-state h3 {
+      font-size: 1rem;
+    }
+  }

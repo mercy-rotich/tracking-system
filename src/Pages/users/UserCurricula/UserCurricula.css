@@ -1,0 +1,46 @@
+
+
+.user-curricula-page {
+    max-width: 1500px;
+    margin: 0 auto;
+    animation: userFadeIn 0.5s ease-in-out;
+  }
+  
+  .user-curricula-search {
+    background: var(--user-bg-card);
+    border: 1px solid var(--user-border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--user-shadow-sm);
+    transition: all 0.3s ease;
+  }
+  
+  .user-curricula-search:hover {
+    box-shadow: var(--user-shadow-md);
+  }
+  
+  .user-curricula-count {
+    background: var(--user-primary-green-dark);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    box-shadow: var(--user-shadow-sm);
+  }
+  
+  /* Mobile Responsive */
+  @media (max-width: 768px) {
+    .user-curricula-search {
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .user-curricula-search {
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+    }
+  }

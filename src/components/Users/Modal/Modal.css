@@ -1,0 +1,301 @@
+
+
+.user-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  
+  .user-modal-content {
+    background: var(--user-bg-card);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow: hidden;
+    border: 1px solid var(--user-border-color);
+    box-shadow: var(--user-shadow-xl);
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .user-modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--user-border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--user-bg-secondary);
+    flex-shrink: 0;
+  }
+  
+  .user-modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--user-text-primary);
+    margin: 0;
+  }
+  
+  .user-modal-close {
+    width: 35px;
+    height: 35px;
+    border: none;
+    background: var(--user-bg-primary);
+    border-radius: 8px;
+    color: var(--user-text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+  }
+  
+  .user-modal-close:hover {
+    background: var(--user-primary-green-dark);
+    color: white;
+  }
+  
+  .user-modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+  }
+  
+  .user-department-item {
+    border: 1px solid var(--user-border-color);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    box-shadow: var(--user-shadow-sm);
+  }
+  
+  .user-department-item:last-child {
+    margin-bottom: 0;
+  }
+  
+  .user-department-header {
+    background: var(--user-primary-green-dark);
+    color: white;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+  }
+  
+  .user-department-header i {
+    margin-right: 0.5rem;
+    font-size: 0.9rem;
+  }
+  
+  .user-department-count {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  
+  .user-curriculum-list {
+    padding: 1rem;
+    background: var(--user-bg-secondary);
+  }
+  
+  .user-curriculum-item {
+    padding: 0.8rem;
+    border-bottom: 1px solid var(--user-border-color);
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    transition: all 0.3s ease;
+  }
+  
+  .user-curriculum-item:last-child {
+    border-bottom: none;
+  }
+  
+  .user-curriculum-item:hover {
+    background: rgba(0, 191, 99, 0.05);
+    border-radius: 4px;
+  }
+  
+  .user-curriculum-icon {
+    color: var(--user-gold);
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+  
+  .user-curriculum-name {
+    color: var(--user-text-primary);
+    font-weight: 500;
+    flex: 1;
+  }
+  
+  .user-status-badge {
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+  
+  .user-status-approved {
+    background: rgba(0, 191, 99, 0.1);
+    color: var(--user-primary-green-dark);
+  }
+  
+  .user-status-pending {
+    background: rgba(240, 180, 28, 0.1);
+    color: #b45309;
+  }
+  
+  .user-status-review {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  
+  /* Scrollbar styling for modal body */
+  .user-modal-body::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .user-modal-body::-webkit-scrollbar-track {
+    background: var(--user-bg-secondary);
+    border-radius: 4px;
+  }
+  
+  .user-modal-body::-webkit-scrollbar-thumb {
+    background: var(--user-border-color);
+    border-radius: 4px;
+  }
+  
+  .user-modal-body::-webkit-scrollbar-thumb:hover {
+    background: var(--user-text-muted);
+  }
+  
+  /* Mobile Responsive */
+  @media (max-width: 768px) {
+    .user-modal-overlay {
+      padding: 0.5rem;
+    }
+    
+    .user-modal-content {
+      max-height: 90vh;
+    }
+    
+    .user-modal-header {
+      padding: 1rem;
+    }
+    
+    .user-modal-title {
+      font-size: 1.1rem;
+    }
+    
+    .user-modal-close {
+      width: 32px;
+      height: 32px;
+      font-size: 0.9rem;
+    }
+    
+    .user-modal-body {
+      padding: 1rem;
+    }
+    
+    .user-department-header {
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+    }
+    
+    .user-curriculum-item {
+      padding: 0.6rem;
+      gap: 0.6rem;
+    }
+    
+    .user-curriculum-name {
+      font-size: 0.9rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .user-modal-overlay {
+      padding: 0.25rem;
+    }
+    
+    .user-modal-content {
+      max-height: 95vh;
+    }
+    
+    .user-modal-header {
+      padding: 0.75rem;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: flex-start;
+    }
+    
+    .user-modal-close {
+      align-self: flex-end;
+      margin-top: -2rem;
+    }
+    
+    .user-modal-title {
+      font-size: 1rem;
+      padding-right: 2rem;
+    }
+    
+    .user-modal-body {
+      padding: 0.75rem;
+    }
+    
+    .user-curriculum-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.4rem;
+    }
+    
+    .user-status-badge {
+      align-self: flex-end;
+    }
+  }
+  
+  /* Animation */
+  .user-fade-in {
+    animation: userModalFadeIn 0.3s ease-out;
+  }
+  
+  @keyframes userModalFadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.9) translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+  
+  /* Focus management */
+  .user-modal-close:focus-visible {
+    outline: 2px solid var(--user-primary-green);
+    outline-offset: 2px;
+  }
+  
+  /* High contrast mode */
+  @media (prefers-contrast: high) {
+    .user-modal-content {
+      border-width: 2px;
+    }
+    
+    .user-department-item {
+      border-width: 2px;
+    }
+  }

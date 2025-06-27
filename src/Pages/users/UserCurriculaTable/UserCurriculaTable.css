@@ -1,0 +1,262 @@
+
+
+.user-curricula-section {
+    background: var(--user-bg-card);
+    border: 1px solid var(--user-border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--user-shadow-sm);
+    transition: all 0.3s ease;
+  }
+  
+  .user-curricula-section:hover {
+    box-shadow: var(--user-shadow-md);
+  }
+  
+  .user-curricula-results {
+    background: var(--user-gold);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    box-shadow: var(--user-shadow-sm);
+  }
+  
+  .user-curricula-empty {
+    padding: 3rem 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .user-table-container {
+    overflow-x: auto;
+  }
+  
+  .user-curricula-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px;
+  }
+  
+  .user-table-header {
+    background: var(--user-bg-secondary);
+    border-bottom: 2px solid var(--user-border-color);
+  }
+  
+  .user-table-header th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--user-text-primary);
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+  
+  .user-table-row {
+    border-bottom: 1px solid var(--user-border-color);
+    transition: all 0.3s ease;
+  }
+  
+  .user-table-row:hover {
+    background: rgba(0, 191, 99, 0.05);
+  }
+  
+  .user-table-row:last-child {
+    border-bottom: none;
+  }
+  
+  .user-table-row td {
+    padding: 1rem;
+    color: var(--user-text-primary);
+    font-size: 0.9rem;
+    vertical-align: middle;
+  }
+  
+  .user-curriculum-title {
+    font-weight: 500;
+    color: var(--user-text-primary);
+    max-width: 300px;
+  }
+  
+  .user-school-name,
+  .user-department-name {
+    color: var(--user-text-secondary);
+  }
+  
+  .user-last-updated {
+    color: var(--user-text-muted);
+    font-size: 0.85rem;
+  }
+  
+  .user-status-badge {
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    display: inline-block;
+  }
+  
+  .user-status-approved {
+    background: rgba(0, 191, 99, 0.1);
+    color: var(--user-primary-green-dark);
+  }
+  
+  .user-status-pending {
+    background: rgba(240, 180, 28, 0.1);
+    color: #b45309;
+  }
+  
+  .user-status-review {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  
+  .user-view-btn {
+    background: var(--user-primary-green-dark);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    font-size: 0.8rem;
+    box-shadow: var(--user-shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 80px;
+    justify-content: center;
+  }
+  
+  .user-view-btn:hover {
+    background: var(--user-primary-green-light);
+    transform: translateY(-1px);
+    box-shadow: var(--user-shadow-md);
+  }
+  
+  .user-view-btn:focus-visible {
+    outline: 2px solid var(--user-primary-green);
+    outline-offset: 2px;
+  }
+  
+  .user-view-btn i {
+    font-size: 0.75rem;
+  }
+  
+  /* Mobile Responsive */
+  @media (max-width: 768px) {
+    .user-table-container {
+      border-radius: 0;
+    }
+    
+    .user-curricula-table {
+      font-size: 0.8rem;
+      min-width: 700px;
+    }
+    
+    .user-table-header th,
+    .user-table-row td {
+      padding: 0.75rem 0.5rem;
+    }
+    
+    .user-curriculum-title {
+      max-width: 200px;
+    }
+    
+    .user-view-btn {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.75rem;
+      min-width: 70px;
+    }
+    
+    .user-section-header {
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: flex-start;
+    }
+    
+    .user-curricula-results {
+      align-self: flex-end;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .user-curricula-table {
+      min-width: 600px;
+    }
+    
+    .user-table-header th,
+    .user-table-row td {
+      padding: 0.5rem 0.4rem;
+    }
+    
+    .user-curriculum-title {
+      max-width: 150px;
+      font-size: 0.8rem;
+    }
+    
+    .user-view-btn {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.7rem;
+      min-width: 60px;
+    }
+    
+    .user-view-btn span {
+      display: none;
+    }
+    
+    .user-status-badge {
+      padding: 0.2rem 0.6rem;
+      font-size: 0.7rem;
+    }
+  }
+  
+  /* Scrollbar styling for table container */
+  .user-table-container::-webkit-scrollbar {
+    height: 8px;
+  }
+  
+  .user-table-container::-webkit-scrollbar-track {
+    background: var(--user-bg-secondary);
+    border-radius: 4px;
+  }
+  
+  .user-table-container::-webkit-scrollbar-thumb {
+    background: var(--user-border-color);
+    border-radius: 4px;
+  }
+  
+  .user-table-container::-webkit-scrollbar-thumb:hover {
+    background: var(--user-text-muted);
+  }
+  
+  /* Loading state */
+  .user-table-row--loading {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  
+  .user-table-row--loading td {
+    background: var(--user-skeleton);
+    animation: userSkeleton 1.5s infinite;
+  }
+  
+  /* Print styles */
+  @media print {
+    .user-view-btn {
+      display: none;
+    }
+    
+    .user-curricula-table {
+      font-size: 10px;
+    }
+    
+    .user-table-header th,
+    .user-table-row td {
+      padding: 0.25rem;
+    }
+  }

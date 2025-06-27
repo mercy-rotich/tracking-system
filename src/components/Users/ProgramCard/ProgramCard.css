@@ -1,0 +1,208 @@
+
+.user-program-card {
+    background: var(--user-bg-card);
+    border: 1px solid var(--user-border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--user-shadow-sm);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .user-program-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--user-gradient-green);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+  }
+  
+  .user-program-card:hover {
+    border-color: var(--user-primary-green-dark);
+    box-shadow: var(--user-shadow-md);
+    transform: translateY(-2px);
+  }
+  
+  .user-program-card:hover::before {
+    transform: scaleX(1);
+  }
+  
+  .user-program-card:focus {
+    outline: 2px solid var(--user-primary-green);
+    outline-offset: 2px;
+  }
+  
+  .user-program-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+  
+  .user-program-name {
+    font-weight: 600;
+    color: var(--user-text-primary);
+    font-size: 0.95rem;
+  }
+  
+  .user-program-count {
+    background: var(--user-gold);
+    color: white;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    min-width: 24px;
+    text-align: center;
+  }
+  
+  .user-program-details {
+    margin-bottom: 1rem;
+  }
+  
+  .user-program-meta,
+  .user-program-type {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--user-text-secondary);
+    margin-bottom: 0.4rem;
+  }
+  
+  .user-program-meta i,
+  .user-program-type i {
+    color: var(--user-primary-green-dark);
+    width: 14px;
+    font-size: 0.8rem;
+  }
+  
+  .user-program-action {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--user-primary-green-dark);
+    font-size: 0.85rem;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: all 0.3s ease;
+  }
+  
+  .user-program-card:hover .user-program-action {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  
+  .user-program-action i {
+    font-size: 0.75rem;
+    transition: transform 0.3s ease;
+  }
+  
+  .user-program-card:hover .user-program-action i {
+    transform: translateX(4px);
+  }
+  
+  /* Program type specific styles */
+  .user-program-card[data-type="masters"] .user-program-count {
+    background: var(--user-gradient-blue);
+  }
+  
+  .user-program-card[data-type="phd"] .user-program-count {
+    background: var(--user-gradient-gold);
+  }
+  
+  .user-program-card[data-type="degree"] .user-program-count {
+    background: var(--user-gradient-green);
+  }
+  
+  /* Loading state */
+  .user-program-card--loading {
+    pointer-events: none;
+    opacity: 0.6;
+  }
+  
+  .user-program-card--loading::before {
+    background: var(--user-skeleton);
+    transform: scaleX(1);
+    animation: userSkeleton 1.5s infinite;
+  }
+  
+  /* Mobile Responsive */
+  @media (max-width: 768px) {
+    .user-program-card {
+      padding: 0.875rem;
+    }
+    
+    .user-program-header {
+      margin-bottom: 0.5rem;
+    }
+    
+    .user-program-name {
+      font-size: 0.9rem;
+    }
+    
+    .user-program-count {
+      padding: 0.15rem 0.5rem;
+      font-size: 0.75rem;
+    }
+    
+    .user-program-meta,
+    .user-program-type {
+      font-size: 0.8rem;
+      margin-bottom: 0.3rem;
+    }
+    
+    .user-program-action {
+      font-size: 0.8rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .user-program-card {
+      padding: 0.75rem;
+    }
+    
+    .user-program-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.25rem;
+    }
+    
+    .user-program-count {
+      align-self: flex-end;
+    }
+  }
+  
+  /* High contrast mode */
+  @media (prefers-contrast: high) {
+    .user-program-card {
+      border-width: 2px;
+    }
+    
+    .user-program-card:hover {
+      border-width: 2px;
+      border-color: var(--user-text-primary);
+    }
+  }
+  
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .user-program-card,
+    .user-program-card::before,
+    .user-program-action,
+    .user-program-action i {
+      transition: none;
+    }
+    
+    .user-program-card:hover {
+      transform: none;
+    }
+  }

@@ -1,6 +1,9 @@
+// src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { CurriculumProvider } from './context/CurriculumContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './Pages/users/LoginPage/LoginPage';
 import AdminLayout from './components/Admin/AdminLayout';
@@ -11,45 +14,62 @@ import SystemMonitoringPage from './Pages/Admin/SystemMonitoringPage/SystemMonit
 import UserManagementPage from './Pages/Admin/UserManagemetPage/UserManagement';
 import Reports from './Pages/Admin/ReportsPage/Reports';
 
+// User components
+import UsersLayout from './components/Users/UsersLayout/UsersLayout';
+import UserDashboard from './Pages/users/UserDashboard/UserDashboard';
+import UserCurricula from './Pages/users/UserCurricula/UserCurricula';
+import Analytics from './Pages/users/Analytics/Analytics';
+import UserSettings from './Pages/users/UserSettings/UserSettings';
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <div className="App">
-          
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/reset-password" element={<PasswordResetSystem/>}/>
-            
-            {/* Protected Admin routes */}
-            <Route path="/admin" element={
-              <ProtectedRoute>
-                <AdminLayout />
-              </ProtectedRoute>
-            }>
-              {/* Nested admin routes */}
-              <Route path="dashboard" element={<AdminDashboardOverview />} />
-              <Route path="admin-all-curricula" element={<AdminCurriculaPage />} />
-              <Route path="admin-system-monitoring" element={<SystemMonitoringPage />} />
-              <Route path="admin-user-management" element={<UserManagementPage />} />
-              <Route path="admin-reports" element={<Reports />} />
-              
-              
-            </Route>
-            
-            {/* Redirect old dashboard route to admin/dashboard */}
-            <Route path="/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
-            
-            {/* Default route */}
-            <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
-            
-            {/* Catch all route */}
-            <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
-          </Routes>
-        </div>
-      </Router>
+      <ThemeProvider>
+        <CurriculumProvider>
+          <Router>
+            <div className="App">
+              <Routes>
+                {/* Admin Authentication Routes */}
+                <Route path="/admin/login" element={<LoginPage />} />
+                <Route path="/admin/reset-password" element={<PasswordResetSystem />} />
+                
+                {/* Protected Admin Routes */}
+                <Route path="/admin/*" element={
+                  <ProtectedRoute>
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }>
+                  {/* Nested admin routes */}
+                  <Route path="dashboard" element={<AdminDashboardOverview />} />
+                  <Route path="admin-all-curricula" element={<AdminCurriculaPage />} />
+                  <Route path="admin-system-monitoring" element={<SystemMonitoringPage />} />
+                  <Route path="admin-user-management" element={<UserManagementPage />} />
+                  <Route path="admin-reports" element={<Reports />} />
+                </Route>
+                
+                {/* Admin base route redirect */}
+                <Route path="/admin" element={<Navigate to="/admin/dashboard"  />} />
+                
+                {/* User Routes with Layout */}
+                <Route path="/" element={<UsersLayout />}>
+                  <Route index element={<Navigate to="/dashboard" replace />} />
+                  <Route path="dashboard" element={<UserDashboard />} />
+                  <Route path="curricula" element={<UserCurricula />} />
+                  <Route path="analytics" element={<Analytics />} />
+                  <Route path="settings" element={<UserSettings />} />
+                </Route>
+                
+                {/* Legacy redirects */}
+                <Route path="/login" element={<Navigate to="/admin/login" replace />} />
+                <Route path="/reset-password" element={<Navigate to="/admin/reset-password" replace />} />
+                
+                {/* Catch all route - redirect to user dashboard */}
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              </Routes>
+            </div>
+          </Router>
+        </CurriculumProvider>
+      </ThemeProvider>
     </AuthProvider>
   );
 }

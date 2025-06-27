@@ -1,0 +1,198 @@
+
+
+.user-school-item {
+    border: 1px solid var(--user-border-color);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    background: var(--user-bg-card);
+    box-shadow: var(--user-shadow-sm);
+  }
+  
+  .user-school-item:hover {
+    border-color: var(--user-primary-green-dark);
+    box-shadow: var(--user-shadow-md);
+    transform: translateY(-1px);
+  }
+  
+  .user-school-item--focused {
+    border-color: var(--user-primary-green-dark);
+    box-shadow: var(--user-shadow-lg);
+    transform: translateY(-1px);
+  }
+  
+  .user-school-header {
+    padding: 1.5rem;
+    background: var(--user-bg-card);
+    border-bottom: 1px solid var(--user-border-color);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+  }
+  
+  .user-school-header:hover {
+    background: var(--user-bg-secondary);
+  }
+  
+  .user-school-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+  }
+  
+  .user-school-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: white;
+    box-shadow: var(--user-shadow-sm);
+    flex-shrink: 0;
+  }
+  
+  .user-school-icon--user-gradient-green {
+    background: var(--user-gradient-green);
+  }
+  
+  .user-school-icon--user-gradient-gold {
+    background: var(--user-gradient-gold);
+  }
+  
+  .user-school-icon--user-gradient-blue {
+    background: var(--user-gradient-blue);
+  }
+  
+  .user-school-icon--user-gradient-purple {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  }
+  
+  .user-school-details h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--user-text-primary);
+    margin-bottom: 0.2rem;
+    margin: 0 0 0.2rem 0;
+  }
+  
+  .user-school-meta {
+    font-size: 0.9rem;
+    color: var(--user-text-secondary);
+  }
+  
+  .user-school-stats {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .user-stat-badge {
+    background: var(--user-primary-green-dark);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    box-shadow: var(--user-shadow-sm);
+  }
+  
+  .user-expand-icon {
+    color: var(--user-text-secondary);
+    transition: transform 0.3s ease;
+    font-size: 1rem;
+  }
+  
+  .user-school-item--expanded .user-expand-icon {
+    transform: rotate(180deg);
+  }
+  
+  .user-programs-container {
+    padding: 1.5rem;
+    background: var(--user-bg-secondary);
+    border-top: 1px solid var(--user-border-color);
+    animation: userSlideDown 0.3s ease-out;
+  }
+  
+  .user-programs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+  
+  /* Animation for programs container */
+  @keyframes userSlideDown {
+    from {
+      opacity: 0;
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+    to {
+      opacity: 1;
+      max-height: 500px;
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+    }
+  }
+  
+  /* Mobile Responsive */
+  @media (max-width: 768px) {
+    .user-school-item {
+      margin-bottom: 0.75rem;
+    }
+    
+    .user-school-header {
+      padding: 1rem;
+    }
+    
+    .user-school-info {
+      gap: 0.75rem;
+    }
+    
+    .user-school-icon {
+      width: 40px;
+      height: 40px;
+      font-size: 1.1rem;
+    }
+    
+    .user-school-details h3 {
+      font-size: 1rem;
+    }
+    
+    .user-school-meta {
+      font-size: 0.8rem;
+    }
+    
+    .user-programs-container {
+      padding: 1rem;
+    }
+    
+    .user-programs-grid {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .user-school-header {
+      padding: 0.75rem;
+    }
+    
+    .user-school-info {
+      gap: 0.5rem;
+    }
+    
+    .user-school-stats {
+      gap: 0.5rem;
+    }
+    
+    .user-programs-container {
+      padding: 0.75rem;
+    }
+  }
