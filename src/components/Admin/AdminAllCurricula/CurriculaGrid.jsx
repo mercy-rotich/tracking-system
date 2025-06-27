@@ -39,11 +39,14 @@ const CurriculaGrid = ({
         onDelete={onDelete}
         onApprove={onApprove}
         onReject={onReject}
+        hideSchoolColumn={false}
+        hideDepartmentColumn={false}
+        showingDepartmentView={false}
       />
     );
   }
 
-  // Card view
+  // Card view 
   if (viewMode === 'card') {
     return (
       <CurriculaByDepartment
@@ -55,11 +58,29 @@ const CurriculaGrid = ({
         onDelete={onDelete}
         onApprove={onApprove}
         onReject={onReject}
+        viewMode="card" 
       />
     );
   }
 
-  // Grid view
+  // Department view 
+  if (viewMode === 'department') {
+    return (
+      <CurriculaByDepartment
+        curricula={safeCurricula}
+        totalCount={totalCount}
+        filteredCount={filteredCount}
+        isLoading={isLoading}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onApprove={onApprove}
+        onReject={onReject}
+        viewMode="list" 
+      />
+    );
+  }
+
+  // Grid view 
   return (
     <div className="content-section">
       <div className="content-header">

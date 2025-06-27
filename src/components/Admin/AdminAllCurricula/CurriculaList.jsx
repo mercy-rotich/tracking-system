@@ -9,7 +9,10 @@ const CurriculaList = ({
   onEdit, 
   onDelete, 
   onApprove, 
-  onReject 
+  onReject,
+  hideSchoolColumn = false,
+  hideDepartmentColumn = false,
+  showingDepartmentView = false 
 }) => {
   if (isLoading) {
     return (
@@ -62,14 +65,30 @@ const CurriculaList = ({
           >
             <i className="fas fa-times"></i>
           </button>
-
+          <button 
+            className="curricula-table-action-btn curricula-table-view"
+            onClick={() => onEdit(curriculum)}
+            disabled={isLoading}
+            title="Edit"
+          >
+            <i className="fas fa-edit"></i>
+            Edit
+          </button>
         </div>
       );
     }
 
     return (
       <div className="curricula-table-actions">
-        
+        <button 
+          className="curricula-table-action-btn curricula-table-view"
+          onClick={() => onEdit(curriculum)}
+          disabled={isLoading}
+          title="Edit"
+        >
+          <i className="fas fa-edit"></i>
+          Edit
+        </button>
         <button 
           className="curricula-table-action-btn curricula-table-delete"
           onClick={() => onDelete(curriculum)}
@@ -92,15 +111,37 @@ const CurriculaList = ({
     );
   }
 
+  
+  const shouldHideSchoolDepartment = hideSchoolColumn && hideDepartmentColumn;
+  const containerClasses = `curricula-table-container ${shouldHideSchoolDepartment ? 'hide-school-department' : ''}`;
+
   return (
-    <div className="curricula-table-container">
+    <div className={containerClasses}>
+      {/* Table header for department view */}
+      {showingDepartmentView && safeCurricula.length > 0 && (
+        <div className="curricula-table-department-header">
+          <div className="curricula-table-department-info">
+            <h3 className="curricula-table-department-title">
+              {safeCurricula[0].department} Department
+            </h3>
+            <p className="curricula-table-department-subtitle">
+              {safeCurricula[0].schoolName} • {safeCurricula.length} curricula
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="curricula-table-wrapper">
         <table className="curricula-table">
           <thead className="curricula-table-header">
             <tr>
               <th className="curricula-table-th curricula-table-th-title">Curriculum Title</th>
-              <th className="curricula-table-th curricula-table-th-school">School</th>
-              <th className="curricula-table-th curricula-table-th-department">Department</th>
+              {!hideSchoolColumn && (
+                <th className="curricula-table-th curricula-table-th-school">School</th>
+              )}
+              {!hideDepartmentColumn && (
+                <th className="curricula-table-th curricula-table-th-department">Department</th>
+              )}
               <th className="curricula-table-th curricula-table-th-status">Status</th>
               <th className="curricula-table-th curricula-table-th-updated">Last Updated</th>
               <th className="curricula-table-th curricula-table-th-actions">Actions</th>
@@ -115,12 +156,16 @@ const CurriculaList = ({
                     <span className="curricula-table-title-id">{curriculum.id}</span>
                   </div>
                 </td>
-                <td className="curricula-table-td curricula-table-td-school">
-                  {curriculum.schoolName || 'School of Computing & Informatics'}
-                </td>
-                <td className="curricula-table-td curricula-table-td-department">
-                  {curriculum.department}
-                </td>
+                {!hideSchoolColumn && (
+                  <td className="curricula-table-td curricula-table-td-school">
+                    {curriculum.schoolName || 'School of Computing & Informatics'}
+                  </td>
+                )}
+                {!hideDepartmentColumn && (
+                  <td className="curricula-table-td curricula-table-td-department">
+                    {curriculum.department}
+                  </td>
+                )}
                 <td className="curricula-table-td curricula-table-td-status">
                   {getStatusBadge(curriculum.status)}
                 </td>

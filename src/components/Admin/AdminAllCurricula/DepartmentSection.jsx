@@ -1,5 +1,6 @@
 import React from 'react';
 import CurriculumCard from './CurriculumCard';
+import CurriculaList from './CurriculaList';
 
 const DepartmentSection = ({ 
   departmentName, 
@@ -9,12 +10,13 @@ const DepartmentSection = ({
   onEdit, 
   onDelete, 
   onApprove, 
-  onReject 
+  onReject,
+  viewMode = 'card' // Add viewMode prop
 }) => {
   // Safety check for curricula prop
   const safeCurricula = curricula || [];
 
-  
+  // Calculate status counts for the department header
   const statusCounts = safeCurricula.reduce((acc, curriculum) => {
     acc[curriculum.status] = (acc[curriculum.status] || 0) + 1;
     return acc;
@@ -44,21 +46,37 @@ const DepartmentSection = ({
         </div>
       </div>
 
-      
+      {/* Department content - either cards or list based on viewMode */}
       <div className="curricula-department-content">
-        <div className="curricula-grid">
-          {safeCurricula.map((curriculum) => (
-            <CurriculumCard
-              key={curriculum.id}
-              curriculum={curriculum}
-              isLoading={isLoading}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onApprove={onApprove}
-              onReject={onReject}
-            />
-          ))}
-        </div>
+        {viewMode === 'list' ? (
+          <CurriculaList
+            curricula={safeCurricula}
+            totalCount={total}
+            filteredCount={total}
+            isLoading={isLoading}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onApprove={onApprove}
+            onReject={onReject}
+            hideSchoolColumn={true} // Hide school column in department view
+            hideDepartmentColumn={true} // Hide department column in department view
+            showingDepartmentView={true} // Indicate this is a department-specific view
+          />
+        ) : (
+          <div className="curricula-grid">
+            {safeCurricula.map((curriculum) => (
+              <CurriculumCard
+                key={curriculum.id}
+                curriculum={curriculum}
+                isLoading={isLoading}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onApprove={onApprove}
+                onReject={onReject}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

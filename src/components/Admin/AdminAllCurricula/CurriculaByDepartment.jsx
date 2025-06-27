@@ -9,7 +9,8 @@ const CurriculaByDepartment = ({
   onEdit, 
   onDelete, 
   onApprove, 
-  onReject 
+  onReject,
+  viewMode = 'card' 
 }) => {
   if (isLoading) {
     return (
@@ -85,6 +86,7 @@ const CurriculaByDepartment = ({
               onDelete={onDelete}
               onApprove={onApprove}
               onReject={onReject}
+              viewMode={viewMode} // Pass viewMode to DepartmentSection
             />
           ))}
         </div>
