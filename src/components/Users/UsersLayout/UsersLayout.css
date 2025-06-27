@@ -6,7 +6,7 @@
   }
   
   .user-main-container {
-    margin-left: 280px;
+    margin-left: 256px;
     min-height: 100vh;
     flex: 1;
     transition: all 0.3s ease;
