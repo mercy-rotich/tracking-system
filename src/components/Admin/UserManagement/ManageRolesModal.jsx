@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import authService from '../../../services/authService';
 import './ManageRoles.css'
+
+const API_BASE_URL = import.meta.env.VITE_BASE_URL;
 
 const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
   const [currentRoles, setCurrentRoles] = useState([]);
@@ -14,7 +17,8 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
     { value: 'DEAN', label: 'Dean of School' },
     { value: 'QA', label: 'Quality Assurance' },
     { value: 'DEPT_REP', label: 'Department Rep' },
-    { value: 'SENATE', label: 'Senate' }
+    { value: 'SENATE', label: 'Senate' },
+    { value: 'STAFF', label: 'Staff' }
   ];
 
   useEffect(() => {
@@ -32,16 +36,124 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
     if (!roleToDelete) return;
 
     setIsLoading(true);
+    console.log('🗑️ Starting role deletion process...');
+    console.log('👤 User ID:', user.id);
+    console.log('🎭 Role to delete:', roleToDelete);
+
     try {
-      if (onDeleteRole) {
-        await onDeleteRole(user.id, roleToDelete);
+      const token = authService.getToken();
+      
+      if (!token) {
+        alert('Authentication token not found. Please log in again.');
+        setIsLoading(false);
+        return;
       }
-      setCurrentRoles(prev => prev.filter(role => role !== roleToDelete));
-      setShowDeleteConfirm(false);
-      setRoleToDelete(null);
+
+      // Construct the DELETE endpoint URL based on your API pattern
+      const endpoint = `${API_BASE_URL}/users/${user.id}/roles/${roleToDelete}/delete`;
+      console.log('🔗 DELETE endpoint:', endpoint);
+
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('📡 DELETE response status:', response.status);
+      console.log('📡 DELETE response ok:', response.ok);
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Role deletion successful:', result);
+
+        // Update local state with the response from API
+        if (result.data && result.data.roles) {
+          setCurrentRoles(result.data.roles);
+          
+          // Also call the parent's update function if provided
+          if (onUpdateRoles) {
+            onUpdateRoles(user.id, result.data.roles);
+          }
+        } else {
+          // Fallback: update local state by removing the deleted role
+          setCurrentRoles(prev => prev.filter(role => role !== roleToDelete));
+          
+          if (onUpdateRoles) {
+            const updatedRoles = currentRoles.filter(role => role !== roleToDelete);
+            onUpdateRoles(user.id, updatedRoles);
+          }
+        }
+
+        // Reset confirmation state
+        setShowDeleteConfirm(false);
+        setRoleToDelete(null);
+
+        // Show success message
+        const roleLabel = getRoleLabel(roleToDelete);
+        alert(`Successfully removed ${roleLabel} role from ${user.firstName} ${user.lastName}`);
+
+        // Also call the legacy onDeleteRole callback if it exists (for backward compatibility)
+        if (onDeleteRole) {
+          try {
+            await onDeleteRole(user.id, roleToDelete);
+          } catch (callbackError) {
+            console.warn('Legacy onDeleteRole callback failed:', callbackError);
+          }
+        }
+
+      } else {
+        const errorData = await response.json().catch(() => ({ 
+          message: `HTTP ${response.status} - ${response.statusText}`,
+          status: response.status 
+        }));
+        
+        console.error('❌ Role deletion failed:', errorData);
+        
+        let errorMessage = 'Failed to remove role: ';
+        
+        if (response.status === 401) {
+          errorMessage += 'Authentication failed. Please log in again.';
+        } else if (response.status === 403) {
+          errorMessage += 'You do not have permission to remove roles.';
+        } else if (response.status === 404) {
+          errorMessage += 'User or role not found.';
+        } else if (response.status === 422) {
+          errorMessage += 'Invalid request. The role might not be assigned to this user.';
+        } else {
+          errorMessage += errorData.message || `Server error (${response.status})`;
+        }
+        
+        alert(errorMessage);
+      }
+
     } catch (error) {
-      console.error('Error deleting role:', error);
-      alert('Failed to delete role. Please try again.');
+      console.error('💥 Network error deleting role:', error);
+      
+      let errorMessage = 'Failed to remove role: ';
+      
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        errorMessage += 'Network error. Please check your connection and try again.';
+      } else {
+        errorMessage += error.message;
+      }
+      
+      alert(errorMessage);
+      
+      // Log debugging info
+      console.log('🔍 Role deletion debugging info:', {
+        user: {
+          id: user.id,
+          email: user.email,
+          type_of_id: typeof user.id
+        },
+        roleToDelete: roleToDelete,
+        endpoint: `${API_BASE_URL}/users/${user.id}/roles/${roleToDelete}/delete`,
+        hasToken: !!authService.getToken(),
+        tokenPreview: authService.getToken()?.substring(0, 20) + '...'
+      });
+      
     } finally {
       setIsLoading(false);
     }
@@ -61,16 +173,199 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
     );
   };
 
+  // Optimized handleSubmit based on API response format
   const handleSubmit = async () => {
+    if (newRoles.length === 0) {
+      alert('Please select at least one role to assign.');
+      return;
+    }
+
     setIsLoading(true);
+    console.log('🚀 Starting role assignment process...');
+    console.log('👤 User:', { id: user.id, email: user.email, name: `${user.firstName} ${user.lastName}` });
+    console.log('🎭 Roles to assign:', newRoles);
+
     try {
-      const finalRoles = [...currentRoles, ...newRoles];
-      const uniqueRoles = [...new Set(finalRoles)];
-      await onUpdateRoles(user.id, uniqueRoles);
+      const token = authService.getToken();
+      
+      if (!token) {
+        alert('Authentication token not found. Please log in again.');
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('🔑 Token present:', !!token);
+      console.log('🌐 API Base URL:', API_BASE_URL);
+
+      // Call the assign-role endpoint for each new role (one at a time)
+      const assignmentPromises = newRoles.map(async (role) => {
+        const endpoint = `${API_BASE_URL}/users/assign-role`;
+        
+        // Try the most likely request formats based on common API patterns
+        const requestBodyOptions = [
+          // Most common format - exactly as shown in your original code
+          {
+            userId: user.id,
+            role: role
+          },
+          // String userId (sometimes APIs expect string IDs)
+          {
+            userId: user.id.toString(),
+            role: role
+          },
+          // Numeric userId (ensure it's a number)
+          {
+            userId: parseInt(user.id),
+            role: role
+          },
+          // Different field naming conventions
+          {
+            user_id: user.id,
+            role: role
+          },
+          {
+            userId: user.id,
+            roleName: role
+          },
+          {
+            user_id: user.id,
+            role_name: role
+          }
+        ];
+        
+        console.log('🔗 Assigning role:', role, 'to user:', user.id);
+        
+        let lastError = null;
+        
+        // Try each format until one works
+        for (let i = 0; i < requestBodyOptions.length; i++) {
+          const requestBody = requestBodyOptions[i];
+          console.log(`🧪 Trying format ${i + 1} for role ${role}:`, requestBody);
+          
+          try {
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(requestBody)
+            });
+
+            console.log(`📡 Response status for ${role}:`, response.status);
+
+            if (response.ok) {
+              const result = await response.json();
+              console.log(`✅ Successfully assigned ${role}:`, result);
+              return result;
+            } else {
+              const errorData = await response.json().catch(() => ({ 
+                message: `HTTP ${response.status}`,
+                status: response.status 
+              }));
+              
+              console.error(`❌ Format ${i + 1} failed for ${role}:`, errorData);
+              lastError = errorData;
+              
+              // If it's an auth error, don't try other formats
+              if (response.status === 401 || response.status === 403) {
+                throw new Error(errorData.message || 'Authentication/Authorization failed');
+              }
+              
+              // Continue to next format
+              continue;
+            }
+          } catch (fetchError) {
+            console.error(`💥 Network error with format ${i + 1} for ${role}:`, fetchError);
+            lastError = fetchError;
+            continue;
+          }
+        }
+        
+        // If we get here, all formats failed for this role
+        throw new Error(lastError?.message || `Failed to assign role ${role} - all request formats failed`);
+      });
+
+      // Wait for all role assignments to complete
+      const results = await Promise.all(assignmentPromises);
+      
+      console.log('✅ All role assignments completed:', results);
+      
+      // Get the updated user data from the last response (they should all be the same user)
+      const lastResult = results[results.length - 1];
+      const updatedUserData = lastResult?.data;
+      
+      if (updatedUserData && updatedUserData.roles) {
+        // Update the local state with the response from the API
+        setCurrentRoles(updatedUserData.roles);
+        
+        // Call the parent's update function with the new roles
+        if (onUpdateRoles) {
+          onUpdateRoles(user.id, updatedUserData.roles);
+        }
+        
+        console.log('🔄 Updated local state with roles:', updatedUserData.roles);
+      } else {
+        // Fallback: update with expected roles if API response doesn't include roles
+        const expectedRoles = [...currentRoles, ...newRoles];
+        setCurrentRoles(expectedRoles);
+        
+        if (onUpdateRoles) {
+          onUpdateRoles(user.id, expectedRoles);
+        }
+        
+        console.log('🔄 Updated local state with expected roles:', expectedRoles);
+      }
+      
+      // Clear new roles selection
+      setNewRoles([]);
+      
+      // Show success message
+      const assignedRoleNames = newRoles.map(role => {
+        const roleObj = allRoles.find(r => r.value === role);
+        return roleObj ? roleObj.label : role;
+      }).join(', ');
+      
+      alert(`Successfully assigned ${assignedRoleNames} role(s) to ${user.firstName} ${user.lastName}`);
+      
+      // Close the modal
       onClose();
+      
     } catch (error) {
-      console.error('Error updating roles:', error);
-      alert('Failed to update roles. Please try again.');
+      console.error('💥 Error assigning roles:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to assign roles: ';
+      
+      if (error.message.includes('validation')) {
+        errorMessage += 'Request validation failed. Please check the required fields.';
+      } else if (error.message.includes('401') || error.message.includes('Authentication')) {
+        errorMessage += 'Authentication failed. Please log in again.';
+      } else if (error.message.includes('403') || error.message.includes('Authorization')) {
+        errorMessage += 'You do not have permission to assign roles.';
+      } else if (error.message.includes('404')) {
+        errorMessage += 'API endpoint not found. Please check the endpoint URL.';
+      } else if (error.message.includes('500')) {
+        errorMessage += 'Server error. Please try again later or contact support.';
+      } else {
+        errorMessage += error.message;
+      }
+      
+      alert(errorMessage);
+      
+      // Log detailed debugging info
+      console.log('🔍 Debugging info:', {
+        user: {
+          id: user.id,
+          email: user.email,
+          type_of_id: typeof user.id
+        },
+        selectedRoles: newRoles,
+        apiEndpoint: `${API_BASE_URL}/users/assign-role`,
+        hasToken: !!authService.getToken(),
+        tokenPreview: authService.getToken()?.substring(0, 20) + '...'
+      });
+      
     } finally {
       setIsLoading(false);
     }
@@ -103,7 +398,8 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
       'DEAN': 'user-management-role-badge-dean',
       'QA': 'user-management-role-badge-qa',
       'DEPT_REP': 'user-management-role-badge-dept',
-      'SENATE': 'user-management-role-badge-senate'
+      'SENATE': 'user-management-role-badge-senate',
+      'STAFF': 'user-management-role-badge-staff'
     };
     return `user-management-role-badge ${roleClasses[role] || ''}`;
   };
@@ -148,6 +444,10 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
             <div className="user-management-user-details">
               <h4>{user.firstName} {user.lastName}</h4>
               <p>{user.email}</p>
+              {/* Add debugging info */}
+              <small style={{ color: '#666', fontSize: '0.75rem' }}>
+                ID: {user.id} | Type: {typeof user.id}
+              </small>
             </div>
           </div>
 
@@ -310,7 +610,7 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
                   <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: '600' }}>Add New Roles</h4>
                 </div>
                 <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--user-management-gray-700)' }}>
-                  Select the roles you want to add to this user. Click "Update Roles" to save your changes.
+                  Select the roles you want to add to this user. Click "Assign Selected Roles" to save your changes.
                 </p>
               </div>
 
@@ -444,12 +744,12 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
               {isLoading ? (
                 <>
                   <i className="fas fa-spinner fa-spin"></i>
-                  Adding Roles...
+                  Assigning Roles...
                 </>
               ) : (
                 <>
                   <i className="fas fa-user-plus"></i>
-                  Add Selected Roles ({newRoles.length})
+                  Assign Selected Roles ({newRoles.length})
                 </>
               )}
             </button>

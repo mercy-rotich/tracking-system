@@ -7,13 +7,19 @@ import AddUserModal from '../../../components/Admin/UserManagement/AddUserModal'
 import EditUserModal from '../../../components/Admin/UserManagement/EditUserModal';
 import ManageRolesModal from '../../../components/Admin/UserManagement/ManageRolesModal';
 import ConfirmModal from '../../../components/Admin/UserManagement/ConfirmModal';
+
 import Notification from '../../../components/Admin/UserManagement/Notification';
 import authService from '../../../services/authService';
+import PermissionWrapper from '../../../components/Admin/PermissionWrapper';
+import { useAuth } from '../../../hooks/UseAuth';
 import './UserManagement.css';
 
 const API_BASE_URL = import.meta.env.VITE_BASE_URL;
 
 const UserManagementPage = () => {
+ 
+  const { canManageUsers, isAdmin, hasPermission, isLoading: authLoading } = useAuth();
+  
   const [modals, setModals] = useState({
     addUser: false,
     editUser: false,
@@ -63,6 +69,12 @@ const UserManagementPage = () => {
 
   // Fetch users from API
   const fetchUsers = async () => {
+    if (!canManageUsers) {
+      console.log('🚫 User does not have permission to fetch users');
+      showNotification('You do not have permission to view users.', 'error');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const token = authService.getToken();
@@ -158,12 +170,20 @@ const UserManagementPage = () => {
     });
   };
 
-  // Load users when component mounts
+  // Load users when component mounts and when permissions are available
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (!authLoading && canManageUsers) {
+      fetchUsers();
+    }
+  }, [authLoading, canManageUsers]);
 
   const openModal = (modalName, user = null) => {
+    // Check permissions before opening certain modals
+    if ((modalName === 'addUser' || modalName === 'editUser' || modalName === 'manageRoles') && !canManageUsers) {
+      showNotification('You do not have permission to perform this action.', 'error');
+      return;
+    }
+    
     setModals(prev => ({ ...prev, [modalName]: true }));
     if (user) setSelectedUser(user);
   };
@@ -197,6 +217,11 @@ const UserManagementPage = () => {
   };
 
   const handleAddUser = (userData) => {
+    if (!canManageUsers) {
+      showNotification('You do not have permission to add users.', 'error');
+      return;
+    }
+
     console.log('➕ Adding user to state:', userData);
     
     const newUser = {
@@ -226,6 +251,11 @@ const UserManagementPage = () => {
   };
 
   const handleUpdateUser = (updatedUser) => {
+    if (!canManageUsers) {
+      showNotification('You do not have permission to update users.', 'error');
+      return;
+    }
+
     console.log('🔄 Updating user in state:', updatedUser);
     
     setUsers(prevUsers => {
@@ -241,6 +271,11 @@ const UserManagementPage = () => {
   };
 
   const handleUpdateRoles = (userId, roles) => {
+    if (!canManageUsers) {
+      showNotification('You do not have permission to manage user roles.', 'error');
+      return;
+    }
+
     console.log('🔄 Updating roles for user:', userId, roles);
     
     setUsers(prevUsers => {
@@ -256,6 +291,10 @@ const UserManagementPage = () => {
   };
 
   const handleDeleteRole = async (userId, role) => {
+    console.log('🗑️ Handling role deletion from parent component...');
+    console.log('👤 User ID:', userId, 'Type:', typeof userId);
+    console.log('🎭 Role to delete:', role);
+
     try {
       const token = authService.getToken();
       
@@ -264,8 +303,9 @@ const UserManagementPage = () => {
         return;
       }
 
+      
       const endpoint = `${API_BASE_URL}/users/${userId}/roles/${role}/delete`;
-      console.log('🗑️ Deleting role from:', endpoint);
+      console.log('🔗 DELETE endpoint:', endpoint);
 
       const response = await fetch(endpoint, {
         method: 'DELETE',
@@ -275,13 +315,23 @@ const UserManagementPage = () => {
         }
       });
 
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response ok:', response.ok);
+
       if (response.ok) {
-        
+        const result = await response.json();
+        console.log('✅ Role deletion successful:', result);
+
         setUsers(prevUsers => {
           const updatedUsers = prevUsers.map(user => {
             if (user.id === userId) {
-              const updatedRoles = user.roles.filter(r => r !== role);
-              return { ...user, roles: updatedRoles };
+             
+              const updatedRoles = result.data?.roles || user.roles.filter(r => r !== role);
+              return { 
+                ...user, 
+                roles: updatedRoles,
+                updatedAt: result.data?.updatedAt || new Date().toISOString()
+              };
             }
             return user;
           });
@@ -289,15 +339,68 @@ const UserManagementPage = () => {
           return updatedUsers;
         });
         
-        showNotification(`${role} role removed successfully!`, 'success');
+        // Get role display name for notification
+        const allRoles = [
+          { value: 'ADMIN', label: 'Admin' },
+          { value: 'DEAN', label: 'Dean of School' },
+          { value: 'QA', label: 'Quality Assurance' },
+          { value: 'DEPT_REP', label: 'Department Rep' },
+          { value: 'SENATE', label: 'Senate' },
+          { value: 'STAFF', label: 'Staff' }
+        ];
+        
+        const roleObj = allRoles.find(r => r.value === role);
+        const roleLabel = roleObj ? roleObj.label : role;
+        
+        showNotification(`${roleLabel} role removed successfully!`, 'success');
+        
       } else {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        const errorData = await response.json().catch(() => ({ 
+          message: `HTTP ${response.status} - ${response.statusText}`,
+          status: response.status 
+        }));
+        
         console.error('❌ Role deletion failed:', errorData);
-        showNotification(errorData.message || 'Failed to remove role', 'error');
+        
+        let errorMessage = 'Failed to remove role: ';
+        
+        if (response.status === 401) {
+          errorMessage += 'Session expired. Please log in again.';
+        } else if (response.status === 403) {
+          errorMessage += 'You do not have permission to remove roles.';
+        } else if (response.status === 404) {
+          errorMessage += 'User or role not found.';
+        } else if (response.status === 422) {
+          errorMessage += 'Invalid request. The role might not be assigned to this user.';
+        } else {
+          errorMessage += errorData.message || `Server error (${response.status})`;
+        }
+        
+        showNotification(errorMessage, 'error');
       }
+      
     } catch (error) {
       console.error('💥 Network error deleting role:', error);
-      showNotification('Network error. Please check your connection and try again.', 'error');
+      
+      let errorMessage = 'Failed to remove role: ';
+      
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        errorMessage += 'Network error. Please check your connection and try again.';
+      } else {
+        errorMessage += error.message;
+      }
+      
+      showNotification(errorMessage, 'error');
+      
+      // Log debugging info
+      console.log('🔍 Role deletion debugging info:', {
+        userId: userId,
+        userIdType: typeof userId,
+        role: role,
+        endpoint: `${API_BASE_URL}/users/${userId}/roles/${role}/delete`,
+        hasToken: !!authService.getToken(),
+        tokenPreview: authService.getToken()?.substring(0, 20) + '...'
+      });
     }
   };
 
@@ -338,7 +441,6 @@ const UserManagementPage = () => {
   };
 
   const handleDeleteClick = (user) => {
-   
     if (user.roles && user.roles.length > 0) {
       openModal('deleteRole', user);
     } else {
@@ -350,6 +452,56 @@ const UserManagementPage = () => {
     fetchUsers();
   };
 
+ 
+  if (authLoading) {
+    return (
+      <div className="user-management-dashboard-main-content">
+        <div className="loading-spinner">
+          <i className="fas fa-spinner fa-spin"></i>
+          Checking permissions...
+        </div>
+      </div>
+    );
+  }
+
+  //  access denied if user doesn't have permission
+  if (!canManageUsers) {
+    return (
+      <div className="user-management-dashboard-main-content">
+        <div className="access-denied" style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '400px',
+          textAlign: 'center',
+          padding: '2rem'
+        }}>
+          <i className="fas fa-shield-alt" style={{ fontSize: '3rem', color: '#dc2626', marginBottom: '1rem' }}></i>
+          <h2>Access Denied</h2>
+          <p>You don't have permission to manage users.</p>
+          <p style={{ fontSize: '0.875rem', color: '#666', marginTop: '1rem' }}>
+            Required permission: <strong>canManageUsers</strong> or <strong>ADMIN</strong> role
+          </p>
+          <button 
+            onClick={() => window.location.reload()} 
+            style={{
+              marginTop: '1rem',
+              padding: '0.5rem 1rem',
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.375rem',
+              cursor: 'pointer'
+            }}
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="user-management-dashboard-main-content">
       <Notification
@@ -360,10 +512,13 @@ const UserManagementPage = () => {
       />
 
       <div className="user-management-container">
-        <UserManagementHeader 
-          onAddUser={() => openModal('addUser')} 
-          onRefresh={handleRefresh}
-        />
+        {/* Header with permission check */}
+        <PermissionWrapper permission="canManageUsers">
+          <UserManagementHeader 
+            onAddUser={() => openModal('addUser')} 
+            onRefresh={handleRefresh}
+          />
+        </PermissionWrapper>
         
         <UserManagementSearchFilter
           filters={filters}
@@ -375,65 +530,96 @@ const UserManagementPage = () => {
         
         <StatusSection stats={stats} />
         
+        {/* Debug info in development */}
+        {process.env.NODE_ENV === 'development' && (
+          <div style={{ 
+            margin: '1rem 0', 
+            padding: '0.5rem', 
+            backgroundColor: '#f0f9ff', 
+            border: '1px solid #0ea5e9', 
+            borderRadius: '0.25rem',
+            fontSize: '0.75rem'
+          }}>
+            <strong>Debug - Current User Permissions:</strong>
+            <br />
+            Can Manage Users: {canManageUsers ? '✅' : '❌'}
+            <br />
+            Is Admin: {isAdmin ? '✅' : '❌'}
+          </div>
+        )}
+        
         {isLoading ? (
           <div className="loading-spinner">
             <i className="fas fa-spinner fa-spin"></i>
             Loading users...
           </div>
         ) : (
-          <UsersTable
-            users={users}
-            filters={filters}
-            onEdit={handleEditUser}
-            onManageRoles={handleManageRoles}
-            onDelete={handleDeleteClick}
-          />
+          <PermissionWrapper 
+            anyRole={['ADMIN', 'DEAN']}
+            permission="canManageUsers"
+            fallback={<div>Limited view for your role</div>}
+          >
+            <UsersTable
+              users={users}
+              filters={filters}
+              onEdit={handleEditUser}
+              onManageRoles={isAdmin ? handleManageRoles : null}
+              onDelete={isAdmin ? handleDeleteClick : null}
+            />
+          </PermissionWrapper>
         )}
       </div>
 
-      {/* Add User Modal */}
-      {modals.addUser && (
-        <AddUserModal
-          onClose={() => closeModal('addUser')}
-          onAddUser={handleAddUser}
-        />
-      )}
+      {/* Modals with permission checks */}
+      <PermissionWrapper permission="canManageUsers">
+        {modals.addUser && (
+          <AddUserModal
+            onClose={() => closeModal('addUser')}
+            onAddUser={handleAddUser}
+          />
+        )}
+      </PermissionWrapper>
 
-      {/* Edit User Modal */}
-      {modals.editUser && selectedUser && (
-        <EditUserModal
-          user={selectedUser}
-          onClose={() => closeModal('editUser')}
-          onUpdateUser={handleUpdateUser}
-        />
-      )}
+      <PermissionWrapper permission="canManageUsers">
+        {modals.editUser && selectedUser && (
+          <EditUserModal
+            user={selectedUser}
+            onClose={() => closeModal('editUser')}
+            onUpdateUser={handleUpdateUser}
+          />
+        )}
+      </PermissionWrapper>
 
-      {/* Manage Roles Modal */}
-      {modals.manageRoles && selectedUser && (
-        <ManageRolesModal
-          user={selectedUser}
-          onClose={() => closeModal('manageRoles')}
-          onUpdateRoles={handleUpdateRoles}
-        />
-      )}
+      <PermissionWrapper role="ADMIN">
+        {modals.manageRoles && selectedUser && (
+          <ManageRolesModal
+            user={selectedUser}
+            onClose={() => closeModal('manageRoles')}
+            onUpdateRoles={handleUpdateRoles}
+          />
+        )}
+      </PermissionWrapper>
 
-      {/* Delete Role Modal */}
-      {modals.deleteRole && selectedUser && (
-        <DeleteRoleModal
-          user={selectedUser}
-          onClose={() => closeModal('deleteRole')}
-          onDeleteRole={handleDeleteRole}
-        />
-      )}
+      {/* Note: You need to create DeleteRoleModal component */}
+      {/* <PermissionWrapper role="ADMIN">
+        {modals.deleteRole && selectedUser && (
+          <DeleteRoleModal
+            user={selectedUser}
+            onClose={() => closeModal('deleteRole')}
+            onDeleteRole={handleDeleteRole}
+          />
+        )}
+      </PermissionWrapper> */}
 
-      {/* Confirm Modal  */}
-      {modals.confirm && selectedUser && (
-        <ConfirmModal
-          user={selectedUser}
-          onClose={() => closeModal('confirm')}
-          onConfirm={() => handleDeleteUser(selectedUser.id)}
-        />
-      )}
+      <PermissionWrapper permission="canManageUsers">
+        {modals.confirm && selectedUser && (
+          <ConfirmModal
+            user={selectedUser}
+            onClose={() => closeModal('confirm')}
+            onConfirm={() => handleDeleteUser(selectedUser.id)}
+          />
+        )}
+      </PermissionWrapper>
     </div>
   );
 };

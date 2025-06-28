@@ -548,6 +548,130 @@ class AuthService {
       logoutPolicy: 'Page exit only'
     };
   }
+
+  //check permissions
+  async getUserRolesAndPermissions() {
+  try {
+    const token = this.getToken();
+    
+    if (!token) {
+      throw new Error('No authentication token available');
+    }
+
+    console.log('🔍 Fetching user roles and permissions...');
+
+    const response = await fetch(`${this.baseURL}/auth/roles`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        
+        await this.refreshToken();
+        return this.getUserRolesAndPermissions(); // Retry with new token
+      }
+      throw new Error(`Failed to fetch roles: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('✅ User roles and permissions:', result.data);
+    
+    
+    localStorage.setItem('userPermissions', JSON.stringify(result.data.permissions));
+    localStorage.setItem('userRoles', JSON.stringify(result.data.roles));
+    
+    return result.data;
+  } catch (error) {
+    console.error('❌ Error fetching user roles:', error);
+    throw error;
+  }
+}
+
+// Quick permission checkers
+hasPermission(permission) {
+  try {
+    const permissions = JSON.parse(localStorage.getItem('userPermissions') || '{}');
+    return permissions[permission] === true;
+  } catch (error) {
+    console.error('Error checking permission:', error);
+    return false;
+  }
+}
+
+hasRole(role) {
+  try {
+    const roles = JSON.parse(localStorage.getItem('userRoles') || '[]');
+    return roles.includes(role);
+  } catch (error) {
+    console.error('Error checking role:', error);
+    return false;
+  }
+}
+
+hasAnyRole(rolesList) {
+  try {
+    const userRoles = JSON.parse(localStorage.getItem('userRoles') || '[]');
+    return rolesList.some(role => userRoles.includes(role));
+  } catch (error) {
+    console.error('Error checking roles:', error);
+    return false;
+  }
+}
+
+
+canManageUsers() {
+  return this.hasPermission('canManageUsers');
+}
+
+
+isAdmin() {
+  return this.hasPermission('isAdmin') || this.hasRole('ADMIN');
+}
+
+
+isDean() {
+  return this.hasPermission('isDean') || this.hasRole('DEAN');
+}
+
+// Clear role data on logout
+clearRoleData() {
+  localStorage.removeItem('userPermissions');
+  localStorage.removeItem('userRoles');
+}
+
+async logout(force = false) {
+  try {
+    const token = this.getToken();
+    
+    if (token && !force) {
+      await fetch(`${this.baseURL}/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+  } catch (error) {
+    console.error('Logout error:', error);
+  } finally {
+    
+    localStorage.removeItem('sessionToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('tokenExpiry');
+    localStorage.removeItem('user');
+    localStorage.removeItem('loginTime');
+    this.clearRoleData(); 
+    
+    this.stopBackgroundServices();
+    
+    console.log('🔐 Logged out and cleared all data including roles');
+  }
+}
 }
 
 const authService = new AuthService();
@@ -557,5 +681,8 @@ window.debugAuth = () => authService.debugStorage();
 window.authStatus = () => authService.getAuthStatus();
 window.forceRefresh = () => authService.refreshToken();
 window.manualLogout = () => authService.logout();
+
+
+
 
 export default authService;
