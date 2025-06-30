@@ -19,7 +19,7 @@
     }
   }
   
-  /* Individual Metric Card */
+ 
   .metric-card {
     background: white;
     border-radius: 0.75rem;
@@ -34,7 +34,7 @@
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   }
   
-  /* Border Colors */
+ 
   .border-green-500 {
     border-left-color: #10b981;
   }
@@ -51,7 +51,7 @@
     border-left-color: #8b5cf6;
   }
   
-  /* Metric Card Content */
+
   .metric-content {
     display: flex;
     align-items: center;
@@ -86,7 +86,7 @@
     margin-right: 0.25rem;
   }
   
-  /* Trend Colors */
+ 
   .trend-positive {
     color: #059669;
   }
@@ -103,7 +103,7 @@
     color: #6b7280;
   }
   
-  /* Metric Icon */
+ 
   .metric-icon {
     padding: 0.75rem;
     border-radius: 50%;
@@ -117,7 +117,7 @@
     font-size: 1.25rem;
   }
   
-  /* Icon Background Colors */
+
   .metric-icon.green {
     background-color: #00BF63;
   }

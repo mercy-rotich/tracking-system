@@ -4,7 +4,7 @@ import React from 'react';
 const UserManagementHeader = ({ onAddUser }) => {
   const handleExportUsers = () => {
     console.log('Exporting users...');
-    // Implementation for export functionality
+    
   };
 
   return (

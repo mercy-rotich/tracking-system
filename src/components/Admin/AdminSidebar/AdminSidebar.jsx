@@ -53,7 +53,6 @@ const AdminSidebar = () => {
     };
   }, [isMobile, isOpen]);
 
-  // Prevent body scroll when mobile sidebar is open
   useEffect(() => {
     if (isMobile && isOpen) {
       document.body.style.overflow = 'hidden';
@@ -66,7 +65,7 @@ const AdminSidebar = () => {
     };
   }, [isMobile, isOpen]);
 
-  // Update main content margin and toggle button position based on sidebar state
+  
   useEffect(() => {
     const mainContent = document.querySelector('.main-content');
     const toggleBtn = document.querySelector('.sidebar-toggle-btn');
@@ -183,7 +182,7 @@ const AdminSidebar = () => {
         </div>
         
         <nav className="sidebar-nav">
-          {/* Main Navigation */}
+        
           <div className="sidebar-section">
             <div className="sidebar-items">
               {navigationItems.map((item) => (
@@ -206,7 +205,7 @@ const AdminSidebar = () => {
             </div>
           </div>
           
-          {/* System Tools Section */}
+         
           <div className="sidebar-section">
             <h3 className="sidebar-section-title">System Tools</h3>
             <div className="sidebar-items">

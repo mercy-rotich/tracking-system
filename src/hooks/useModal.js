@@ -8,14 +8,14 @@ export const useModal = () => {
   const openModal = (data) => {
     setModalData(data);
     setIsOpen(true);
-    // Prevent body scroll when modal is open
+    
     document.body.style.overflow = 'hidden';
   };
 
   const closeModal = () => {
     setIsOpen(false);
     setModalData(null);
-    // Restore body scroll
+    
     document.body.style.overflow = 'unset';
   };
 

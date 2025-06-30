@@ -20,7 +20,7 @@ const UserHeader = ({ onMobileSidebarToggle }) => {
   };
 
   const handleAdminLogin = () => {
-    // Navigate to admin login page
+    
     navigate('/admin/login');
   };
 

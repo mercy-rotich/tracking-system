@@ -28,13 +28,13 @@ const ForgotPasswordPage = ({ onSuccess }) => {
     setIsLoading(true);
 
     try {
-      console.log('🔐 Attempting password reset for:', email);
+      console.log(' Attempting password reset for:', email);
       const result = await passwordResetService.initiatePasswordReset(email);
       
       console.log('✅ Password reset result:', result);
       
       if (result && result.success) {
-        console.log('🎉 Password reset initiated successfully');
+        console.log(' Password reset initiated successfully');
         
         onSuccess(email);
       } else {

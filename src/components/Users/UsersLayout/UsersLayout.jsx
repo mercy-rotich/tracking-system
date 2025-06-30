@@ -32,7 +32,7 @@ const UsersLayout = () => {
         <UserHeader onMobileSidebarToggle={handleMobileSidebarToggle} />
         
         <main className="user-content">
-          {/* This is where the nested routes will be rendered */}
+          
           <Outlet />
         </main>
       </div>

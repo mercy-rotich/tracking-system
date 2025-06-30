@@ -401,7 +401,7 @@
     }
   }
   
-  /* Print styles */
+ 
   @media print {
     .user-chart-placeholder {
       border-style: solid;

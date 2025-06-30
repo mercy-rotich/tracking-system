@@ -4,7 +4,7 @@
   --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   --font-heading: 'Montserrat', sans-serif;
   
-  /* Spacing */
+ 
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
   --spacing-md: 1rem;
@@ -12,19 +12,18 @@
   --spacing-xl: 2rem;
   --spacing-2xl: 3rem;
   
-  /* Border Radius */
+  
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
   
-  /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   
-  /* Transitions */
+ 
   --transition-fast: 150ms ease-in-out;
   --transition-normal: 250ms ease-in-out;
   --transition-slow: 350ms ease-in-out;
@@ -41,7 +40,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Main Container */
+
 .login-container {
   min-height: 100vh;
   display: flex;
@@ -60,7 +59,7 @@ body {
   background: var(--white);
 }
 
-/* Branding Section (Left Side) */
+
 .branding-section {
   display: none;
   width: 50%;
@@ -193,7 +192,6 @@ body {
   font-weight: 700;
 }
 
-/* Form Section (Right Side) */
 .form-section {
   width: 100%;
   padding: var(--spacing-2xl);
@@ -255,7 +253,7 @@ body {
   color: var(--gray-600);
 }
 
-/* Form Styles */
+
 .form-title {
   font-size: 2rem;
   font-weight: 700;
@@ -322,7 +320,6 @@ body {
 }
 
 
-/* Password Input Container */
 .password-input-container {
   position: relative;
   display: flex;
@@ -333,7 +330,6 @@ body {
   padding-right: 3rem; 
 }
 
-/* Password Toggle Button - Updated positioning */
 .password-toggle-btn {
   position: absolute;
   right: 0.75rem;
@@ -459,7 +455,7 @@ body {
   background: var(--must-green-dark);
 }
 
-/* Help Section */
+
 .help-section {
   margin-top: var(--spacing-xl);
 }
@@ -510,7 +506,7 @@ body {
   font-weight: 500;
 }
 
-/* Info Card */
+
 .info-card {
   margin-top: var(--spacing-lg);
   background: var(--gray-50);
@@ -532,7 +528,7 @@ body {
   flex-shrink: 0;
 }
 
-/* Responsive Design */
+
 @media (min-width: 768px) {
   .branding-section {
     display: flex;
@@ -658,7 +654,7 @@ body {
   }
 }
 
-/* Print Styles */
+
 @media print {
   .login-container {
     background: white;
@@ -676,9 +672,7 @@ body {
   }
 }
 
-/* PasswordReset.css - Add these styles to your existing LoginPage.css */
 
-/* Success and Error Cards */
 .success-card,
 .error-card {
   text-align: center;
@@ -694,7 +688,7 @@ body {
   justify-content: center;
 }
 
-/* Success and Error Messages */
+
 .success-message,
 .error-message-large {
   margin-bottom: 2rem;
@@ -714,7 +708,7 @@ body {
   font-weight: 600;
 }
 
-/* Email Instructions */
+
 .email-instructions {
   background-color: #f9fafb;
   border: 1px solid #e5e7eb;
@@ -743,7 +737,7 @@ body {
   line-height: 1.5;
 }
 
-/* Resend Section */
+
 .resend-section {
   margin-bottom: 2rem;
 }
@@ -777,7 +771,7 @@ body {
   cursor: not-allowed;
 }
 
-/* Back to Login */
+
 .back-to-login {
   margin-top: 2rem;
   text-align: center;
@@ -797,7 +791,7 @@ body {
   color: #1d4ed8;
 }
 
-/* Action Buttons */
+
 .action-buttons {
   display: flex;
   flex-direction: column;
@@ -809,7 +803,7 @@ body {
   margin: 0;
 }
 
-/* Redirect Info */
+
 .redirect-info {
   background-color: #eff6ff;
   border: 1px solid #bfdbfe;
@@ -833,7 +827,7 @@ body {
   text-align: center;
 }
 
-/* Input Hints */
+
 .input-hint {
   display: block;
   margin-top: 0.25rem;
@@ -842,7 +836,7 @@ body {
   line-height: 1.4;
 }
 
-/* Input Icon Wrapper */
+
 .input-icon-wrapper {
   position: relative;
 }
@@ -884,7 +878,7 @@ body {
   margin: 0;
 }
 
-/* Enhanced Error States */
+
 .form-input.error {
   border-color: #ef4444;
   background-color: #fef2f2;
@@ -895,7 +889,7 @@ body {
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
 
-/* Success States */
+
 .form-input.success {
   border-color: #10b981;
   background-color: #f0fdf4;
@@ -906,7 +900,6 @@ body {
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
-/* Password Strength Indicator  */
 .password-strength {
   margin-top: 0.5rem;
 }
@@ -986,7 +979,7 @@ body {
   }
 }
 
-/* Animation for success/error states */
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -1003,7 +996,7 @@ body {
   animation: fadeInUp 0.5s ease-out;
 }
 
-/* Focus management for accessibility */
+
 .form-input:focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
@@ -1015,7 +1008,7 @@ body {
   border-radius: 0.25rem;
 }
 
-/* Secondary button styles for consistency */
+
 .secondary-button {
   background: none;
   border: 1px solid #d1d5db;

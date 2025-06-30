@@ -1,4 +1,4 @@
-/* MUST Brand Colors */
+
 :root {
   --must-green: #00BF63;
   --must-green-hover: #00a854;
@@ -21,7 +21,7 @@
   --sidebar-width: 256px;
 }
 
-/* Header Main Styles */
+
 .header {
   background-color: var(--must-green);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -31,20 +31,19 @@
   transition: left 0.3s ease-in-out, width 0.3s ease-in-out;
 }
 
-/* Default mobile styles - full width */
 .header {
   left: 0;
   width: 100%;
 }
 
-/* Desktop styles with sidebar */
+
 @media (min-width: 768px) {
   .header {
     left: var(--sidebar-width);
     width: calc(100% - var(--sidebar-width));
   }
   
-  /* When sidebar is collapsed/hidden */
+ 
   .header.sidebar-collapsed {
     left: 0;
     width: 100%;
@@ -86,7 +85,7 @@
   height: 4rem;
 }
 
-/* Brand Section */
+
 .header-brand {
   display: flex;
   align-items: center;
@@ -98,7 +97,7 @@
   gap: 0.75rem;
 }
 
-/* Updated Logo Styles */
+
 .header-container .logo-container {
   background-color: white;
   border-radius: 50%;
@@ -118,7 +117,7 @@
   border-radius: 50%;
 }
 
-/* Responsive logo sizing */
+
 @media (max-width: 640px) {
   .logo-container {
     width: 2.5rem;
@@ -135,7 +134,6 @@
   }
 }
 
-/* Keep the original circular logo styles as fallback */
 .logo-circle {
   background-color: white;
   border-radius: 50%;
@@ -183,7 +181,7 @@
   }
 }
 
-/* Search Section */
+
 .header .header-search {
   flex: 1;
   display: flex;
@@ -270,14 +268,14 @@
   color: var(--gray-600);
 }
 
-/* Header Actions */
+
 .header-actions {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-/* System Health */
+
 .system-health {
   display: flex;
   align-items: center;
@@ -320,7 +318,7 @@
   }
 }
 
-/* Notifications */
+
 .notification-wrapper {
   position: relative;
 }
@@ -376,7 +374,7 @@
   animation: slideDown 0.2s ease-out;
 }
 
-/* Profile */
+
 .profile-wrapper {
   position: relative;
 }
@@ -466,7 +464,7 @@
   animation: slideDown 0.2s ease-out;
 }
 
-/* Dropdown Styles */
+
 .dropdown-header {
   padding: 1rem;
   border-bottom: 1px solid var(--gray-200);
@@ -666,7 +664,7 @@
   background-color: var(--must-green-hover);
 }
 
-/* Animations */
+
 @keyframes slideDown {
   from {
     opacity: 0;
@@ -687,7 +685,6 @@
   }
 }
 
-/* Responsive adjustments */
 @media (max-width: 640px) {
   .header-content {
     gap: 0.5rem;
@@ -720,7 +717,7 @@
   }
 }
 
-/* Modal and Form styles remain the same... */
+
 .modal-overlay {
   position: fixed;
   top: 0;

@@ -10,7 +10,7 @@
     margin-top: 2rem;
   }
   
-  /* Focus Mode Styles */
+
   body.user-focus-mode .user-dashboard .user-school-item:not(.user-school-item--focused) {
     opacity: 0.3;
     pointer-events: none;

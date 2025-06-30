@@ -83,7 +83,7 @@ const CurriculaStats = ({ stats, onStatClick }) => {
       id: 'total',
       title: 'Total Curricula',
       value: stats.total,
-      trend: null, // No trend for total
+      trend: null, 
       icon: 'fas fa-book',
       color: 'curricula-total',
       borderColor: 'border-curricula-total'

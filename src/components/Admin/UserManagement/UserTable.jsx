@@ -4,12 +4,12 @@ const UsersTable = ({ users, filters, onEdit, onManageRoles, onDelete }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Reset to first page when users array changes (new user added)
+  
   useEffect(() => {
     setCurrentPage(1);
   }, [users.length]);
 
-  // Filter users based on search and filter criteria
+  
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
       const matchesSearch = !filters.search || 
@@ -25,7 +25,7 @@ const UsersTable = ({ users, filters, onEdit, onManageRoles, onDelete }) => {
     });
   }, [users, filters]);
 
-  // Pagination logic
+
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
@@ -66,7 +66,6 @@ const UsersTable = ({ users, filters, onEdit, onManageRoles, onDelete }) => {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
 
-    // Previous button
     buttons.push(
       <button
         key="prev"
@@ -79,7 +78,7 @@ const UsersTable = ({ users, filters, onEdit, onManageRoles, onDelete }) => {
       </button>
     );
 
-    // Page numbers
+    
     for (let i = startPage; i <= endPage; i++) {
       buttons.push(
         <button
@@ -92,7 +91,7 @@ const UsersTable = ({ users, filters, onEdit, onManageRoles, onDelete }) => {
       );
     }
 
-    // Show ellipsis and last page if needed
+    
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
         buttons.push(

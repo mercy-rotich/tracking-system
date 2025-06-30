@@ -101,7 +101,7 @@ const EditUserModal = ({ user, onClose, onUpdateUser }) => {
 
       
       const response = await fetch(`${API_BASE_URL}/users/${user.id}`, {
-        method: 'PUT', // or PATCH depending on your API
+        method: 'PUT', 
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -135,7 +135,7 @@ const EditUserModal = ({ user, onClose, onUpdateUser }) => {
         alert(errorData.message || 'Failed to update user');
       }
     } catch (error) {
-      console.error('💥 Network error updating user:', error);
+      console.error(' Network error updating user:', error);
       alert('Network error. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
@@ -148,7 +148,7 @@ const EditUserModal = ({ user, onClose, onUpdateUser }) => {
     }
   };
 
-  // Handle escape key
+ 
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape' && !isLoading) {

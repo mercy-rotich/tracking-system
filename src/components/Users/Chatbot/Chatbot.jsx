@@ -69,7 +69,7 @@ const Chatbot = () => {
     setInputValue('');
     setIsTyping(true);
 
-    // Simulate bot typing delay
+   
     setTimeout(() => {
       const botResponse = {
         id: Date.now() + 1,

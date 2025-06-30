@@ -25,7 +25,7 @@ const AddUserModal = ({ onClose, onAddUser }) => {
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
+   
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -104,9 +104,9 @@ const AddUserModal = ({ onClose, onAddUser }) => {
         return;
       }
 
-      console.log('🎫 Using token for API call:', token ? `${token.substring(0, 20)}...` : 'null');
+      console.log('Using token for API call:', token ? `${token.substring(0, 20)}...` : 'null');
 
-      // Prepare API payload (matching the expected format from dashboard overview)
+      
       const apiPayload = {
         username: formData.username,
         email: formData.email,
@@ -134,25 +134,23 @@ const AddUserModal = ({ onClose, onAddUser }) => {
         
         showNotification('User created successfully! Login details have been sent to their email.', 'success');
         
-        // Call the parent callback with the created user data
-        // The result should contain the user data in result.data
+       
         if (onAddUser && result.data) {
           console.log('🔄 Calling onAddUser with:', result.data);
           onAddUser(result.data);
         } else if (onAddUser && result) {
-          // Fallback if data is at root level
+          
           console.log('🔄 Calling onAddUser with result:', result);
           onAddUser(result);
         } else {
           console.warn('⚠️ No user data returned from API or no callback provided');
         }
         
-        // Close modal after a short delay to show success message
+        
         setTimeout(() => {
           onClose();
           resetForm();
-        }, 1500); // Reduced delay for better UX
-        
+        }, 1500); 
       } else {
         const errorData = await response.json();
         console.error('❌ API error response:', errorData);
@@ -166,7 +164,7 @@ const AddUserModal = ({ onClose, onAddUser }) => {
         }
       }
     } catch (error) {
-      console.error('💥 Error creating user:', error);
+      console.error(' Error creating user:', error);
       showNotification('Network error. Please check your connection and try again.', 'error');
     } finally {
       setIsLoading(false);

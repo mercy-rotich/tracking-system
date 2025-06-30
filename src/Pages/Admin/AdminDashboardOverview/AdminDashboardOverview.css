@@ -6,7 +6,7 @@
 .must-blue { color: #1a3a6e; }
 .must-blue-bg { background-color: #1a3a6e; }
 
-/* Main content wrapper */
+
 .dashboard-main-content {
   margin-left: 0;
   padding-top: 5rem; 
@@ -24,13 +24,13 @@
   }
 }
 
-/* Dashboard Overview */
+
 .dashboard-overview {
   max-width: 1550px;
   margin: 0 auto;
 }
 
-/* Dashboard Header */
+
 .dashboard-header {
   margin-bottom: 2rem;
 }
@@ -78,7 +78,7 @@
   }
 }
 
-/* Button Styles */
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -129,7 +129,7 @@
   text-decoration: underline;
 }
 
-/* Section Layouts */
+
 .workflow-section,
 .activity-section {
   display: grid;
@@ -148,7 +148,7 @@
   }
 }
 
-/* Section Titles */
+
 .section-title {
   font-size: 1.125rem;
   font-weight: 600;
@@ -156,7 +156,6 @@
   margin: 0 0 1rem 0;
 }
 
-/* Responsive adjustments for main content */
 @media (max-width: 767px) {
   .dashborad-main-content {
     padding: 5rem 0.5rem 1rem 0.5rem; 

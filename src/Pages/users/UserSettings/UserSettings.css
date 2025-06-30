@@ -229,7 +229,7 @@
     font-size: 0.8rem;
   }
   
-  /* Section-specific styling */
+  
   .user-settings-section:nth-child(1) .user-settings-title i {
     color: var(--user-primary-green-dark);
   }
@@ -339,7 +339,7 @@
     }
   }
   
-  /* High contrast mode */
+ 
   @media (prefers-contrast: high) {
     .user-toggle-switch {
       border: 2px solid var(--user-text-primary);
@@ -350,7 +350,7 @@
     }
   }
   
-  /* Animation for settings sections */
+ 
   .user-settings-section {
     animation: userSlideUp 0.3s ease-out;
   }

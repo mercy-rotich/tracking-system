@@ -18,7 +18,6 @@ export const CurriculumProvider = ({ children }) => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [loading, setLoading] = useState(false);
 
-  // Filter schools based on search term and active filter
   const filteredSchools = data.schools.filter(school => {
     const matchesSearch = searchTerm === '' || 
       school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -40,7 +39,6 @@ export const CurriculumProvider = ({ children }) => {
     return matchesSearch && matchesFilter;
   });
 
-  // Get all curricula with school and department info
   const getAllCurricula = () => {
     const allCurricula = [];
     data.schools.forEach(school => {
@@ -60,7 +58,6 @@ export const CurriculumProvider = ({ children }) => {
     return allCurricula;
   };
 
-  // Filter curricula for curricula page
   const getFilteredCurricula = (statusFilter = 'all', searchTerm = '') => {
     const allCurricula = getAllCurricula();
     return allCurricula.filter(curriculum => {

@@ -1,4 +1,4 @@
-/* Enhanced Tab Navigation Styles */
+
 .user-management-tab-navigation {
     display: flex;
     gap: 0.5rem;
@@ -41,7 +41,7 @@
     color: white;
   }
   
-  /* Enhanced Info Boxes */
+  
   .user-management-info-box {
     border-radius: 0.5rem;
     padding: 1rem;
@@ -87,7 +87,6 @@
     border: 1px solid rgba(220, 38, 38, 0.2);
   }
   
-  /* Enhanced Role Item Styles for Delete Tab */
   .user-management-role-item-removable {
     border: 1px solid rgba(220, 38, 38, 0.2);
     background-color: rgba(220, 38, 38, 0.05);
@@ -112,7 +111,6 @@
     color: #b91c1c;
   }
   
-  /* Enhanced Preview Section */
   .user-management-roles-preview {
     margin-bottom: 1.5rem;
   }
@@ -133,7 +131,6 @@
     font-weight: bold;
   }
   
-  /* Enhanced Empty States */
   .user-management-empty-state {
     text-align: center;
     padding: 2rem;
@@ -154,7 +151,6 @@
     font-style: italic;
   }
   
-  /* Enhanced Modal Actions */
   .user-management-modal-actions-enhanced {
     display: flex;
     gap: 0.75rem;
@@ -178,7 +174,6 @@
     gap: 0.75rem;
   }
   
-  /* Progress Indicator */
   .user-management-progress-indicator {
     display: flex;
     align-items: center;
@@ -190,8 +185,6 @@
   .user-management-progress-indicator i {
     color: var(--user-management-must-green);
   }
-  
-  /* Enhanced Animations */
   .user-management-tab-content {
     animation: user-management-tabSlideIn 0.3s ease-out;
   }
@@ -206,8 +199,7 @@
       transform: translateY(0);
     }
   }
-  
-  /* Enhanced Focus States */
+ 
   .user-management-tab-button:focus {
     outline: 2px solid var(--user-management-must-green);
     outline-offset: 2px;
@@ -276,7 +268,6 @@
     transform: scale(0.95);
   }
   
-  /* Specific styling for removable role items */
   .user-management-role-item-removable .user-management-remove-role-btn {
     background-color: rgba(220, 38, 38, 0.1);
     color: #dc2626;
@@ -326,7 +317,7 @@
     }
   }
   
-  /* Accessibility Improvements */
+ 
   .user-management-sr-only {
     position: absolute;
     width: 1px;
@@ -338,8 +329,7 @@
     white-space: nowrap;
     border: 0;
   }
-  
-  /* High Contrast Mode Support */
+
   @media (prefers-contrast: high) {
     .user-management-info-box {
       border-width: 2px;
@@ -354,7 +344,6 @@
     }
   }
   
-  /* Reduced Motion Support */
   @media (prefers-reduced-motion: reduce) {
     .user-management-tab-content,
     .user-management-role-item-removable,

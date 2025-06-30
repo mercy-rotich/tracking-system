@@ -110,7 +110,7 @@
     transform: translateX(4px);
   }
   
-  /* Program type specific styles */
+  
   .user-program-card[data-type="masters"] .user-program-count {
     background: var(--user-gradient-blue);
   }
@@ -123,7 +123,7 @@
     background: var(--user-gradient-green);
   }
   
-  /* Loading state */
+ 
   .user-program-card--loading {
     pointer-events: none;
     opacity: 0.6;
@@ -193,7 +193,7 @@
     }
   }
   
-  /* Reduced motion */
+ 
   @media (prefers-reduced-motion: reduce) {
     .user-program-card,
     .user-program-card::before,

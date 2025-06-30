@@ -11,12 +11,12 @@ const DepartmentSection = ({
   onDelete, 
   onApprove, 
   onReject,
-  viewMode = 'card' // Add viewMode prop
+  viewMode = 'card' 
 }) => {
-  // Safety check for curricula prop
+  
   const safeCurricula = curricula || [];
 
-  // Calculate status counts for the department header
+  
   const statusCounts = safeCurricula.reduce((acc, curriculum) => {
     acc[curriculum.status] = (acc[curriculum.status] || 0) + 1;
     return acc;
@@ -30,7 +30,7 @@ const DepartmentSection = ({
 
   return (
     <div className="curricula-department-section">
-      {/* Department Header with Statistics */}
+      {/* Department Header  */}
       <div className="curricula-department-header">
         <div className="curricula-department-info">
           <h2 className="curricula-department-name">{departmentName} Department</h2>
@@ -46,7 +46,7 @@ const DepartmentSection = ({
         </div>
       </div>
 
-      {/* Department content - either cards or list based on viewMode */}
+      {/* Department content */}
       <div className="curricula-department-content">
         {viewMode === 'list' ? (
           <CurriculaList
@@ -58,9 +58,9 @@ const DepartmentSection = ({
             onDelete={onDelete}
             onApprove={onApprove}
             onReject={onReject}
-            hideSchoolColumn={true} // Hide school column in department view
-            hideDepartmentColumn={true} // Hide department column in department view
-            showingDepartmentView={true} // Indicate this is a department-specific view
+            hideSchoolColumn={true} 
+            hideDepartmentColumn={true} 
+            showingDepartmentView={true} 
           />
         ) : (
           <div className="curricula-grid">

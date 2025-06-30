@@ -10,7 +10,7 @@ const UserDashboard = () => {
   const { data, filteredSchools, searchTerm, setSearchTerm, activeFilter, setActiveFilter } = useCurriculum();
   const [animatedCount, setAnimatedCount] = useState(0);
 
-  // Animate counter on mount
+ 
   useEffect(() => {
     const target = data.totalCurricula;
     const increment = target / 60;

@@ -43,7 +43,7 @@ const RecentActivity = () => {
   ];
 
   const handleViewAll = () => {
-    // TODO: Navigate to full activity log
+   
     console.log('Navigating to full activity log...');
   };
 

@@ -1,4 +1,4 @@
-// services/authService.js
+
 class AuthService {
   constructor() {
     this.baseURL = import.meta.env.VITE_BASE_URL;
@@ -42,7 +42,7 @@ class AuthService {
   initializePageExitHandlers() {
    
     window.addEventListener('beforeunload', (event) => {
-      console.log('🚪 Page is about to unload, logging out...');
+      console.log(' Page is about to unload, logging out...');
       
       this.logoutSync();
     });
@@ -50,22 +50,21 @@ class AuthService {
     
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
-        console.log('🙈 Page hidden, preparing for potential exit...');
+        console.log(' Page hidden, preparing for potential exit...');
        
       }
     });
     window.addEventListener('blur', () => {
-      console.log('👋 Window lost focus');
+      console.log(' Window lost focus');
       
     });
 
     window.addEventListener('focus', () => {
-      console.log('👁️ Window gained focus, checking token...');
+      console.log(' Window gained focus, checking token...');
       this.checkAndRefreshToken();
     });
   }
 
-  // Synchronous logout for page unload events
   logoutSync() {
     try {
       const token = this.getToken();
@@ -93,7 +92,7 @@ class AuthService {
 
   async login(credentials) {
     try {
-      console.log('🔐 Starting login process with credentials:', {
+      console.log(' Starting login process with credentials:', {
         username: credentials.username,
         hasPassword: !!credentials.password,
         rememberMe: credentials.rememberMe
@@ -107,7 +106,7 @@ class AuthService {
         body: JSON.stringify(credentials),
       });
 
-      console.log('📡 Login response status:', response.status);
+      console.log(' Login response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -182,7 +181,7 @@ class AuthService {
         tokenExpiry = new Date(tokenExpiry).toISOString();
       }
       
-      // Store tokens
+     
       localStorage.setItem('sessionToken', sessionToken);
       localStorage.setItem('refreshToken', refreshToken || '');
       localStorage.setItem('tokenExpiry', tokenExpiry || '');
@@ -211,13 +210,13 @@ class AuthService {
   startBackgroundServices() {
     this.startTokenRefresh();
     this.startSessionCheck();
-    console.log('🚀 Background authentication services started (no inactivity monitoring)');
+    console.log('Background authentication services started (no inactivity monitoring)');
   }
 
   stopBackgroundServices() {
     this.stopTokenRefresh();
     this.stopSessionCheck();
-    console.log('🛑 Background authentication services stopped');
+    console.log(' Background authentication services stopped');
   }
 
   async refreshToken() {
@@ -252,7 +251,7 @@ class AuthService {
 
       const data = await response.json();
       
-      // Extract new tokens using same logic as login
+     
       const newToken = data.token || data.accessToken || data.access_token;
       const newRefreshToken = data.refreshToken || data.refresh_token || refreshToken;
       const newExpiry = data.expiresAt || data.expires_at || data.expiry;
@@ -261,7 +260,7 @@ class AuthService {
         throw new Error('Refresh response missing new token');
       }
 
-      // Store new tokens
+  
       localStorage.setItem('sessionToken', newToken);
       localStorage.setItem('refreshToken', newRefreshToken);
       if (newExpiry) {
@@ -270,7 +269,7 @@ class AuthService {
 
       console.log('✅ Token refreshed successfully');
 
-      // Resolve all queued requests
+      
       this.failedQueue.forEach(({ resolve }) => resolve(newToken));
       this.failedQueue = [];
 
@@ -307,7 +306,6 @@ class AuthService {
     return timeUntilExpiry < this.refreshBuffer;
   }
 
-  // Check and refresh token if needed
   async checkAndRefreshToken() {
     if (!this.isAuthenticated()) {
       return false;
@@ -335,7 +333,7 @@ class AuthService {
       }
     }, 60000);
 
-    console.log('⏰ Token refresh monitoring started (every 60 seconds)');
+    console.log(' Token refresh monitoring started (every 60 seconds)');
   }
 
   stopTokenRefresh() {
@@ -359,7 +357,7 @@ class AuthService {
     });
 
     if (!response.ok) {
-      // Try to refresh token before giving up
+      
       if (response.status === 401 && localStorage.getItem('refreshToken')) {
         console.log('🔄 Session invalid, attempting token refresh...');
         await this.refreshToken();
@@ -408,7 +406,6 @@ class AuthService {
     }
   }
 
-  // Method to manually trigger refresh 
   async ensureValidToken() {
     if (!this.isAuthenticated()) {
       throw new Error('Not authenticated');
@@ -471,11 +468,10 @@ class AuthService {
      
       this.stopBackgroundServices();
       
-      console.log('🔐 Logged out and cleared all data');
+      console.log(' Logged out and cleared all data');
     }
   }
 
-  // Get token with automatic refresh if needed
   async getValidToken() {
     if (!this.isAuthenticated()) {
       throw new Error('Not authenticated');
@@ -558,7 +554,7 @@ class AuthService {
       throw new Error('No authentication token available');
     }
 
-    console.log('🔍 Fetching user roles and permissions...');
+    console.log(' Fetching user roles and permissions...');
 
     const response = await fetch(`${this.baseURL}/auth/roles`, {
       method: 'GET',
@@ -572,7 +568,7 @@ class AuthService {
       if (response.status === 401) {
         
         await this.refreshToken();
-        return this.getUserRolesAndPermissions(); // Retry with new token
+        return this.getUserRolesAndPermissions(); 
       }
       throw new Error(`Failed to fetch roles: ${response.status}`);
     }
@@ -591,7 +587,7 @@ class AuthService {
   }
 }
 
-// Quick permission checkers
+
 hasPermission(permission) {
   try {
     const permissions = JSON.parse(localStorage.getItem('userPermissions') || '{}');
@@ -637,7 +633,7 @@ isDean() {
   return this.hasPermission('isDean') || this.hasRole('DEAN');
 }
 
-// Clear role data on logout
+
 clearRoleData() {
   localStorage.removeItem('userPermissions');
   localStorage.removeItem('userRoles');
@@ -669,7 +665,7 @@ async logout(force = false) {
     
     this.stopBackgroundServices();
     
-    console.log('🔐 Logged out and cleared all data including roles');
+    console.log(' Logged out and cleared all data including roles');
   }
 }
 }

@@ -34,14 +34,13 @@ const DeleteRoleModal = ({ user, onClose, onDeleteRole }) => {
     }
   };
 
-  // Handle click outside modal to close
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget && !isLoading) {
       onClose();
     }
   };
 
-  // Handle escape key
+  
   React.useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape' && !isLoading) {

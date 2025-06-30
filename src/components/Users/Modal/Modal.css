@@ -164,7 +164,7 @@
     color: #92400e;
   }
   
-  /* Scrollbar styling for modal body */
+ 
   .user-modal-body::-webkit-scrollbar {
     width: 8px;
   }
@@ -283,13 +283,13 @@
     }
   }
   
-  /* Focus management */
+  
   .user-modal-close:focus-visible {
     outline: 2px solid var(--user-primary-green);
     outline-offset: 2px;
   }
   
-  /* High contrast mode */
+ 
   @media (prefers-contrast: high) {
     .user-modal-content {
       border-width: 2px;

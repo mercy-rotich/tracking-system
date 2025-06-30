@@ -73,7 +73,7 @@ const AdminDashboardOverview = () => {
       }
 
      
-      console.log('🎫 Using token for API call:', token ? `${token.substring(0, 20)}...` : 'null');
+      console.log('Using token for API call:', token ? `${token.substring(0, 20)}...` : 'null');
 
      
       const response = await fetch(`${API_BASE_URL}/users/create`, {
@@ -85,7 +85,7 @@ const AdminDashboardOverview = () => {
         body: JSON.stringify(formData)
       });
 
-      console.log('📡 API response status:', response.status);
+      console.log(' API response status:', response.status);
 
       if (response.ok) {
         const result = await response.json();
@@ -103,7 +103,7 @@ const AdminDashboardOverview = () => {
         }
       }
     } catch (error) {
-      console.error('💥 Error creating user:', error);
+      console.error(' Error creating user:', error);
       showNotification('Network error. Please check your connection and try again.', 'error');
     } finally {
       setIsLoading(false);
@@ -116,7 +116,7 @@ const AdminDashboardOverview = () => {
   };
 
   const debugAuth = () => {
-    console.log('🔍 Debug Auth Status:');
+    console.log(' Debug Auth Status:');
     console.log('Is Authenticated:', authService.isAuthenticated());
     console.log('Current User:', authService.getCurrentUser());
     console.log('Token:', authService.getToken() ? 'Present' : 'Missing');

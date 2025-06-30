@@ -35,7 +35,7 @@ const QuickActions = () => {
     setLoading(prev => ({ ...prev, [actionId]: true }));
     
     try {
-      // Simulate API call
+      
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       switch (actionId) {

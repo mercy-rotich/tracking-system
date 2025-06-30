@@ -10,7 +10,7 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState(null);
-  const [activeTab, setActiveTab] = useState('view'); // 'view', 'add', 'delete'
+  const [activeTab, setActiveTab] = useState('view'); 
 
   const allRoles = [
     { value: 'ADMIN', label: 'Admin' },
@@ -36,9 +36,9 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
     if (!roleToDelete) return;
 
     setIsLoading(true);
-    console.log('🗑️ Starting role deletion process...');
-    console.log('👤 User ID:', user.id);
-    console.log('🎭 Role to delete:', roleToDelete);
+    console.log(' Starting role deletion process...');
+    console.log(' User ID:', user.id);
+    console.log(' Role to delete:', roleToDelete);
 
     try {
       const token = authService.getToken();
@@ -49,9 +49,9 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
         return;
       }
 
-      // Construct the DELETE endpoint URL based on your API pattern
+      
       const endpoint = `${API_BASE_URL}/users/${user.id}/roles/${roleToDelete}/delete`;
-      console.log('🔗 DELETE endpoint:', endpoint);
+      console.log(' DELETE endpoint:', endpoint);
 
       const response = await fetch(endpoint, {
         method: 'DELETE',
@@ -61,23 +61,22 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
         }
       });
 
-      console.log('📡 DELETE response status:', response.status);
-      console.log('📡 DELETE response ok:', response.ok);
+      console.log(' DELETE response status:', response.status);
+      console.log(' DELETE response ok:', response.ok);
 
       if (response.ok) {
         const result = await response.json();
         console.log('✅ Role deletion successful:', result);
 
-        // Update local state with the response from API
         if (result.data && result.data.roles) {
           setCurrentRoles(result.data.roles);
           
-          // Also call the parent's update function if provided
+          
           if (onUpdateRoles) {
             onUpdateRoles(user.id, result.data.roles);
           }
         } else {
-          // Fallback: update local state by removing the deleted role
+        
           setCurrentRoles(prev => prev.filter(role => role !== roleToDelete));
           
           if (onUpdateRoles) {
@@ -86,15 +85,15 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
           }
         }
 
-        // Reset confirmation state
+        
         setShowDeleteConfirm(false);
         setRoleToDelete(null);
 
-        // Show success message
+        
         const roleLabel = getRoleLabel(roleToDelete);
         alert(`Successfully removed ${roleLabel} role from ${user.firstName} ${user.lastName}`);
 
-        // Also call the legacy onDeleteRole callback if it exists (for backward compatibility)
+      
         if (onDeleteRole) {
           try {
             await onDeleteRole(user.id, roleToDelete);
@@ -141,8 +140,8 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
       
       alert(errorMessage);
       
-      // Log debugging info
-      console.log('🔍 Role deletion debugging info:', {
+   
+      console.log(' Role deletion debugging info:', {
         user: {
           id: user.id,
           email: user.email,
@@ -173,7 +172,7 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
     );
   };
 
-  // Optimized handleSubmit based on API response format
+  
   const handleSubmit = async () => {
     if (newRoles.length === 0) {
       alert('Please select at least one role to assign.');
@@ -181,9 +180,9 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
     }
 
     setIsLoading(true);
-    console.log('🚀 Starting role assignment process...');
-    console.log('👤 User:', { id: user.id, email: user.email, name: `${user.firstName} ${user.lastName}` });
-    console.log('🎭 Roles to assign:', newRoles);
+    console.log(' Starting role assignment process...');
+    console.log(' User:', { id: user.id, email: user.email, name: `${user.firstName} ${user.lastName}` });
+    console.log('Roles to assign:', newRoles);
 
     try {
       const token = authService.getToken();
@@ -194,31 +193,31 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
         return;
       }
 
-      console.log('🔑 Token present:', !!token);
-      console.log('🌐 API Base URL:', API_BASE_URL);
+      console.log('Token present:', !!token);
+      console.log(' API Base URL:', API_BASE_URL);
 
-      // Call the assign-role endpoint for each new role (one at a time)
+      
       const assignmentPromises = newRoles.map(async (role) => {
         const endpoint = `${API_BASE_URL}/users/assign-role`;
         
-        // Try the most likely request formats based on common API patterns
+       
         const requestBodyOptions = [
-          // Most common format - exactly as shown in your original code
+         
           {
             userId: user.id,
             role: role
           },
-          // String userId (sometimes APIs expect string IDs)
+          
           {
             userId: user.id.toString(),
             role: role
           },
-          // Numeric userId (ensure it's a number)
+          
           {
             userId: parseInt(user.id),
             role: role
           },
-          // Different field naming conventions
+          
           {
             user_id: user.id,
             role: role
@@ -237,7 +236,6 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
         
         let lastError = null;
         
-        // Try each format until one works
         for (let i = 0; i < requestBodyOptions.length; i++) {
           const requestBody = requestBodyOptions[i];
           console.log(`🧪 Trying format ${i + 1} for role ${role}:`, requestBody);
@@ -267,12 +265,10 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
               console.error(`❌ Format ${i + 1} failed for ${role}:`, errorData);
               lastError = errorData;
               
-              // If it's an auth error, don't try other formats
               if (response.status === 401 || response.status === 403) {
                 throw new Error(errorData.message || 'Authentication/Authorization failed');
               }
               
-              // Continue to next format
               continue;
             }
           } catch (fetchError) {
@@ -281,32 +277,28 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
             continue;
           }
         }
-        
-        // If we get here, all formats failed for this role
         throw new Error(lastError?.message || `Failed to assign role ${role} - all request formats failed`);
       });
 
-      // Wait for all role assignments to complete
       const results = await Promise.all(assignmentPromises);
       
       console.log('✅ All role assignments completed:', results);
       
-      // Get the updated user data from the last response (they should all be the same user)
+     
       const lastResult = results[results.length - 1];
       const updatedUserData = lastResult?.data;
       
       if (updatedUserData && updatedUserData.roles) {
-        // Update the local state with the response from the API
+       
         setCurrentRoles(updatedUserData.roles);
         
-        // Call the parent's update function with the new roles
         if (onUpdateRoles) {
           onUpdateRoles(user.id, updatedUserData.roles);
         }
         
         console.log('🔄 Updated local state with roles:', updatedUserData.roles);
       } else {
-        // Fallback: update with expected roles if API response doesn't include roles
+        
         const expectedRoles = [...currentRoles, ...newRoles];
         setCurrentRoles(expectedRoles);
         
@@ -317,10 +309,10 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
         console.log('🔄 Updated local state with expected roles:', expectedRoles);
       }
       
-      // Clear new roles selection
+      
       setNewRoles([]);
       
-      // Show success message
+     
       const assignedRoleNames = newRoles.map(role => {
         const roleObj = allRoles.find(r => r.value === role);
         return roleObj ? roleObj.label : role;
@@ -328,13 +320,12 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
       
       alert(`Successfully assigned ${assignedRoleNames} role(s) to ${user.firstName} ${user.lastName}`);
       
-      // Close the modal
       onClose();
       
     } catch (error) {
       console.error('💥 Error assigning roles:', error);
       
-      // Provide more specific error messages
+   
       let errorMessage = 'Failed to assign roles: ';
       
       if (error.message.includes('validation')) {
@@ -353,8 +344,8 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
       
       alert(errorMessage);
       
-      // Log detailed debugging info
-      console.log('🔍 Debugging info:', {
+      
+      console.log(' Debugging info:', {
         user: {
           id: user.id,
           email: user.email,
@@ -436,7 +427,7 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
         </div>
 
         <div className="user-management-modal-body">
-          {/* User Info Header */}
+          
           <div className="user-management-user-info-header">
             <div className="user-management-user-avatar">
               {user.avatar || `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`}
@@ -444,7 +435,7 @@ const ManageRolesModal = ({ user, onClose, onUpdateRoles, onDeleteRole }) => {
             <div className="user-management-user-details">
               <h4>{user.firstName} {user.lastName}</h4>
               <p>{user.email}</p>
-              {/* Add debugging info */}
+              {/*  debugging info */}
               <small style={{ color: '#666', fontSize: '0.75rem' }}>
                 ID: {user.id} | Type: {typeof user.id}
               </small>

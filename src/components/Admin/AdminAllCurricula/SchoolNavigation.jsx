@@ -1,5 +1,5 @@
 import React from 'react';
-import './SchoolNavigation.css'; // Import the external CSS file
+import './SchoolNavigation.css';
 
 const SchoolNavigation = ({
   schools,

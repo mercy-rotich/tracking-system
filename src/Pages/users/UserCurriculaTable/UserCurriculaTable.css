@@ -215,7 +215,7 @@
     }
   }
   
-  /* Scrollbar styling for table container */
+ 
   .user-table-container::-webkit-scrollbar {
     height: 8px;
   }
@@ -234,7 +234,7 @@
     background: var(--user-text-muted);
   }
   
-  /* Loading state */
+
   .user-table-row--loading {
     opacity: 0.6;
     pointer-events: none;

@@ -266,7 +266,7 @@
     transform: none;
   }
   
-  /* Scrollbar styling */
+
   .user-chatbot-messages::-webkit-scrollbar {
     width: 6px;
   }

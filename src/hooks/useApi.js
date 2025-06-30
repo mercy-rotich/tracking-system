@@ -1,7 +1,6 @@
 import { useAuth } from '../context/AuthContext';
 import authService from '../services/authService';
 
-// Custom hook for API calls with automatic token handling
 export const useApi = () => {
   const { logout } = useAuth();
 
@@ -9,7 +8,7 @@ export const useApi = () => {
     try {
       let token = authService.getToken();
       
-      // Check if token needs refresh before making the call
+      
       if (authService.shouldRefreshToken()) {
         token = await authService.refreshToken();
       }
@@ -26,10 +25,10 @@ export const useApi = () => {
       // Handle token expiration
       if (response.status === 401) {
         try {
-          // Try to refresh token
+          
           token = await authService.refreshToken();
           
-          // Retry the original request
+          
           const retryResponse = await fetch(url, {
             ...options,
             headers: {
@@ -41,7 +40,7 @@ export const useApi = () => {
           
           return retryResponse;
         } catch (refreshError) {
-          // Refresh failed, logout user
+          
           logout();
           throw new Error('Session expired. Please login again.');
         }

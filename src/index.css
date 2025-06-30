@@ -3,7 +3,7 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap');
 :root {
-  /* MUST Brand Colors  */
+  
   --must-blue: #1a3a6e;
   --must-blue-dark: #142d5a;
   --must-blue-light: #2d4a7a;
@@ -23,7 +23,7 @@
   --must-teal-dark: #008844;
   --must-teal-light: #33BB77;
   
-  /* Neutral Colors */
+  
   --white: #ffffff;
   --gray-50: #f9fafb;
   --gray-100: #f3f4f6;
@@ -36,7 +36,7 @@
   --gray-800: #1f2937;
   --gray-900: #111827;
   
-  /* System Colors */
+  
   --error: #ef4444;
   --error-light: #fef2f2;
   --error-dark: #dc2626;
@@ -45,7 +45,7 @@
   --warning: #f59e0b;
   --warning-light: #fef3c7;
   
-  /* High Contrast Text Colors */
+ 
   --text-on-green: #ffffff;        
   --text-on-green-light: #0f7a3c;  
   --text-primary: var(--gray-900);
@@ -132,14 +132,12 @@
 
 
 
-/*user global styles*/
 
-/* Import Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-/* CSS Variables */
+
 :root {
-  /* User Theme Colors - Unique from admin */
+ 
   --user-primary-green: #00D666;
   --user-primary-green-dark: #00BF63;
   --user-primary-green-light: #05e65b;
@@ -149,19 +147,17 @@
   --user-blue: #1a3a6e;
   --user-blue-dark: #153458;
   --user-dark: #2D1A12;
-  
-  /* Background colors */
+ 
   --user-bg-primary: #f9fafb;
   --user-bg-secondary: #f3f4f6;
   --user-bg-card: #ffffff;
   
-  /* Text colors */
+ 
   --user-text-primary: #1f2937;
   --user-text-secondary: #6b7280;
   --user-text-muted: #9ca3af;
   --user-white: #ffffff;
   
-  /* Border and shadow */
   --user-border-color: #e5e7eb;
   --user-border-light: #f3f4f6;
   --user-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -169,7 +165,6 @@
   --user-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   --user-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
   
-  /* Gradients */
   --user-gradient-green: linear-gradient(135deg, #00D666 0%, #00BF63 50%, #00a855 100%);
   --user-gradient-gold: linear-gradient(135deg, #f0b41c 0%, #f5c747 50%, #d4940f 100%);
   --user-gradient-blue: linear-gradient(135deg, #1a3a6e 0%, #153458 100%);
@@ -195,7 +190,7 @@
   height: 100%;
 }
 
-/* Utility Classes */
+
 .user-text-primary { color: var(--user-text-primary); }
 .user-text-secondary { color: var(--user-text-secondary); }
 .user-text-muted { color: var(--user-text-muted); }
@@ -203,7 +198,7 @@
 .user-bg-secondary { background: var(--user-bg-secondary); }
 .user-bg-card { background: var(--user-bg-card); }
 
-/* Animation Classes */
+
 .user-fade-in {
   animation: userFadeIn 0.3s ease-in-out;
 }
@@ -216,7 +211,7 @@
   animation: userPulse 2s infinite;
 }
 
-/* Keyframes */
+
 @keyframes userFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -239,13 +234,13 @@
   100% { transform: scale(1); }
 }
 
-/* Focus States */
+
 .user-focus-visible:focus-visible {
   outline: 2px solid var(--user-primary-green);
   outline-offset: 2px;
 }
 
-/* Loading States */
+
 .user-loading {
   opacity: 0.6;
   pointer-events: none;
@@ -262,7 +257,7 @@
   100% { background-position: -200% 0; }
 }
 
-/* High contrast mode */
+
 @media (prefers-contrast: high) {
   :root {
     --user-border-color: #000000;
@@ -270,7 +265,7 @@
   }
 }
 
-/* Reduced motion */
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

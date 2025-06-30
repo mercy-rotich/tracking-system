@@ -6,7 +6,7 @@ body {
     color: #1f2937;
 }
 
-/* Color Variables */
+
 .system-monitoring-must-green { background-color: #00BF63; }
 .system-monitoring-must-green-text { color: #00BF63; }
 .system-monitoring-must-dark { background-color: #2D1A12; }
@@ -15,7 +15,7 @@ body {
 .system-monitoring-must-blue { color: #1a3a6e; }
 .system-monitoring-must-blue-bg { background-color: #1a3a6e; }
 
-/* Main content wrapper */
+
 .system-monitoring-header-content {
     display: flex;
     flex-direction: column;
@@ -62,9 +62,7 @@ body {
     }
 }
 
-/* Status Indicators */
 
-/* Button Styles */
 .system-monitoring-btn {
     display: inline-flex;
     align-items: center;
@@ -107,7 +105,7 @@ body {
     background-color: #153458;
 }
 
-/* Grid Layouts */
+
 .system-monitoring-metrics-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -141,7 +139,7 @@ body {
     }
 }
 
-/* Card Styles */
+
 .system-monitoring-card {
     background: white;
     border-radius: 0.75rem;
@@ -177,7 +175,6 @@ body {
     color: #6b7280;
 }
 
-/* Metric Card Specific */
 .system-monitoring-metric-card {
     text-align: center;
 }
@@ -207,7 +204,7 @@ body {
     color: #ef4444;
 }
 
-/* Progress Bars */
+
 .system-monitoring-progress-bar {
     width: 100%;
     height: 0.5rem;
@@ -235,7 +232,7 @@ body {
     background-color: #ef4444;
 }
 
-/* System Resource Bars */
+
 .system-monitoring-resource-item {
     display: flex;
     align-items: center;
@@ -271,7 +268,7 @@ body {
     font-size: 1.125rem;
 }
 
-/* Alert Items */
+
 .system-monitoring-alert-item {
     display: flex;
     align-items: flex-start;
@@ -324,7 +321,7 @@ body {
     color: #9ca3af;
 }
 
-/* Chart Container */
+
 .system-monitoring-chart-container {
     height: 300px;
     display: flex;
@@ -338,7 +335,7 @@ body {
     text-align: center;
 }
 
-/* Service Status Grid */
+
 .system-monitoring-service-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -384,7 +381,7 @@ body {
     background-color: #f0b41c;
 }
 
-/* Status Indicator Styles */
+
 .system-monitoring-status-indicator {
     display: inline-flex;
     align-items: center;
@@ -410,7 +407,6 @@ body {
     color: #ef4444;
 }
 
-/* Responsive adjustments */
 @media (max-width: 767px) {
     .system-monitoring-dashboard-main-content {
         padding: 1rem 0.5rem;
@@ -433,7 +429,7 @@ body {
     }
 }
 
-/* Animation for real-time updates */
+
 @keyframes system-monitoring-pulse {
     0%, 100% {
         opacity: 1;
@@ -447,7 +443,7 @@ body {
     animation: system-monitoring-pulse 2s infinite;
 }
 
-/* Loading states */
+
 .system-monitoring-skeleton {
     background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
     background-size: 200% 100%;

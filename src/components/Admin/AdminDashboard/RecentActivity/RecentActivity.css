@@ -7,7 +7,7 @@
     padding: 1.5rem;
   }
   
-  /* Activity Header */
+
   .activity-header {
     display: flex;
     align-items: center;
@@ -15,7 +15,7 @@
     margin-bottom: 1rem;
   }
   
-  /* Activity Timeline */
+ 
   .activity-timeline {
     position: relative;
   }
@@ -29,7 +29,7 @@
     background-color: #e5e7eb;
   }
   
-  /* Individual Activity Item */
+ 
   .activity-item {
     position: relative;
     display: flex;
@@ -41,7 +41,7 @@
     margin-bottom: 0;
   }
   
-  /* Activity Icon */
+ 
   .activity-icon {
     flex-shrink: 0;
     width: 2rem;
@@ -59,7 +59,7 @@
     font-size: 0.75rem;
   }
   
-  /* Icon Colors */
+  
   .activity-icon.red {
     background-color: #ef4444;
   }
@@ -76,7 +76,7 @@
     background-color: #3b82f6;
   }
   
-  /* Activity Content */
+ 
   .activity-content {
     margin-left: 1rem;
     flex: 1;

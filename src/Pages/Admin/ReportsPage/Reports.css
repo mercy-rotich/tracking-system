@@ -7,7 +7,7 @@
 .report-must-blue { color: #1a3a6e; }
 .report-must-blue-bg { background-color: #1a3a6e; }
 
-/* Main content wrapper */
+
 .report-dashboard-main-content {
     margin-left: 0;
     padding-top: 5rem; 
@@ -25,13 +25,13 @@
     }
 }
 
-/* Dashboard Overview */
+
 .report-dashboard-overview {
     max-width: 1550px;
     margin: 0 auto;
 }
 
-/* Dashboard Header */
+
 .report-dashboard-header {
     margin-bottom: 2rem;
 }
@@ -67,7 +67,6 @@
     margin: 0;
 }
 
-/* Button Styles */
 .report-btn {
     display: inline-flex;
     align-items: center;
@@ -120,7 +119,7 @@
     background-color: #f9fafb;
 }
 
-/* Filter Section */
+
 .report-filters-section {
     background-color: white;
     border-radius: 0.75rem;
@@ -194,7 +193,6 @@
     flex-wrap: wrap;
 }
 
-/* Report Cards Grid */
 .report-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -377,7 +375,7 @@
     font-weight: 500;
 }
 
-/* Recent Reports Section */
+
 .report-recent-reports {
     background-color: white;
     border-radius: 0.75rem;
@@ -447,7 +445,7 @@
     color: #1a3a6e;
 }
 
-/* Responsive adjustments */
+
 @media (max-width: 767px) {
     .report-dashboard-main-content {
         padding: 5rem 0.5rem 1rem 0.5rem;
@@ -468,7 +466,7 @@
     }
 }
 
-/* Loading state */
+
 .report-loading {
     display: flex;
     align-items: center;

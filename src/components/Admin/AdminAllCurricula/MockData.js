@@ -1,4 +1,4 @@
-// MockData.js - Updated with better department organization
+
 const mockSchools = [
   { id: 'sci', name: 'Computing & Informatics', icon: 'laptop-code' },
   { id: 'sbe', name: 'Business & Economics', icon: 'chart-line' },

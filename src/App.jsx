@@ -1,4 +1,4 @@
-// src/App.jsx - Fixed to use PasswordResetSystem
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
@@ -7,10 +7,9 @@ import { CurriculumProvider } from './context/CurriculumContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './Pages/users/LoginPage/LoginPage';
 
-// Import the unified PasswordResetSystem instead of individual components
 import PasswordResetSystem from './Pages/users/PasswordResetSystem';
 
-// Admin components
+
 import AdminLayout from './components/Admin/AdminLayout';
 import AdminDashboardOverview from './Pages/Admin/AdminDashboardOverview/AdminDashboardOverview';
 import AdminCurriculaPage from './Pages/Admin/AdminCurriculaPage/AdminCurriculaPage';
@@ -18,7 +17,7 @@ import SystemMonitoringPage from './Pages/Admin/SystemMonitoringPage/SystemMonit
 import UserManagementPage from './Pages/Admin/UserManagemetPage/UserManagement';
 import Reports from './Pages/Admin/ReportsPage/Reports';
 
-// User components
+
 import UsersLayout from './components/Users/UsersLayout/UsersLayout';
 import UserDashboard from './Pages/users/UserDashboard/UserDashboard';
 import UserCurricula from './Pages/users/UserCurricula/UserCurricula';

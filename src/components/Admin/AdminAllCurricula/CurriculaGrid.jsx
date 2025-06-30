@@ -14,7 +14,7 @@ const CurriculaGrid = ({
   onReject,
   viewMode = 'card' 
 }) => {
-  // Safety check for curricula prop
+ 
   const safeCurricula = curricula || [];
   
   if (isLoading) {

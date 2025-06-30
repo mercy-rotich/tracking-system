@@ -1,8 +1,7 @@
-// File: src/components/Dashboard/SystemDashboard.jsx
+
 import React, { useState, useEffect } from 'react';
 import './SystemMonitoringPage.css';
 
-// Consolidated Common Components
 const Card = ({ children, className = '', title, icon, status, actions }) => (
   <div className={`system-monitoring-card ${className}`}>
     {(title || icon || status || actions) && (
@@ -47,7 +46,6 @@ const ProgressBar = ({ percentage, type = 'healthy' }) => (
   </div>
 );
 
-// Dashboard Header Component
 const DashboardHeader = ({ onRefresh, isRefreshing }) => (
   <div className="system-monitoring-dashboard-header">
     <div className="system-monitoring-header-content">
@@ -83,7 +81,6 @@ const DashboardHeader = ({ onRefresh, isRefreshing }) => (
   </div>
 );
 
-// Consolidated Metrics Grid
 const MetricsGrid = ({ metrics }) => {
   const metricConfigs = [
     {
@@ -137,7 +134,7 @@ const MetricsGrid = ({ metrics }) => {
   );
 };
 
-// Performance Chart Component
+
 const PerformanceChart = () => (
   <Card
     title="Performance Trends"
@@ -156,7 +153,7 @@ const PerformanceChart = () => (
   </Card>
 );
 
-// Consolidated Alerts Panel
+
 const AlertsPanel = ({ alerts }) => {
   const getIconColor = (type) => {
     switch (type) {
@@ -194,7 +191,7 @@ const AlertsPanel = ({ alerts }) => {
   );
 };
 
-// Consolidated System Resources
+
 const SystemResources = ({ metrics }) => {
   const resources = [
     {
@@ -259,7 +256,7 @@ const SystemResources = ({ metrics }) => {
   );
 };
 
-// Consolidated Service Status
+
 const ServiceStatus = ({ services }) => {
   const onlineCount = services.filter(service => service.status === 'online').length;
   const totalCount = services.length;
@@ -297,7 +294,7 @@ const ServiceStatus = ({ services }) => {
   );
 };
 
-// Database Performance Component
+
 const DatabasePerformance = () => {
   const dbMetrics = [
     {
@@ -343,7 +340,7 @@ const DatabasePerformance = () => {
   );
 };
 
-// Security Monitor Component
+
 const SecurityMonitor = () => {
   const securityMetrics = [
     {
@@ -392,7 +389,7 @@ const SecurityMonitor = () => {
   );
 };
 
-// Custom Hook for System Metrics
+
 const useSystemMetrics = () => {
   const [metrics, setMetrics] = useState({
     uptime: 99.8,

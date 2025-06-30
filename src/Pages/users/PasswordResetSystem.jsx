@@ -1,10 +1,10 @@
-// src/Pages/users/PasswordResetSystem.jsx - Fixed version
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import passwordResetService from '../../services/passwordResetService';
 import { getTokenFromUrl, getTokenFromPath } from '../../utils/validUtils';
 
-// Import your custom components
+
 import ForgotPasswordPage from '../../components/PasswordReset/ForgotPasswordPage';
 import EmailSentSuccess from '../../components/PasswordReset/ EmailSentSuccess'
 import ResetPasswordPage from '../../components/PasswordReset/ResetPasswordPage';
@@ -23,7 +23,7 @@ const PasswordResetSystem = () => {
     
     const finalToken = tokenFromParams || tokenFromQuery || tokenFromPath;
     
-    console.log('🔍 PasswordResetSystem - Token extraction:', {
+    console.log(' PasswordResetSystem - Token extraction:', {
       urlToken: tokenFromParams,
       queryToken: tokenFromQuery,
       pathToken: tokenFromPath,
@@ -36,7 +36,6 @@ const PasswordResetSystem = () => {
   
   const token = getToken();
   
-  // Determine initial step based on current route and token
   const getInitialStep = () => {
     const path = location.pathname;
     
@@ -60,7 +59,7 @@ const PasswordResetSystem = () => {
   
   useEffect(() => {
     if (token && step === 'validating') {
-      console.log('🔍 Validating token:', token);
+      console.log(' Validating token:', token);
       setIsValidatingToken(true);
       
       passwordResetService.validateResetToken(token)

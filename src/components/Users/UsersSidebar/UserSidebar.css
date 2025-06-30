@@ -24,7 +24,7 @@
     transform: translateX(0);
   }
   
-  /* Mobile overlay */
+
   .user-sidebar-overlay {
     position: fixed;
     top: 0;
@@ -36,7 +36,7 @@
     backdrop-filter: blur(4px);
   }
   
-  /* Toggle Button - Refined styling */
+ 
   .user-sidebar-toggle {
     position: absolute;
     top: 1rem;
@@ -109,7 +109,7 @@
   .user-brand-info h1 {
     font-size: 1.125rem;
     font-weight: 700;
-    color: var(--must-gold); /* Gold text on black background */
+    color: var(--must-gold); 
     margin: 0;
     line-height: 1.4;
     font-family: var(--font-heading);
@@ -117,13 +117,12 @@
   
   .user-brand-info p {
     font-size: 0.875rem;
-    color: var(--gray-300); /* Light gray for subtitle */
+    color: var(--gray-300); 
     margin: 0.25rem 0 0 0;
     line-height: 1.3;
     opacity: 0.9;
   }
   
-  /* Navigation Container */
   .user-nav-menu {
     list-style: none;
     padding: 1.5rem 1rem;
@@ -137,7 +136,7 @@
     margin-bottom: 0;
   }
   
-  /* Modern sidebar links - Card-like design on green background */
+ 
   .user-nav-link {
     display: flex;
     align-items: center;
@@ -171,7 +170,6 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
   
-  /* Active link styling - Gold accent on green background */
   .user-nav-link--active {
     background: var(--white);
     border-color: var(--must-gold);
@@ -194,7 +192,7 @@
     transform: none;
   }
   
-  /* Icon styling */
+  
   .user-nav-icon {
     font-size: 1rem;
     min-width: 20px;
@@ -297,14 +295,13 @@
     background: rgba(0, 0, 0, 0.3);
   }
   
-  /* Focus states for accessibility */
   .user-nav-link:focus-visible,
   .user-sidebar-toggle:focus-visible {
     outline: 2px solid var(--must-green);
     outline-offset: 2px;
   }
   
-  /* High contrast mode */
+ 
   @media (prefers-contrast: high) {
     .user-sidebar {
       border-right: 2px solid var(--gray-400);
@@ -320,7 +317,7 @@
     }
   }
   
-  /* Reduced motion */
+ 
   @media (prefers-reduced-motion: reduce) {
     .user-sidebar,
     .user-nav-link,

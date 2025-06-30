@@ -24,7 +24,7 @@ const CurriculaList = ({
     );
   }
 
-  // Safety check for curricula prop
+ 
   const safeCurricula = curricula || [];
 
   const getTimeSince = (dateString) => {
@@ -72,7 +72,7 @@ const CurriculaList = ({
             title="Edit"
           >
             <i className="fas fa-edit"></i>
-            Edit
+           
           </button>
         </div>
       );
@@ -81,13 +81,13 @@ const CurriculaList = ({
     return (
       <div className="curricula-table-actions">
         <button 
-          className="curricula-table-action-btn curricula-table-view"
+          className="curricula-table-action-btn curricula-table-edit"
           onClick={() => onEdit(curriculum)}
           disabled={isLoading}
           title="Edit"
         >
           <i className="fas fa-edit"></i>
-          Edit
+         
         </button>
         <button 
           className="curricula-table-action-btn curricula-table-delete"

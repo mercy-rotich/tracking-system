@@ -1,14 +1,14 @@
-// services/passwordResetService.js - Fixed version
+
 const API_BASE_URL = import.meta.env.VITE_BASE_URL 
 
 export const passwordResetService = {
   initiatePasswordReset: async (email) => {
     try {
-      console.log('🔐 Initiating password reset for email:', email);
-      console.log('🌐 Using API base URL:', API_BASE_URL);
+      console.log(' Initiating password reset for email:', email);
+      console.log(' Using API base URL:', API_BASE_URL);
 
       const endpoint = `${API_BASE_URL}/auth/password/forgot`;
-      console.log('📡 Full endpoint URL:', endpoint);
+      console.log(' Full endpoint URL:', endpoint);
 
      
       const normalizedEmail = email.trim().toLowerCase();
@@ -51,7 +51,7 @@ export const passwordResetService = {
         }
       }
     } catch (error) {
-      console.error('💥 Password reset initiation error:', error);
+      console.error(' Password reset initiation error:', error);
       
       
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
@@ -64,10 +64,10 @@ export const passwordResetService = {
 
   validateResetToken: async (token) => {
     try {
-      console.log('🔍 Validating reset token...');
+      console.log(' Validating reset token...');
 
       const endpoint = `${API_BASE_URL}/auth/password/validate-token?token=${encodeURIComponent(token)}`;
-      console.log('📡 Validation endpoint:', endpoint);
+      console.log(' Validation endpoint:', endpoint);
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -76,10 +76,10 @@ export const passwordResetService = {
         },
       });
 
-      console.log('📡 Token validation response status:', response.status);
+      console.log(' Token validation response status:', response.status);
       
       const data = await response.json();
-      console.log('📦 Validation response:', data);
+      console.log(' Validation response:', data);
       
       if (response.ok) {
         console.log('✅ Reset token is valid');
@@ -100,7 +100,7 @@ export const passwordResetService = {
         }
       }
     } catch (error) {
-      console.error('💥 Token validation error:', error);
+      console.error(' Token validation error:', error);
       
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
         throw new Error('Network error. Please check your internet connection and try again.');
@@ -112,10 +112,10 @@ export const passwordResetService = {
 
   resetPassword: async (token, newPassword) => {
     try {
-      console.log('🔐 Resetting password with token...');
+      console.log(' Resetting password with token...');
 
       const endpoint = `${API_BASE_URL}/auth/password/reset`;
-      console.log('📡 Reset endpoint:', endpoint);
+      console.log(' Reset endpoint:', endpoint);
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -128,10 +128,10 @@ export const passwordResetService = {
         }),
       });
 
-      console.log('📡 Password reset response status:', response.status);
+      console.log(' Password reset response status:', response.status);
       
       const data = await response.json();
-      console.log('📦 Reset response:', data);
+      console.log(' Reset response:', data);
       
       if (response.ok) {
         console.log('✅ Password reset successful');
@@ -160,7 +160,7 @@ export const passwordResetService = {
         }
       }
     } catch (error) {
-      console.error('💥 Password reset error:', error);
+      console.error(' Password reset error:', error);
       
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
         throw new Error('Network error. Please check your internet connection and try again.');
@@ -170,7 +170,7 @@ export const passwordResetService = {
     }
   },
 
-  // Debug helper to test the connection
+ 
   testConnection: async () => {
     try {
       console.log('🔌 Testing API connection...');
@@ -213,11 +213,11 @@ export const debugPasswordResetFlow = {
   testEmailUrlGeneration: async (email) => {
     try {
       const response = await passwordResetService.initiatePasswordReset(email);
-      console.log('🔍 Password reset response:', response);
+      console.log(' Password reset response:', response);
       
       
       if (response.resetUrl || response.url || response.link) {
-        console.log('📧 Generated reset URL:', response.resetUrl || response.url || response.link);
+        console.log(' Generated reset URL:', response.resetUrl || response.url || response.link);
       }
       
       return response;
@@ -234,7 +234,7 @@ export const debugPasswordResetFlow = {
     const search = window.location.search;
     const hash = window.location.hash;
     
-    console.log('🌐 Current URL Analysis:', {
+    console.log(' Current URL Analysis:', {
       fullUrl: currentUrl,
       pathname: pathname,
       search: search,
@@ -262,7 +262,7 @@ export const debugPasswordResetFlow = {
     ];
     
     console.log('✅ Email should link to one of these URLs:', correctUrls);
-    console.log('🔗 Full URLs would be:');
+    console.log(' Full URLs would be:');
     correctUrls.forEach(url => {
       console.log(`   ${window.location.origin}${url}`);
     });
@@ -276,7 +276,7 @@ if (import.meta.env.DEV) {
     debug: debugPasswordResetFlow
   };
   
-  console.log('🛠️ Enhanced debug tools available:');
+  console.log(' Enhanced debug tools available:');
   console.log('  - window.debugPasswordReset.debug.testEmailUrlGeneration("email@test.com")');
   console.log('  - window.debugPasswordReset.debug.analyzeCurrentUrl()');
   console.log('  - window.debugPasswordReset.debug.simulateEmailClick("your-token-here")');
