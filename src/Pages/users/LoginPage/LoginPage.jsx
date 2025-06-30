@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import { Link } from 'react-router-dom';
 import './LoginPage.css';
 import logo_image from '../../../assets/logo.jpg';
 
@@ -212,9 +213,9 @@ const LoginPage = () => {
               </div>
               
               <div className="forgot-password">
-                <a href="/forgot-password" className="forgot-link">
-                  Forgot your password?
-                </a>
+              <Link to="/forgot-password" className="forgot-link">
+  Forgot your password?
+</Link>
               </div>
             </div>
             

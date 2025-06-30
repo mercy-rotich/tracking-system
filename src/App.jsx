@@ -1,4 +1,4 @@
-// src/App.jsx
+// src/App.jsx - Fixed to use PasswordResetSystem
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
@@ -6,9 +6,13 @@ import { ThemeProvider } from './context/ThemeContext';
 import { CurriculumProvider } from './context/CurriculumContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './Pages/users/LoginPage/LoginPage';
+
+// Import the unified PasswordResetSystem instead of individual components
+import PasswordResetSystem from './Pages/users/PasswordResetSystem';
+
+// Admin components
 import AdminLayout from './components/Admin/AdminLayout';
 import AdminDashboardOverview from './Pages/Admin/AdminDashboardOverview/AdminDashboardOverview';
-import PasswordResetSystem from './Pages/users/PasswordResetSystem';
 import AdminCurriculaPage from './Pages/Admin/AdminCurriculaPage/AdminCurriculaPage';
 import SystemMonitoringPage from './Pages/Admin/SystemMonitoringPage/SystemMonitoringPage';
 import UserManagementPage from './Pages/Admin/UserManagemetPage/UserManagement';
@@ -29,9 +33,13 @@ function App() {
           <Router>
             <div className="App">
               <Routes>
+                {/* Password Reset Routes */}
+                <Route path="/forgot-password" element={<PasswordResetSystem />} />
+                <Route path="/reset-password" element={<PasswordResetSystem />} />
+                <Route path="/reset-password/:token" element={<PasswordResetSystem />} />
+                
                 {/* Admin Authentication Routes */}
                 <Route path="/admin/login" element={<LoginPage />} />
-                <Route path="/admin/reset-password" element={<PasswordResetSystem />} />
                 
                 {/* Protected Admin Routes */}
                 <Route path="/admin/*" element={
@@ -39,7 +47,6 @@ function App() {
                     <AdminLayout />
                   </ProtectedRoute>
                 }>
-                  {/* Nested admin routes */}
                   <Route path="dashboard" element={<AdminDashboardOverview />} />
                   <Route path="admin-all-curricula" element={<AdminCurriculaPage />} />
                   <Route path="admin-system-monitoring" element={<SystemMonitoringPage />} />
@@ -47,8 +54,7 @@ function App() {
                   <Route path="admin-reports" element={<Reports />} />
                 </Route>
                 
-                {/* Admin base route redirect */}
-                <Route path="/admin" element={<Navigate to="/admin/dashboard"  />} />
+                <Route path="/admin" element={<Navigate to="/admin/dashboard" />} />
                 
                 {/* User Routes with Layout */}
                 <Route path="/" element={<UsersLayout />}>
@@ -61,9 +67,8 @@ function App() {
                 
                 {/* Legacy redirects */}
                 <Route path="/login" element={<Navigate to="/admin/login" replace />} />
-                <Route path="/reset-password" element={<Navigate to="/admin/reset-password" replace />} />
                 
-                {/* Catch all route - redirect to user dashboard */}
+                {/* Catch all route */}
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>
             </div>
