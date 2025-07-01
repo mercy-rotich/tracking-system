@@ -285,12 +285,12 @@ const AdminCurriculaPage = () => {
           result = await curriculumService.getAllCurriculums(0, 500);
         }
       } else {
-        console.log('📚 Loading all curricula');
+        console.log(' Loading all curricula');
         result = await curriculumService.getAllCurriculums(0, 500);
       }
       
       let filteredCurricula = result.curriculums;
-      console.log('📊 Raw curricula loaded:', filteredCurricula.length);
+      console.log(' Raw curricula loaded:', filteredCurricula.length);
      
       if (selectedDepartment !== 'all') {
         const beforeFilter = filteredCurricula.length;
@@ -301,7 +301,7 @@ const AdminCurriculaPage = () => {
       if (statusFilter !== 'all') {
         const beforeFilter = filteredCurricula.length;
         filteredCurricula = filteredCurricula.filter(curriculum => curriculum.status === statusFilter);
-        console.log(`📋 Status filter applied: ${beforeFilter} → ${filteredCurricula.length}`);
+        console.log(` Status filter applied: ${beforeFilter} → ${filteredCurricula.length}`);
       }
       
       
@@ -325,10 +325,10 @@ const AdminCurriculaPage = () => {
       
       console.log('✅ Loaded curricula for schools view:', filteredCurricula.length);
       if (filteredCurricula.length > 0) {
-        console.log('📄 Sample curriculum data:', filteredCurricula[0]);
+        console.log(' Sample curriculum data:', filteredCurricula[0]);
         const uniqueSchoolIds = [...new Set(filteredCurricula.map(c => c.schoolId))];
-        console.log('🏫 Unique schoolIds in curricula:', uniqueSchoolIds);
-        console.log('🏫 Available schools:', schools.map(s => ({ id: s.id, name: s.name, type: typeof s.id })));
+        console.log(' Unique schoolIds in curricula:', uniqueSchoolIds);
+        console.log(' Available schools:', schools.map(s => ({ id: s.id, name: s.name, type: typeof s.id })));
       }
       
     } catch (error) {
@@ -526,7 +526,7 @@ const AdminCurriculaPage = () => {
 
   
   const getProgramsForSchool = (schoolId) => {
-    console.log(`🔍 Getting programs for school ${schoolId}...`);
+    console.log(` Getting programs for school ${schoolId}...`);
     
     
     const schoolCurricula = schoolsViewData.filter(c => c.schoolId?.toString() === schoolId?.toString());
@@ -543,7 +543,7 @@ const AdminCurriculaPage = () => {
         rejected: programCurricula.filter(c => c.status === 'rejected').length
       };
       
-      console.log(`📋 Program ${program.name}: ${programCurricula.length} curricula`);
+      console.log(` Program ${program.name}: ${programCurricula.length} curricula`);
       
       return {
         ...program,

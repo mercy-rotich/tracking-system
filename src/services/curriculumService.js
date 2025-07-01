@@ -662,7 +662,9 @@ class CurriculumService {
       };
     }
   }
+  
 }
+
 
 
 const curriculumService = new CurriculumService();
