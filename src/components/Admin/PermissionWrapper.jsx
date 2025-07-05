@@ -16,8 +16,7 @@ const PermissionWrapper = ({
   if (isLoading) {
     return (
       <div className="permission-loading">
-        <i className="fas fa-spinner fa-spin"></i>
-        Loading permissions...
+       
       </div>
     );
   }

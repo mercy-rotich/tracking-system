@@ -51,11 +51,18 @@
   }
   
   
-  .user-management-container {
-    max-width: 1550px;
-    margin: 0 auto;
+  .user-management-loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    padding: 3rem 1rem;
+    text-align: center;
+    background-color: var(--gray-50);
+    border-radius: 0.75rem;
+    margin: 2rem 0;
   }
-  
  
   .user-management-btn {
     display: inline-flex;
@@ -146,30 +153,96 @@
   }
   
  
-  .user-management-loading {
-    text-align: center;
-    padding: 2rem;
-    color: var(--gray-600);
-  }
-  
-  .user-management-loading i {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
+  .user-management-loading-spinner i {
+    font-size: 2.5rem;
+    color: var(--must-green);
     animation: user-management-spin 1s linear infinite;
   }
   
+  .user-management-loading-text {
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: var(--gray-700);
+    margin-top: 0.5rem;
+  }
+  
+  .user-management-loading-subtext {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    margin-top: 0.25rem;
+  }
+  
+  
+  .user-management-main-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    width: 100%;
+  }
+  
+ 
   @keyframes user-management-spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
   }
   
- 
+  
+  .user-dashboard-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    width: 100%;
+  }
+  
+  .user-dashboard-loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  }
+  
+  .user-dashboard-loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--gray-600);
+  }
+  
+  .spinner i {
+    font-size: 2rem;
+    color: var(--must-green);
+    animation: user-management-spin 1s linear infinite;
+  }
+  
+  
   @media (max-width: 767px) {
-    .user-management-dashboard-main-content {
-      padding: 5rem 0.5rem 1rem 0.5rem;
+    .user-management-loading-container {
+      min-height: 300px;
+      padding: 2rem 1rem;
+    }
+    
+    .user-management-loading-spinner i {
+      font-size: 2rem;
+    }
+    
+    .user-management-loading-text {
+      font-size: 1rem;
     }
   }
-
 
  
 
@@ -1144,9 +1217,7 @@
   cursor: not-allowed;
 }
 
-.user-management-btn .fa-spinner {
-  animation: user-management-spin 1s linear infinite;
-}
+
 
 
 @media (max-width: 767px) {
