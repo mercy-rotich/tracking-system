@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import logo_image from '../../../assets/logo.jpg'
 import './LandingPageHeader.css'
 
 const LandingPageHeader = () => {
@@ -59,7 +60,7 @@ const LandingPageHeader = () => {
       <div className="landing-header-container">
         <div className="landing-logo-container">
           <div className="landing-logo-img">
-            <i className="fas fa-graduation-cap"></i>
+            <img src={logo_image} alt="school logo" />
           </div>
           <div className="landing-brand-info">
             <h1>Curriculum Tracking System</h1>

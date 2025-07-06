@@ -1,4 +1,5 @@
 import React from 'react';
+import logo_image from '../../../assets/logo.jpg'
 import './LandingPageFooter.css'
 export const LandingPageFooter = () => {
   const footerLinks = [
@@ -20,7 +21,7 @@ export const LandingPageFooter = () => {
       <div className="footer-container">
         <div className="footer-logo">
           <div className="logo-img">
-            <i className="fas fa-graduation-cap"></i>
+            <img src={logo_image} alt="school logo" />
           </div>
           <div>
             <h3>CurricFlow</h3>

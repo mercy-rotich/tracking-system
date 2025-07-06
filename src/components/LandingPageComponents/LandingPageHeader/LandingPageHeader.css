@@ -17,9 +17,16 @@
 .landing-header.landing-on-white-section .landing-brand-info h1 {
     color: var(--white);
 }
+.landing-header.landing-on-white-section .landing-logo-img img{
+background: none;
+border-radius: 50%;
+width: 60px;
+height: 60px;
+}
 
 .landing-header.landing-on-white-section .landing-brand-info p {
     color: rgba(255, 255, 255, 0.9);
+    
 }
 
 .landing-header.landing-on-white-section .landing-nav-link {
@@ -56,18 +63,15 @@
     gap: 1rem;
 }
 
-.landing-logo-img {
-    width: 60px;
-    height: 60px;
-    background: var(--gradient-green);
-    border-radius: 12px;
+.landing-logo-img img {
+    width: 70px;
+    height: 70px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
     font-size: 1.5rem;
     font-weight: bold;
-    box-shadow: var(--shadow-md);
+    
 }
 
 .landing-brand-info h1 {

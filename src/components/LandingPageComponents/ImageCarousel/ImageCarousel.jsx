@@ -1,4 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import must_campus from '../../../assets/image1.jpg'
+import image_4 from '../../../assets/image3.jpeg'
+import image_2 from '../../../assets/image2.jpg'
+import library_image from '../../../assets/library.jpg'
 import '../LandingPageHero/LandingPageHero.css'
 
 export const ImageCarousel = () => {
@@ -12,12 +16,12 @@ export const ImageCarousel = () => {
 
   const images = [
     {
-      src: "https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+      src: must_campus,
       title: "MUST Main Campus",
       description: "Excellence in Education & Technology - Our state-of-the-art facilities provide world-class learning environments."
     },
     {
-      src: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+      src: library_image,
       title: "Modern Library & Learning Center",
       description: "Advanced digital resources and collaborative spaces designed for 21st-century academic excellence."
     },
@@ -32,7 +36,7 @@ export const ImageCarousel = () => {
       description: "A hub for student activities, collaboration, and community building across all academic disciplines."
     },
     {
-      src: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+      src: image_4 ,
       title: "Innovation & Technology Hub",
       description: "Fostering technological advancement and entrepreneurship in science and technology fields."
     }
