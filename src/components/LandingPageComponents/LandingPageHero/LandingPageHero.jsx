@@ -17,7 +17,7 @@ export const LandingPageHero = () => {
   const statsData = [
     { key: 'curricula', target: 247, icon: 'fas fa-book-open', label: 'Total Curricula' },
     { key: 'schools', target: 8, icon: 'fas fa-building', label: 'Academic Schools' },
-    { key: 'programs', target: 24, icon: 'fas fa-graduation-cap', label: 'Programs' },
+    { key: 'programs', target: 24, icon: 'fas fa-graduation-cap', label: 'Academic levels' },
     { key: 'departments', target: 72, icon: 'fas fa-users', label: 'Departments' }
   ];
 

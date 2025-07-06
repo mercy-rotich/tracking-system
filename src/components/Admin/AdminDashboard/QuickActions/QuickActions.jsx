@@ -68,7 +68,7 @@ const QuickActions = () => {
 
   return (
     <div className="quick-actions">
-      <h2 className="section-title">Quick Actions</h2>
+      <h2 className="overview-section-title">Quick Actions</h2>
       <div className="actions-grid">
         {actions.map(action => (
           <button

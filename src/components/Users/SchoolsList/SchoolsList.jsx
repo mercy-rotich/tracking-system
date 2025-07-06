@@ -103,7 +103,7 @@ const SchoolsList = ({ schools, loading = false }) => {
           </div>
           <div className="summary-stat">
             <i className="fas fa-graduation-cap"></i>
-            <span>{schools.reduce((sum, school) => sum + school.programs.length, 0)} Programs</span>
+            <span>{schools.reduce((sum, school) => sum + school.programs.length, 0)} Academic Levels</span>
           </div>
           <div className="summary-stat">
             <i className="fas fa-layer-group"></i>

@@ -53,7 +53,7 @@ const WorkflowBottlenecks = () => {
   return (
     <div className="workflow-bottlenecks">
       <div className="bottlenecks-header">
-        <h2 className="section-title">Workflow Bottlenecks</h2>
+        <h2 className="overview-section-title">Workflow Bottlenecks</h2>
         <button 
           className="btn btn-link"
           onClick={handleViewDetails}

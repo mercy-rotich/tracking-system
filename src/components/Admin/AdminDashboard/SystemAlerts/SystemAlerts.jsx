@@ -59,7 +59,7 @@ const SystemAlerts = () => {
   return (
     <div className="system-alerts">
       <div className="alerts-header">
-        <h2 className="section-title">System Alerts</h2>
+        <h2 className="overview-section-title">System Alerts</h2>
         <span className="alert-badge">
           {activeAlertsCount} Active
         </span>

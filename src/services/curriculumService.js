@@ -166,28 +166,28 @@ getSchoolIcon(schoolName) {
     return this.transformCurriculumData(result.data);
   }
 
-  async getCurriculumsBySchool(schoolId, page = 0, size = 20) {
+  async getCurriculumsBySchool(schoolId, page = 0, size = 10) {
     const result = await this.makeRequest(`/users/curriculums/school/${schoolId}`, {
       params: { page, size }
     });
     return this.processResponse(result, page, size);
   }
 
-  async getCurriculumsByDepartment(departmentId, page = 0, size = 20) {
+  async getCurriculumsByDepartment(departmentId, page = 0, size = 10) {
     const result = await this.makeRequest(`/users/curriculums/department/${departmentId}`, {
       params: { page, size }
     });
     return this.processResponse(result, page, size);
   }
 
-  async getCurriculumsByAcademicLevel(academicLevelId, page = 0, size = 20) {
+  async getCurriculumsByAcademicLevel(academicLevelId, page = 0, size = 10) {
     const result = await this.makeRequest(`/users/curriculums/academic-level/${academicLevelId}`, {
       params: { page, size }
     });
     return this.processResponse(result, page, size);
   }
 
-  async searchCurriculums(searchCriteria, page = 0, size = 20) {
+  async searchCurriculums(searchCriteria, page = 0, size = 10) {
     const result = await this.makeRequest('/users/curriculums/search', {
       method: 'POST',
       body: searchCriteria,
@@ -197,7 +197,7 @@ getSchoolIcon(schoolName) {
   }
 
    // Search by name with fallback
-   async searchByName(name, page = 0, size = 20) {
+   async searchByName(name, page = 0, size = 10) {
     if (!name?.trim()) {
       return await this.getAllCurriculums(page, size);
     }
@@ -236,7 +236,7 @@ getSchoolIcon(schoolName) {
     }
   }
 
-  async searchByCode(code, page = 0, size = 20) {
+  async searchByCode(code, page = 0, size = 10) {
     if (!code?.trim()) {
       return await this.getAllCurriculums(page, size);
     }

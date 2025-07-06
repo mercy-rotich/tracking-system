@@ -26,9 +26,9 @@ const UserDashboardCards = ({ totalCurricula, totalSchools, totalPrograms, total
       id: 'programs',
       icon: 'fas fa-graduation-cap',
       value: totalPrograms,
-      label: 'Programs',
-      trend: '+3 new programs',
-      trendIcon: 'fas fa-arrow-up',
+      label: 'Academic Levels',
+      trend: '',
+      trendIcon: '',
       gradient: 'user-gradient-blue'
     },
     {

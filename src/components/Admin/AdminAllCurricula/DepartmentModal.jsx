@@ -1,4 +1,4 @@
-// DepartmentModal.js - Complete modal for department management
+
 import React, { useState, useEffect } from 'react';
 
 const DepartmentModal = ({ 
@@ -40,7 +40,7 @@ const DepartmentModal = ({
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Clear error when user starts typing
+    
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }

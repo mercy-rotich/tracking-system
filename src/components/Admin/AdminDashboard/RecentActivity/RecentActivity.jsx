@@ -50,7 +50,7 @@ const RecentActivity = () => {
   return (
     <div className="recent-activity">
       <div className="activity-header">
-        <h2 className="section-title">Recent System Activity</h2>
+        <h2 className="overview-section-title">Recent System Activity</h2>
         <button 
           className="btn btn-link"
           onClick={handleViewAll}
