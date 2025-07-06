@@ -1,0 +1,157 @@
+import React, { useState, useEffect, useRef } from 'react';
+import '../LandingPageHero/LandingPageHero.css'
+
+export const ImageCarousel = () => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  
+  const autoScrollInterval = 4000;
+  const progressInterval = useRef(null);
+  const autoScrollTimer = useRef(null);
+
+  const images = [
+    {
+      src: "https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+      title: "MUST Main Campus",
+      description: "Excellence in Education & Technology - Our state-of-the-art facilities provide world-class learning environments."
+    },
+    {
+      src: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+      title: "Modern Library & Learning Center",
+      description: "Advanced digital resources and collaborative spaces designed for 21st-century academic excellence."
+    },
+    {
+      src: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+      title: "Cutting-Edge Science Laboratories",
+      description: "Equipped with the latest technology to support innovative research and hands-on learning experiences."
+    },
+    {
+      src: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+      title: "Vibrant Student Center",
+      description: "A hub for student activities, collaboration, and community building across all academic disciplines."
+    },
+    {
+      src: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+      title: "Innovation & Technology Hub",
+      description: "Fostering technological advancement and entrepreneurship in science and technology fields."
+    }
+  ];
+
+  const goToSlide = (index) => {
+    setCurrentIndex(index);
+    setProgress(0);
+  };
+
+  const nextSlide = () => {
+    const nextIndex = (currentIndex + 1) % images.length;
+    goToSlide(nextIndex);
+  };
+
+  const startAutoScroll = () => {
+    if (isPaused) return;
+    
+    autoScrollTimer.current = setTimeout(() => {
+      nextSlide();
+    }, autoScrollInterval);
+  };
+
+  const startProgressBar = () => {
+    if (isPaused) return;
+    
+    const increment = 100 / (autoScrollInterval / 50); 
+    
+    progressInterval.current = setInterval(() => {
+      setProgress(prev => {
+        const newProgress = prev + increment;
+        if (newProgress >= 100) {
+          clearInterval(progressInterval.current);
+          return 100;
+        }
+        return newProgress;
+      });
+    }, 50);
+  };
+
+  const resetTimers = () => {
+    if (autoScrollTimer.current) {
+      clearTimeout(autoScrollTimer.current);
+    }
+    if (progressInterval.current) {
+      clearInterval(progressInterval.current);
+    }
+    setProgress(0);
+  };
+
+  const pauseCarousel = () => {
+    setIsPaused(true);
+    resetTimers();
+  };
+
+  const resumeCarousel = () => {
+    setIsPaused(false);
+    resetTimers();
+    startAutoScroll();
+    startProgressBar();
+  };
+
+  useEffect(() => {
+    startAutoScroll();
+    startProgressBar();
+    
+    return () => resetTimers();
+  }, [currentIndex, isPaused]);
+
+  const handleDotClick = (index) => {
+    goToSlide(index);
+    resetTimers();
+    if (!isPaused) {
+      startAutoScroll();
+      startProgressBar();
+    }
+  };
+
+  const currentImage = images[currentIndex];
+
+  return (
+    <div 
+      className="landing-hero-image"
+      onMouseEnter={pauseCarousel}
+      onMouseLeave={resumeCarousel}
+    >
+      <div className="landing-main-image">
+        <img 
+          src={currentImage.src} 
+          alt={currentImage.title}
+          style={{ 
+            opacity: 1,
+            transition: 'opacity 0.3s ease-in-out'
+          }}
+        />
+      </div>
+      
+      <div className="landing-carousel-controls">
+        <div 
+          className="landing-progress-bar" 
+          style={{ width: `${progress}%` }}
+        ></div>
+        
+        <div className="landing-image-info">
+          <div className="landing-image-title">{currentImage.title}</div>
+          <div className="landing-image-description">{currentImage.description}</div>
+        </div>
+        
+        <div className="landing-carousel-nav">
+          {images.map((_, index) => (
+            <button
+              key={index}
+              className={`landing-carousel-dot ${index === currentIndex ? 'active' : ''}`}
+              onClick={() => handleDotClick(index)}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};

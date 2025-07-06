@@ -8,10 +8,10 @@ const UserSidebar = ({ isCollapsed, isMobileOpen, onToggle, onMobileToggle }) =>
   const location = useLocation();
 
   const navigationItems = [
-    { path: '/dashboard', icon: 'fas fa-home', label: 'Dashboard' },
-    { path: '/curricula', icon: 'fas fa-file-alt', label: 'Curricula' },
-    { path: '/analytics', icon: 'fas fa-chart-bar', label: 'Analytics' },
-    { path: '/settings', icon: 'fas fa-cog', label: 'Settings' },
+    { path: '/app/dashboard', icon: 'fas fa-home', label: 'Dashboard' },
+    { path: '/app/curricula', icon: 'fas fa-file-alt', label: 'Curricula' },
+    { path: '/app/analytics', icon: 'fas fa-chart-bar', label: 'Analytics' },
+    { path: '/app/settings', icon: 'fas fa-cog', label: 'Settings' },
   ];
 
   const handleNavigation = (path) => {

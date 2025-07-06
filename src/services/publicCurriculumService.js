@@ -2,7 +2,7 @@
 class PublicCurriculumService {
     constructor() {
       this.baseURL = import.meta.env.VITE_BASE_URL;
-      console.log('🌐 Public Curriculum Service initialized with base URL:', this.baseURL);
+      console.log(' Public Curriculum Service initialized with base URL:', this.baseURL);
     }
   
     
