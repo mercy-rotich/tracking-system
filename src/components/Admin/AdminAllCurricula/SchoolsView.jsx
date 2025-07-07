@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { getStatusBadge } from '../../../components/Admin/AdminAllCurricula/BadgeComponents';
 import Pagination from './Pagination';
@@ -8,7 +7,7 @@ const SchoolsView = ({
   programs,
   isLoading,
   
-
+  // Filters
   searchTerm,
   selectedSchool,
   selectedProgram,
@@ -23,8 +22,10 @@ const SchoolsView = ({
   onReject,
   onRefresh,
   
-  // Service
-  curriculumService
+  
+  curriculumService,
+  getSchoolName,
+  findSchool
 }) => {
   
   const [expandedSchools, setExpandedSchools] = useState(new Set());
@@ -34,6 +35,7 @@ const SchoolsView = ({
   const [schoolsViewData, setSchoolsViewData] = useState([]);
   const [programViewData, setProgramViewData] = useState([]);
   const [isLoadingSchoolsData, setIsLoadingSchoolsData] = useState(false);
+  const [schoolMapping, setSchoolMapping] = useState(new Map());
   
   // Program view pagination
   const [programCurrentPage, setProgramCurrentPage] = useState(0);
@@ -45,16 +47,77 @@ const SchoolsView = ({
 
   
   useEffect(() => {
+    if (schools.length > 0 && schoolsViewData.length > 0) {
+      createSchoolMapping();
+    }
+  }, [schools, schoolsViewData]);
+
+  
+  useEffect(() => {
     if (!showingCurriculaFor) {
       loadSchoolsViewData();
     }
   }, [searchTerm, selectedSchool, selectedProgram, selectedDepartment, statusFilter, sortBy]);
 
+  const createSchoolMapping = () => {
+    const mapping = new Map();
+    const curriculumSchools = new Map();
+    
+    schoolsViewData.forEach(curriculum => {
+      if (curriculum.schoolId && curriculum.schoolName) {
+        curriculumSchools.set(curriculum.schoolId, curriculum.schoolName);
+      }
+    });
+    
+    schools.forEach(apiSchool => {
+      let mappedTo = null;
+      
+      // Direct ID match
+      if (curriculumSchools.has(apiSchool.id)) {
+        mappedTo = apiSchool.id;
+      }
+      // Code match
+      else if (apiSchool.code && curriculumSchools.has(apiSchool.code)) {
+        mappedTo = apiSchool.code;
+      }
+      // Exact name match
+      else {
+        for (const [id, name] of curriculumSchools.entries()) {
+          if (name === apiSchool.name) {
+            mappedTo = id;
+            break;
+          }
+        }
+      }
+      
+      
+      if (!mappedTo) {
+        for (const [id, name] of curriculumSchools.entries()) {
+          if (name && apiSchool.name) {
+            const nameWords = name.toLowerCase().split(' ').filter(w => w.length > 2);
+            const apiWords = apiSchool.name.toLowerCase().split(' ').filter(w => w.length > 2);
+            const commonWords = nameWords.filter(word => 
+              apiWords.some(apiWord => word.includes(apiWord) || apiWord.includes(word))
+            );
+            
+            if (commonWords.length >= Math.min(nameWords.length, apiWords.length) * 0.5) {
+              mappedTo = id;
+              break;
+            }
+          }
+        }
+      }
+      
+      mapping.set(apiSchool.id, mappedTo);
+    });
+    
+    setSchoolMapping(mapping);
+    return mapping;
+  };
+
   const loadSchoolsViewData = async () => {
     setIsLoadingSchoolsData(true);
     try {
-      console.log('🔄 Loading data for schools view...');
-      
       let result;
       
       if (searchTerm && searchTerm.length >= 2) {
@@ -83,7 +146,7 @@ const SchoolsView = ({
         filteredCurricula = filteredCurricula.filter(curriculum => curriculum.status === statusFilter);
       }
       
-      
+      // Apply sorting
       filteredCurricula.sort((a, b) => {
         switch (sortBy) {
           case 'newest':
@@ -102,18 +165,100 @@ const SchoolsView = ({
       setSchoolsViewData(filteredCurricula);
       
     } catch (error) {
-      console.error('❌ Error loading schools view data:', error);
+      console.error('Error loading schools view data:', error);
       setSchoolsViewData([]);
     } finally {
       setIsLoadingSchoolsData(false);
     }
   };
 
+  const getSchoolStatsEnhanced = (schoolId) => {
+    const school = schools.find(s => s.id === schoolId);
+    let schoolCurricula = [];
+    
+    
+    const mappedId = schoolMapping.get(schoolId);
+    if (mappedId) {
+      schoolCurricula = schoolsViewData.filter(c => c.schoolId?.toString() === mappedId?.toString());
+    }
+    
+  
+    if (schoolCurricula.length === 0) {
+      // Direct ID match
+      schoolCurricula = schoolsViewData.filter(c => c.schoolId?.toString() === schoolId?.toString());
+      
+      // Code match
+      if (schoolCurricula.length === 0 && school?.code) {
+        schoolCurricula = schoolsViewData.filter(c => c.schoolId?.toString() === school.code?.toString());
+      }
+      
+      // Exact name match
+      if (schoolCurricula.length === 0 && school?.name) {
+        schoolCurricula = schoolsViewData.filter(c => c.schoolName === school.name);
+      }
+      
+      
+      if (schoolCurricula.length === 0 && school?.name) {
+        const schoolKeywords = school.name.toLowerCase().split(' ').filter(word => 
+          !['school', 'of', 'and', 'the', 'for', 'in'].includes(word) && word.length > 2
+        );
+        
+        schoolCurricula = schoolsViewData.filter(c => {
+          if (!c.schoolName) return false;
+          const curriculumSchoolLower = c.schoolName.toLowerCase();
+          return schoolKeywords.some(keyword => curriculumSchoolLower.includes(keyword));
+        });
+      }
+    }
+    
+    const departments = [...new Set(schoolCurricula.map(c => c.department))].filter(Boolean);
+    
+    const statusStats = {
+      approved: schoolCurricula.filter(c => c.status === 'approved').length,
+      pending: schoolCurricula.filter(c => c.status === 'pending').length,
+      draft: schoolCurricula.filter(c => c.status === 'draft').length,
+      rejected: schoolCurricula.filter(c => c.status === 'rejected').length
+    };
+    
+    return {
+      total: schoolCurricula.length,
+      departments: departments.length,
+      programs: getProgramsForSchoolEnhanced(schoolId, schoolCurricula).length,
+      statusStats,
+      matchedCurricula: schoolCurricula
+    };
+  };
+
+  const getProgramsForSchoolEnhanced = (schoolId, schoolCurricula = null) => {
+    if (!schoolCurricula) {
+      const stats = getSchoolStatsEnhanced(schoolId);
+      schoolCurricula = stats.matchedCurricula || [];
+    }
+    
+    return programs.map(program => {
+      const programCurricula = schoolCurricula.filter(c => c.programId === program.id);
+      const departments = [...new Set(programCurricula.map(c => c.department))].filter(Boolean);
+      
+      const statusStats = {
+        approved: programCurricula.filter(c => c.status === 'approved').length,
+        pending: programCurricula.filter(c => c.status === 'pending').length,
+        draft: programCurricula.filter(c => c.status === 'draft').length,
+        rejected: programCurricula.filter(c => c.status === 'rejected').length
+      };
+      
+      return {
+        ...program,
+        count: programCurricula.length,
+        departments: departments.length,
+        statusStats
+      };
+    }).filter(program => program.count > 0);
+  };
+
   const loadProgramViewData = async (schoolId, programId, page = 0) => {
     try {
-      console.log(`🔄 Loading curricula for school ${schoolId}, program ${programId}, page ${page + 1}...`);
-      
-      const result = await curriculumService.getCurriculumsBySchool(schoolId, page, programPageSize);
+      const mappedId = schoolMapping.get(schoolId) || schoolId;
+      const result = await curriculumService.getCurriculumsBySchool(mappedId, page, programPageSize);
       
       let filteredCurricula = result.curriculums.filter(c => c.programId === programId);
       
@@ -125,7 +270,7 @@ const SchoolsView = ({
         filteredCurricula = filteredCurricula.filter(curriculum => curriculum.status === statusFilter);
       }
       
-    
+      
       filteredCurricula.sort((a, b) => {
         switch (sortBy) {
           case 'newest':
@@ -143,7 +288,6 @@ const SchoolsView = ({
       
       setProgramViewData(filteredCurricula);
       
-      
       const totalProgramCurricula = result.pagination?.totalElements || filteredCurricula.length;
       const estimatedProgramTotal = Math.ceil(totalProgramCurricula * (filteredCurricula.length / Math.max(result.curriculums.length, 1)));
       
@@ -153,7 +297,7 @@ const SchoolsView = ({
       setProgramHasPrevious(page > 0);
       
     } catch (error) {
-      console.error('❌ Error loading program view data:', error);
+      console.error('Error loading program view data:', error);
       setProgramViewData([]);
     }
   };
@@ -174,7 +318,7 @@ const SchoolsView = ({
   };
 
   const handleProgramClick = async (schoolId, programId) => {
-    const school = schools.find(s => s.id === schoolId);
+    const school = findSchool ? findSchool(schoolId) : schools.find(s => s.id === schoolId);
     const program = programs.find(p => p.id === programId);
     
     setShowingCurriculaFor({ schoolId, programId });
@@ -183,7 +327,7 @@ const SchoolsView = ({
     
     setNavigationPath([
       { label: 'Schools', action: () => handleBackToSchools() },
-      { label: school?.name || 'Unknown School', action: () => handleBackToSchools() },
+      { label: school?.name || getSchoolName(schoolId) || 'Unknown School', action: () => handleBackToSchools() },
       { label: program?.name || 'Unknown Program', action: null }
     ]);
     
@@ -198,60 +342,15 @@ const SchoolsView = ({
     await loadSchoolsViewData();
   };
 
-  const getSchoolStats = (schoolId) => {
-    const schoolCurricula = schoolsViewData.filter(c => 
-      c.schoolId?.toString() === schoolId?.toString()
-    );
-    
-    const departments = [...new Set(schoolCurricula.map(c => c.department))];
-    
-    const statusStats = {
-      approved: schoolCurricula.filter(c => c.status === 'approved').length,
-      pending: schoolCurricula.filter(c => c.status === 'pending').length,
-      draft: schoolCurricula.filter(c => c.status === 'draft').length,
-      rejected: schoolCurricula.filter(c => c.status === 'rejected').length
-    };
-    
-    return {
-      total: schoolCurricula.length,
-      departments: departments.length,
-      programs: getProgramsForSchool(schoolId).length,
-      statusStats
-    };
-  };
-
-  const getProgramsForSchool = (schoolId) => {
-    const schoolCurricula = schoolsViewData.filter(c => 
-      c.schoolId?.toString() === schoolId?.toString()
-    );
-    
-    return programs.map(program => {
-      const programCurricula = schoolCurricula.filter(c => c.programId === program.id);
-      const departments = [...new Set(programCurricula.map(c => c.department))];
-      
-      const statusStats = {
-        approved: programCurricula.filter(c => c.status === 'approved').length,
-        pending: programCurricula.filter(c => c.status === 'pending').length,
-        draft: programCurricula.filter(c => c.status === 'draft').length,
-        rejected: programCurricula.filter(c => c.status === 'rejected').length
-      };
-      
-      return {
-        ...program,
-        count: programCurricula.length,
-        departments: departments.length,
-        statusStats
-      };
-    }).filter(program => program.count > 0);
-  };
-
   const getCurriculaForProgram = (schoolId, programId) => {
     if (showingCurriculaFor) {
       return programViewData;
     }
-    return schoolsViewData.filter(c => 
-      c.schoolId?.toString() === schoolId?.toString() && c.programId === programId
-    );
+    
+    const stats = getSchoolStatsEnhanced(schoolId);
+    const schoolCurricula = stats.matchedCurricula || [];
+    
+    return schoolCurricula.filter(c => c.programId === programId);
   };
 
   // Program pagination handlers
@@ -380,10 +479,10 @@ const SchoolsView = ({
     );
   };
 
-  
+  //  program view rendering
   if (showingCurriculaFor) {
     const programCurricula = getCurriculaForProgram(showingCurriculaFor.schoolId, showingCurriculaFor.programId);
-    const school = schools.find(s => s.id === showingCurriculaFor.schoolId);
+    const school = findSchool ? findSchool(showingCurriculaFor.schoolId) : schools.find(s => s.id === showingCurriculaFor.schoolId);
     const program = programs.find(p => p.id === showingCurriculaFor.programId);
 
     if (isLoading) {
@@ -407,7 +506,7 @@ const SchoolsView = ({
           <div className="curricula-table-program-header">
             <div className="curricula-table-program-info">
               <h3 className="curricula-table-program-title">
-                {program?.name} - {school?.name}
+                {program?.name} - {school?.name || getSchoolName(showingCurriculaFor.schoolId)}
               </h3>
               <div className="curricula-table-program-actions">
                 <button 
@@ -431,7 +530,7 @@ const SchoolsView = ({
 
     // Group curricula by department
     const groupedByDepartment = programCurricula.reduce((acc, curriculum) => {
-      const department = curriculum.department;
+      const department = curriculum.department || 'Unknown Department';
       if (!acc[department]) {
         acc[department] = [];
       }
@@ -447,7 +546,7 @@ const SchoolsView = ({
         <div className="curricula-table-program-header">
           <div className="curricula-table-program-info">
             <h3 className="curricula-table-program-title">
-              {program?.name} - {school?.name}
+              {program?.name} - {school?.name || getSchoolName(showingCurriculaFor.schoolId)}
             </h3>
             <p className="curricula-table-program-subtitle">
               {programCurricula.length} curricula across {departmentNames.length} departments
@@ -473,7 +572,7 @@ const SchoolsView = ({
                 <div className="admin-department-header">
                   <div className="admin-department-info">
                     <i className="fas fa-layer-group admin-department-icon"></i>
-                    <span className="admin-department-name">{departmentName}</span>
+                    <span className="admin-department-name">{departmentName} department</span>
                   </div>
                   <div className="admin-department-count">
                     {departmentCurricula.length}
@@ -540,6 +639,7 @@ const SchoolsView = ({
     );
   }
 
+  // Handle loading state
   if (isLoadingSchoolsData) {
     return (
       <div className="content-section">
@@ -551,6 +651,7 @@ const SchoolsView = ({
     );
   }
 
+  // Handle empty schools state
   if (!schools || schools.length === 0) {
     return (
       <div className="empty-state">
@@ -569,13 +670,13 @@ const SchoolsView = ({
     );
   }
 
-  
+  // Handle empty curricula data state
   if (!schoolsViewData || schoolsViewData.length === 0) {
     return (
       <div className="empty-state">
         <i className="fas fa-book-open"></i>
         <h3>No curricula data</h3>
-        <p>No curricula found or data is still loading.</p>
+        <p>No curricula found with current filters.</p>
         <button 
           className="btn btn-primary" 
           onClick={() => loadSchoolsViewData()}
@@ -590,15 +691,16 @@ const SchoolsView = ({
 
 
   const schoolsWithData = schools.map(school => {
-    const stats = getSchoolStats(school.id);
+    const stats = getSchoolStatsEnhanced(school.id);
     return { ...school, stats };
   }).filter(school => school.stats.total > 0);
 
+  // Handle empty filtered schools state
   if (schoolsWithData.length === 0) {
     return (
       <div className="empty-state">
         <i className="fas fa-university"></i>
-        <h3>No schools found</h3>
+        <h3>No schools found with curricula</h3>
         <p>No schools have curricula matching your current filters.</p>
         <button 
           className="btn btn-primary" 
@@ -612,7 +714,7 @@ const SchoolsView = ({
     );
   }
 
-  
+  // Main schools view rendering
   return (
     <div className="admin-schools-section">
       <div className="admin-section-header">
@@ -621,13 +723,13 @@ const SchoolsView = ({
           Academic Schools
         </h2>
         <span className="admin-schools-count">
-          {schoolsWithData.length} schools found
+          {schoolsWithData.length} schools found with curricula
         </span>
       </div>
       
       <div className="admin-schools-list">
         {schoolsWithData.map((school) => {
-          const schoolPrograms = getProgramsForSchool(school.id);
+          const schoolPrograms = getProgramsForSchoolEnhanced(school.id, school.stats.matchedCurricula);
           const isExpanded = expandedSchools.has(school.id);
 
           return (
@@ -638,10 +740,13 @@ const SchoolsView = ({
               >
                 <div className="admin-school-info">
                   <div className="admin-school-icon">
-                    <i className="fas fa-university"></i>
+                    <i className={`fas fa-${school.icon || 'university'}`}></i>
                   </div>
                   <div className="admin-school-details">
                     <h3>{school.name}</h3>
+                    {school.code && (
+                      <span className="admin-school-code">{school.code}</span>
+                    )}
                     <div className="admin-school-meta">
                       {school.stats.programs} Academic levels • {school.stats.departments} departments • {school.stats.total} curricula
                     </div>

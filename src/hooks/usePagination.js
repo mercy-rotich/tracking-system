@@ -9,19 +9,18 @@ export const usePagination = (initialPageSize = 20) => {
   const [hasPrevious, setHasPrevious] = useState(false);
 
   const updatePagination = (paginationData) => {
-    console.log('🔄 Updating pagination with:', paginationData);
     if (paginationData) {
       setTotalElements(paginationData.totalElements || 0);
       setTotalPages(paginationData.totalPages || 0);
       setHasNext(paginationData.hasNext || false);
       setHasPrevious(paginationData.hasPrevious || false);
       
-      
+      // Update current page if provided
       if (paginationData.currentPage !== undefined) {
         setCurrentPage(paginationData.currentPage);
       }
       
-    
+      // Update page size if provided
       if (paginationData.pageSize !== undefined) {
         setPageSize(paginationData.pageSize);
       }
@@ -29,39 +28,39 @@ export const usePagination = (initialPageSize = 20) => {
   };
 
   const goToPage = (page) => {
-    console.log('🔄 Going to page:', page);
     if (page >= 0 && page < totalPages) {
       setCurrentPage(page);
     }
   };
 
   const goToPreviousPage = () => {
-    console.log('🔄 Going to previous page, current:', currentPage);
     if (hasPrevious && currentPage > 0) {
       setCurrentPage(currentPage - 1);
     }
   };
 
   const goToNextPage = () => {
-    console.log('🔄 Going to next page, current:', currentPage);
     if (hasNext && currentPage < totalPages - 1) {
       setCurrentPage(currentPage + 1);
     }
   };
 
   const changePageSize = (newSize) => {
-    console.log('🔄 Changing page size to:', newSize);
     setPageSize(newSize);
-    setCurrentPage(0); 
+    setCurrentPage(0); // Reset to first page when page size changes
   };
 
   const resetPagination = () => {
-    console.log('🔄 Resetting pagination');
     setCurrentPage(0);
     setTotalElements(0);
     setTotalPages(0);
     setHasNext(false);
     setHasPrevious(false);
+  };
+
+  // Force reset to first page (useful when filters change)
+  const resetToFirstPage = () => {
+    setCurrentPage(0);
   };
 
   return {
@@ -78,6 +77,7 @@ export const usePagination = (initialPageSize = 20) => {
     goToPreviousPage,
     goToNextPage,
     changePageSize,
-    resetPagination
+    resetPagination,
+    resetToFirstPage
   };
 };

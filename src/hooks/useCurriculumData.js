@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import curriculumService from '../services/curriculumService';
 
@@ -23,7 +22,9 @@ export const useCurriculumData = () => {
   const loadSchoolsAndDepartments = async () => {
     try {
       console.log('🔄 Loading schools and departments...');
-      const schoolsData = await curriculumService.getSchoolsFromCurriculums();
+      
+      
+      const schoolsData = await curriculumService.getAllSchoolsEnhanced();
       const departmentsData = await curriculumService.getDepartmentsFromCurriculums();
       
       console.log('✅ Schools loaded:', schoolsData);
@@ -31,14 +32,20 @@ export const useCurriculumData = () => {
       
       setSchools(schoolsData);
       setDepartments(departmentsData);
+      
+      return { schools: schoolsData, departments: departmentsData };
     } catch (error) {
       console.error('❌ Error loading schools/departments:', error);
+      
+      setSchools([]);
+      setDepartments([]);
       throw error;
     }
   };
 
   const loadStatsOverview = async () => {
     try {
+      console.log('🔄 Loading stats overview...');
       const result = await curriculumService.getAllCurriculums(0, 200);
       const totalFromApi = result.pagination?.totalElements || result.curriculums.length;
       
@@ -56,6 +63,7 @@ export const useCurriculumData = () => {
         rejected: statusCounts.rejected || 0
       };
       
+    
       if (sampleSize < totalFromApi && sampleSize > 50) {
         const ratio = totalFromApi / sampleSize;
         finalStats = {
@@ -68,8 +76,14 @@ export const useCurriculumData = () => {
       }
       
       setStats(finalStats);
+      console.log('✅ Stats loaded:', finalStats);
+      return finalStats;
     } catch (error) {
       console.error('❌ Error loading stats:', error);
+      
+      const defaultStats = { total: 0, approved: 0, pending: 0, draft: 0, rejected: 0 };
+      setStats(defaultStats);
+      return defaultStats;
     }
   };
 
@@ -86,8 +100,10 @@ export const useCurriculumData = () => {
     setIsLoading(true);
     try {
       console.log(`🔄 Loading page ${currentPage + 1} of curricula...`);
+      console.log('Filters:', { searchTerm, selectedSchool, selectedProgram, selectedDepartment, statusFilter, sortBy });
       
       let result;
+      
       
       if (searchTerm && searchTerm.length >= 2) {
         result = await curriculumService.searchByName(searchTerm, currentPage, pageSize);
@@ -107,13 +123,19 @@ export const useCurriculumData = () => {
       
       let filteredCurricula = result.curriculums;
       
+    
       if (selectedDepartment !== 'all') {
-        filteredCurricula = filteredCurricula.filter(curriculum => curriculum.department === selectedDepartment);
+        filteredCurricula = filteredCurricula.filter(curriculum => 
+          curriculum.department === selectedDepartment
+        );
       }
       
       if (statusFilter !== 'all') {
-        filteredCurricula = filteredCurricula.filter(curriculum => curriculum.status === statusFilter);
+        filteredCurricula = filteredCurricula.filter(curriculum => 
+          curriculum.status === statusFilter
+        );
       }
+      
       
       filteredCurricula.sort((a, b) => {
         switch (sortBy) {
@@ -149,10 +171,47 @@ export const useCurriculumData = () => {
   };
 
   const refreshData = async () => {
-    await Promise.all([
-      loadStatsOverview(),
-      loadSchoolsAndDepartments()
-    ]);
+    try {
+      console.log('🔄 Refreshing all data...');
+      await Promise.all([
+        loadStatsOverview(),
+        loadSchoolsAndDepartments()
+      ]);
+      console.log('✅ Data refresh completed');
+    } catch (error) {
+      console.error('❌ Error refreshing data:', error);
+      throw error;
+    }
+  };
+
+  //  function to find school by various identifiers
+  const findSchool = (identifier) => {
+    if (!identifier || !schools.length) return null;
+    
+    
+    const strategies = [
+      // Direct ID match
+      (id) => schools.find(s => s.id?.toString() === id?.toString()),
+      // Code match
+      (id) => schools.find(s => s.code?.toString() === id?.toString()),
+      // Curriculum ID match (for backward compatibility)
+      (id) => schools.find(s => s.curriculumId?.toString() === id?.toString()),
+      // Name match (case insensitive)
+      (id) => schools.find(s => s.name?.toLowerCase() === id?.toString().toLowerCase())
+    ];
+    
+    for (const strategy of strategies) {
+      const school = strategy(identifier);
+      if (school) return school;
+    }
+    
+    return null;
+  };
+
+  //  function to get school name by identifier
+  const getSchoolName = (schoolIdentifier) => {
+    const school = findSchool(schoolIdentifier);
+    return school ? school.name : 'Unknown School';
   };
 
   return {
@@ -165,6 +224,8 @@ export const useCurriculumData = () => {
     loadCurriculaData,
     loadSchoolsAndDepartments,
     loadStatsOverview,
-    refreshData
+    refreshData,
+    findSchool,
+    getSchoolName
   };
 };

@@ -21,6 +21,7 @@ const AdminCurriculaPage = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCurriculum, setSelectedCurriculum] = useState(null);
+
   const {
     curricula,
     schools,
@@ -31,7 +32,9 @@ const AdminCurriculaPage = () => {
     loadCurriculaData,
     loadSchoolsAndDepartments,
     loadStatsOverview,
-    refreshData
+    refreshData,
+    findSchool,
+    getSchoolName
   } = useCurriculumData();
 
   const {
@@ -47,7 +50,9 @@ const AdminCurriculaPage = () => {
     setStatusFilter,
     sortBy,
     setSortBy,
-    isSearching
+    isSearching,
+    resetFilters,
+    hasActiveFilters
   } = useFilters();
 
   const {
@@ -63,25 +68,27 @@ const AdminCurriculaPage = () => {
     goToPage,
     goToPreviousPage,
     goToNextPage,
-    changePageSize
+    changePageSize,
+    resetToFirstPage
   } = usePagination();
 
   useEffect(() => {
     const initializeData = async () => {
       try {
-        console.log('🔄 Initializing AdminCurriculaPage...');
+        setIsInitialized(false);
         await loadSchoolsAndDepartments();
         await loadStatsOverview();
         setIsInitialized(true);
-        console.log('✅ AdminCurriculaPage initialized');
       } catch (error) {
-        console.error('❌ Error initializing AdminCurriculaPage:', error);
-        showNotification('Failed to initialize page data', 'error');
+        console.error('Error initializing AdminCurriculaPage:', error);
+        showNotification('Failed to initialize page data. Some features may not work correctly.', 'error');
+        setIsInitialized(true);
       }
     };
     
     initializeData();
   }, []);
+
   useEffect(() => {
     if (isInitialized && viewMode === 'table') {
       loadCurriculaData({
@@ -94,12 +101,12 @@ const AdminCurriculaPage = () => {
         statusFilter,
         sortBy
       }).then((result) => {
-        
         if (result?.pagination) {
           updatePagination(result.pagination);
         }
       }).catch(error => {
         console.error('Error loading curricula:', error);
+        showNotification('Failed to load curricula data', 'error');
       });
     }
   }, [
@@ -107,9 +114,10 @@ const AdminCurriculaPage = () => {
     selectedProgram, selectedDepartment, statusFilter, 
     sortBy, viewMode, isInitialized
   ]);
+
   useEffect(() => {
     if (currentPage !== 0 && viewMode === 'table') {
-      setCurrentPage(0);
+      resetToFirstPage();
     }
   }, [searchTerm, selectedSchool, selectedProgram, selectedDepartment, statusFilter]);
 
@@ -120,9 +128,18 @@ const AdminCurriculaPage = () => {
     }, 5000);
   };
 
-  const getSchoolName = (schoolId) => {
-    const school = schools.find(s => s.id?.toString() === schoolId?.toString());
-    return school ? school.name : 'Unknown School';
+  const getSchoolNameEnhanced = (schoolId) => {
+    if (!schoolId) return 'Unknown School';
+    
+    const name = getSchoolName(schoolId);
+    if (name !== 'Unknown School') return name;
+    
+    const curriculum = curricula.find(c => c.schoolId?.toString() === schoolId?.toString());
+    if (curriculum?.schoolName) {
+      return curriculum.schoolName;
+    }
+    
+    return 'Unknown School';
   };
 
   const getProgramName = (programId) => {
@@ -135,14 +152,13 @@ const AdminCurriculaPage = () => {
   };
 
   const handleViewModeChange = async (newMode) => {
-    console.log('🔄 Changing view mode to:', newMode);
     setViewMode(newMode);
     
     if (newMode === 'schools' && (!schools || schools.length === 0)) {
       try {
         await loadSchoolsAndDepartments();
       } catch (error) {
-        console.error('❌ Error in handleViewModeChange:', error);
+        console.error('Error in handleViewModeChange:', error);
         showNotification('Failed to load schools view data', 'error');
       }
     }
@@ -164,6 +180,7 @@ const AdminCurriculaPage = () => {
       await refreshData();
       showNotification(`"${curriculum.title}" has been approved successfully!`, 'success');
     } catch (error) {
+      console.error('Error approving curriculum:', error);
       showNotification('Failed to approve curriculum. Please try again.', 'error');
     }
   };
@@ -174,6 +191,7 @@ const AdminCurriculaPage = () => {
       await refreshData();
       showNotification(`"${curriculum.title}" has been rejected.`, 'success');
     } catch (error) {
+      console.error('Error rejecting curriculum:', error);
       showNotification('Failed to reject curriculum. Please try again.', 'error');
     }
   };
@@ -182,9 +200,11 @@ const AdminCurriculaPage = () => {
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
       await refreshData();
-      const action = showAddModal ? 'added' : 'updated';
-      showNotification(`Curriculum ${action} successfully!`, 'success');
+      
+      const actionPast = showAddModal ? 'added' : 'updated';
+      showNotification(`Curriculum ${actionPast} successfully!`, 'success');
     } catch (error) {
+      console.error('Error saving curriculum:', error);
       showNotification(`Failed to save curriculum: ${error.message}`, 'error');
     } finally {
       setShowAddModal(false);
@@ -199,10 +219,21 @@ const AdminCurriculaPage = () => {
       await refreshData();
       showNotification(`"${selectedCurriculum.title}" has been deleted.`, 'success');
     } catch (error) {
+      console.error('Error deleting curriculum:', error);
       showNotification(`Failed to delete curriculum: ${error.message}`, 'error');
     } finally {
       setShowDeleteModal(false);
       setSelectedCurriculum(null);
+    }
+  };
+
+  const handleRefreshData = async () => {
+    try {
+      await refreshData();
+      showNotification('Data refreshed successfully', 'success');
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      showNotification('Failed to refresh data', 'error');
     }
   };
 
@@ -234,18 +265,15 @@ const AdminCurriculaPage = () => {
         <StatsGrid stats={stats} />
 
         <FilterSection
-         
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           statusFilter={statusFilter}
           setStatusFilter={setStatusFilter}
           isSearching={isSearching}
           
-          e
           viewMode={viewMode}
           onViewModeChange={handleViewModeChange}
           
-          // Advanced filters (only for table view)
           showAdvancedFilters={viewMode === 'table'}
           selectedSchool={selectedSchool}
           setSelectedSchool={setSelectedSchool}
@@ -256,19 +284,19 @@ const AdminCurriculaPage = () => {
           sortBy={sortBy}
           setSortBy={setSortBy}
           
-          
           schools={schools}
           programs={programs}
           departments={getAvailableDepartments()}
+          
+          resetFilters={resetFilters}
+          hasActiveFilters={hasActiveFilters}
         />
 
-        {/* Main Content */}
         {viewMode === 'table' ? (
           <CurriculumTable
             curricula={curricula}
             isLoading={isLoading}
             
-            // Pagination
             currentPage={currentPage}
             pageSize={pageSize}
             totalElements={totalElements}
@@ -280,16 +308,14 @@ const AdminCurriculaPage = () => {
             onNextPage={goToNextPage}
             onPageSizeChange={changePageSize}
             
-            // Actions
             onEdit={handleEdit}
             onDelete={handleDelete}
             onApprove={handleApprove}
             onReject={handleReject}
             
-            // Utilities
-            getSchoolName={getSchoolName}
+            getSchoolName={getSchoolNameEnhanced}
             getProgramName={getProgramName}
-            onRefresh={refreshData}
+            onRefresh={handleRefreshData}
           />
         ) : (
           <SchoolsView
@@ -297,7 +323,6 @@ const AdminCurriculaPage = () => {
             programs={programs}
             isLoading={isLoading}
             
-            // Filters for data processing
             searchTerm={searchTerm}
             selectedSchool={selectedSchool}
             selectedProgram={selectedProgram}
@@ -305,19 +330,18 @@ const AdminCurriculaPage = () => {
             statusFilter={statusFilter}
             sortBy={sortBy}
             
-            // Actions
             onEdit={handleEdit}
             onDelete={handleDelete}
             onApprove={handleApprove}
             onReject={handleReject}
-            onRefresh={refreshData}
+            onRefresh={handleRefreshData}
             
-            // Service
             curriculumService={curriculumService}
+            getSchoolName={getSchoolNameEnhanced}
+            findSchool={findSchool}
           />
         )}
 
-        {/* Modals */}
         {(showAddModal || showEditModal) && (
           <CurriculumModal
             isOpen={showAddModal || showEditModal}

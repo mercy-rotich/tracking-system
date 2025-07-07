@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { getStatusBadge } from '../../../components/Admin/AdminAllCurricula/BadgeComponents';
 import Pagination from './Pagination';
@@ -111,11 +110,20 @@ const CurriculumTable = ({
     );
   };
 
-  const enrichedCurricula = curricula.map(curriculum => ({
-    ...curriculum,
-    schoolName: curriculum.schoolName || getSchoolName(curriculum.schoolId),
-    programName: curriculum.programName || getProgramName(curriculum.programId)
-  }));
+  const enrichedCurricula = curricula.map(curriculum => {
+    const enriched = {
+      ...curriculum,
+      schoolName: curriculum.schoolName || (getSchoolName ? getSchoolName(curriculum.schoolId) : 'Unknown School'),
+      programName: curriculum.programName || (getProgramName ? getProgramName(curriculum.programId) : 'Unknown Program')
+    };
+
+    
+    if (!enriched.title) enriched.title = 'Untitled Curriculum';
+    if (!enriched.department) enriched.department = 'Unknown Department';
+    if (!enriched.status) enriched.status = 'draft';
+
+    return enriched;
+  });
 
   if (isLoading) {
     return (
@@ -124,6 +132,7 @@ const CurriculumTable = ({
           <div className="curricula-loading-spinner">
             <div className="spinner"></div>
             <p>Loading page {currentPage + 1} of curricula...</p>
+            <small>Fetching curriculum data and school information...</small>
           </div>
         </div>
       </div>
@@ -152,6 +161,15 @@ const CurriculumTable = ({
 
   return (
     <div className="curricula-table-container">
+      <div className="curricula-table-info">
+        
+        {currentPage > 0 && (
+          <span className="curricula-table-page-info">
+            Page {currentPage + 1} of {totalPages}
+          </span>
+        )}
+      </div>
+
       <div className="curricula-table-wrapper">
         <table className="curricula-table">
           <thead className="curricula-table-header">
@@ -169,23 +187,35 @@ const CurriculumTable = ({
               <tr key={curriculum.id} className="curricula-table-row">
                 <td className="curricula-table-td curricula-table-td-title">
                   <div className="curricula-table-title-content">
-                    <span className="curricula-table-title-text">{curriculum.title}</span>
-                    <span className="curricula-table-title-id">{curriculum.code || curriculum.id}</span>
+                    <span className="curricula-table-title-text" title={curriculum.title}>
+                      {curriculum.title}
+                    </span>
+                    <span className="curricula-table-title-id">
+                      {curriculum.code || curriculum.id}
+                    </span>
                   </div>
                 </td>
                 <td className="curricula-table-td curricula-table-td-school">
-                  {curriculum.schoolName}
+                  <span title={curriculum.schoolName}>
+                    {curriculum.schoolName}
+                  </span>
                 </td>
                 <td className="curricula-table-td curricula-table-td-department">
-                  {curriculum.department}
+                  <span title={curriculum.department}>
+                    {curriculum.department}
+                  </span>
                 </td>
                 <td className="curricula-table-td curricula-table-td-status">
                   {getStatusBadge(curriculum.status)}
                 </td>
                 <td className="curricula-table-td curricula-table-td-updated">
                   <div className="curricula-table-date-content">
-                    <span className="curricula-table-date-main">{formatDate(curriculum.lastModified)}</span>
-                    <span className="curricula-table-date-relative">{getTimeSince(curriculum.lastModified)}</span>
+                    <span className="curricula-table-date-main">
+                      {formatDate(curriculum.lastModified)}
+                    </span>
+                    <span className="curricula-table-date-relative">
+                      {getTimeSince(curriculum.lastModified)}
+                    </span>
                   </div>
                 </td>
                 <td className="curricula-table-td curricula-table-td-actions">
