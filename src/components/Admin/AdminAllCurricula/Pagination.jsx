@@ -38,7 +38,7 @@ const Pagination = ({
           key={0}
           onClick={() => onPageChange(0)}
           disabled={isLoading}
-          className={`pagination-btn ${currentPage === 0 ? 'active' : ''}`}
+          className={`pagination-page ${currentPage === 0 ? 'active' : ''}`}
         >
           1
         </button>
@@ -59,7 +59,7 @@ const Pagination = ({
           key={i}
           onClick={() => onPageChange(i)}
           disabled={isLoading}
-          className={`pagination-btn ${currentPage === i ? 'active' : ''}`}
+          className={`pagination-page ${currentPage === i ? 'active' : ''}`}
         >
           {i + 1}
         </button>
@@ -80,7 +80,7 @@ const Pagination = ({
           key={totalPages - 1}
           onClick={() => onPageChange(totalPages - 1)}
           disabled={isLoading}
-          className={`pagination-btn ${currentPage === totalPages - 1 ? 'active' : ''}`}
+          className={`pagination-page ${currentPage === totalPages - 1 ? 'active' : ''}`}
         >
           {totalPages}
         </button>
