@@ -52,7 +52,7 @@ const Pagination = ({
       }
     }
 
-    // Add page numbers
+    
     for (let i = startPage; i <= endPage; i++) {
       pages.push(
         <button
@@ -66,7 +66,7 @@ const Pagination = ({
       );
     }
 
-    // Add last page and ellipsis if needed
+    
     if (endPage < totalPages - 1) {
       if (endPage < totalPages - 2) {
         pages.push(
