@@ -3,6 +3,8 @@ import must_campus from '../../../assets/image1.jpg'
 import image_4 from '../../../assets/image3.jpeg'
 import image_2 from '../../../assets/image2.jpg'
 import library_image from '../../../assets/library.jpg'
+import laboratory_image from '../../../assets/multi-specialty-laboratory.jpg'
+import student_image from '../../../assets/student-center.jpg'
 import '../LandingPageHero/LandingPageHero.css'
 
 export const ImageCarousel = () => {
@@ -26,12 +28,12 @@ export const ImageCarousel = () => {
       description: "Advanced digital resources and collaborative spaces designed for 21st-century academic excellence."
     },
     {
-      src: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+      src: laboratory_image,
       title: "Cutting-Edge Science Laboratories",
       description: "Equipped with the latest technology to support innovative research and hands-on learning experiences."
     },
     {
-      src: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+      src: student_image,
       title: "Vibrant Student Center",
       description: "A hub for student activities, collaboration, and community building across all academic disciplines."
     },

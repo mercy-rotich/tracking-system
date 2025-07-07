@@ -98,7 +98,7 @@ export const LandingPageHero = () => {
         <div className="landing-hero-content">
           <div className="landing-welcome-badge">
             <i className="fas fa-star"></i>
-            Welcome to CurricFlow
+            Welcome to Curriculum management System
           </div>
           
           <h1 className="landing-hero-title">
