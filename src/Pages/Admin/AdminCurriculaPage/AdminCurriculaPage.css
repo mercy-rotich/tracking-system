@@ -1,4 +1,3 @@
-
 :root {
   --must-gold: #f0b41c;
   --must-gold-dark: #d4940f;
@@ -31,6 +30,7 @@
   --gradient-gold: linear-gradient(135deg, #f0b41c 0%, #f5c747 50%, #d4940f 100%);
   --gradient-blue: linear-gradient(135deg, #1a3a6e 0%, #153458 100%);
   --gradient-card: linear-gradient(145deg, #ffffff 0%, #f9fafb 100%);
+}
 
 @media print {
   .curricula-main-page {
@@ -41,7 +41,6 @@
   .controls-section,
   .curricula-page .action-buttons,
   .curricula-page .notification,
-  .admin-school-header,
   .curricula-table-program-actions {
     display: none;
   }
@@ -49,10 +48,6 @@
   .curricula-table-container {
     box-shadow: none;
     border: 1px solid #ccc;
-  }
-
-  .admin-programs-container {
-    display: none;
   }
 }
 
@@ -83,7 +78,6 @@
     padding: 1rem;
   }
 }
-
 
 .curricula-page .page-header {
   margin-bottom: 2rem;
@@ -120,7 +114,6 @@
   gap: 0.75rem;
   flex-wrap: wrap;
 }
-
 
 .curricula-page .stats-grid {
   display: grid;
@@ -198,7 +191,6 @@
   margin: 0;
   line-height: 1;
 }
-
 
 .controls-section {
   background: var(--gradient-card);
@@ -307,6 +299,7 @@
   color: white;
   border-color: var(--must-green-primary);
 }
+
 .curricula-page .content-section {
   background: var(--background-card);
   border-radius: 12px;
@@ -421,7 +414,6 @@
   padding: 0 1.5rem;
 }
 
-
 .curricula-table-container {
   background: var(--background-card);
   border-radius: 12px;
@@ -512,13 +504,13 @@
   margin: 0;
 }
 
-
 .curricula-table-container.hide-school-department .curricula-table-th-school,
 .curricula-table-container.hide-school-department .curricula-table-td-school,
 .curricula-table-container.hide-school-department .curricula-table-th-department,
 .curricula-table-container.hide-school-department .curricula-table-td-department {
   display: none;
 }
+
 .curricula-table-container.hide-school-department .curricula-table-th-title {
   width: 50%;
 }
@@ -670,6 +662,7 @@
   background: var(--must-green-primary);
   color: white;
 }
+
 .curricula-table-action-btn .curricula-table-edit{
   background-image: none;
 }
@@ -710,7 +703,6 @@
   text-align: center;
 }
 
-
 .status-badge {
   display: inline-flex;
   align-items: center;
@@ -745,7 +737,6 @@
   color: #dc2626;
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
-
 
 .curricula-page .btn {
   display: inline-flex;
@@ -834,7 +825,6 @@
   font-size: 0.75rem;
 }
 
-
 .curricula-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -910,7 +900,6 @@
   flex-wrap: wrap;
 }
 
-
 .card-title-section {
   display: flex;
   justify-content: space-between;
@@ -923,7 +912,6 @@
   flex: 1;
   margin: 0;
 }
-
 
 .curricula-page .loading-spinner {
   display: flex;
@@ -972,7 +960,6 @@
   margin: 0;
 }
 
-
 .curricula-page .notification {
   position: fixed;
   top: 1rem;
@@ -1018,7 +1005,6 @@
 .curricula-page .notification-close:hover {
   background: rgba(0, 0, 0, 0.1);
 }
-
 
 .curricula-page .modal-overlay {
   position: fixed;
@@ -1076,7 +1062,6 @@
   background: var(--background-secondary);
   color: var(--text-primary);
 }
-
 
 @media (max-width: 1024px) {
   .curricula-table-th,
@@ -1212,196 +1197,6 @@
   }
 }
 
-
-.admin-schools-section {
-  background: var(--background-card);
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-color);
-  overflow: hidden;
-}
-
-.admin-section-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--background-secondary);
-}
-
-.admin-section-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0;
-}
-
-.admin-schools-count {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  background: var(--must-green-primary);
-  color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 16px;
-  font-weight: 600;
-}
-
-.admin-schools-list {
-  padding: 1rem;
-}
-
-.admin-school-item {
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  margin-bottom: 1rem;
-  overflow: hidden;
-  transition: all 0.3s ease;
-  background: var(--background-card);
-  box-shadow: var(--shadow-sm);
-}
-
-.admin-school-item:hover {
-  border-color: var(--must-green-primary);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
-}
-
-.admin-school-item:last-child {
-  margin-bottom: 0;
-}
-
-.admin-school-header {
-  padding: 1.5rem;
-  background: var(--background-card);
-  border-bottom: 1px solid var(--border-color);
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: all 0.3s ease;
-}
-
-.admin-school-header:hover {
-  background: var(--background-secondary);
-}
-
-.admin-school-info {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.admin-school-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.3rem;
-  color: white;
-  box-shadow: var(--shadow-sm);
-  background: var(--gradient-green);
-}
-
-.admin-school-details h3 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 0.2rem 0;
-}
-
-.admin-school-meta {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
-.admin-school-stats {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.admin-stat-badge {
-  background: var(--must-green-primary);
-  color: white;
-  padding: 0.3rem 0.8rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  box-shadow: var(--shadow-sm);
-}
-
-.admin-expand-icon {
-  color: var(--text-secondary);
-  transition: transform 0.3s ease;
-  font-size: 1rem;
-}
-
-.admin-expand-icon.expanded {
-  transform: rotate(180deg);
-}
-
-
-.admin-programs-container {
-  padding: 1.5rem;
-  background: var(--background-secondary);
-  border-top: 1px solid var(--border-color);
-}
-
-.admin-programs-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1rem;
-}
-
-.admin-program-card {
-  background: var(--background-card);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: var(--shadow-sm);
-}
-
-.admin-program-card:hover {
-  border-color: var(--must-green-primary);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-
-.admin-program-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.admin-program-name {
-  font-weight: 600;
-  color: var(--text-primary);
-  font-size: 0.95rem;
-}
-
-.admin-program-count {
-  background: var(--must-gold);
-  color: white;
-  padding: 0.2rem 0.6rem;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.admin-program-meta {
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-}
-
 .curricula-table-program-header {
   padding: 1.5rem;
   background: var(--background-secondary);
@@ -1436,7 +1231,6 @@
   flex-shrink: 0;
 }
 
-
 .curricula-table-container .curricula-table-th:first-child,
 .curricula-table-container .curricula-table-td:first-child {
   width: 40%;
@@ -1463,32 +1257,7 @@
   text-align: center;
 }
 
-
 @media (max-width: 768px) {
-  .admin-schools-list {
-    padding: 0.5rem;
-  }
-
-  .admin-school-header {
-    padding: 1rem;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-
-  .admin-school-stats {
-    align-self: stretch;
-    justify-content: space-between;
-  }
-
-  .admin-programs-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-program-card {
-    padding: 0.75rem;
-  }
-
   .curricula-table-program-header {
     flex-direction: column;
     align-items: flex-start;
@@ -1499,39 +1268,14 @@
     align-self: stretch;
     justify-content: center;
   }
-
-  .admin-section-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
 }
 
 @media (max-width: 480px) {
-  .admin-school-info {
-    gap: 0.75rem;
-  }
-
-  .admin-school-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 1.1rem;
-  }
-
-  .admin-school-details h3 {
-    font-size: 1rem;
-  }
-
-  .admin-school-meta {
-    font-size: 0.8rem;
-  }
-
   .curricula-table-program-actions {
     flex-direction: column;
     gap: 0.5rem;
   }
 }
-
 
 .view-mode-toggle {
   margin-bottom: 2rem;
@@ -1577,7 +1321,6 @@
 .view-toggle-btn i {
   font-size: 1rem;
 }
-
 
 .advanced-filters-section {
   background: var(--gradient-card);
@@ -1686,6 +1429,7 @@
     font-size: 0.875rem;
   }
 }
+
 .admin-departments-container {
   background: var(--background-card);
 }
@@ -1732,7 +1476,6 @@
   font-weight: 600;
 }
 
-/* Department Content */
 .admin-department-content {
   background: var(--background-card);
 }
@@ -1774,7 +1517,6 @@
   text-align: center;
 }
 
-
 .admin-department-content .curricula-table-th {
   border-bottom: 1px solid var(--border-color);
 }
@@ -1786,7 +1528,6 @@
 .admin-department-content .curricula-table-row:last-child .curricula-table-td {
   border-bottom: none;
 }
-
 
 @media (max-width: 768px) {
   .admin-department-header {
@@ -1844,57 +1585,6 @@
     padding: 0.2rem 0.5rem;
   }
 }
-@media print {
-  .curricula-main-page {
-    margin-left: 0;
-    padding: 1rem;
-  }
-
-  .controls-section,
-  .curricula-page .action-buttons,
-  .curricula-page .notification,
-  .admin-school-header,
-  .curricula-table-program-actions {
-    display: none;
-  }
-
-  .curricula-table-container {
-    box-shadow: none;
-    border: 1px solid #ccc;
-  }
-
-  .admin-programs-container {
-    display: none;
-  }
-}
-
-
-@media (prefers-contrast: high) {
-  .curricula-table-container {
-    border: 2px solid var(--text-secondary);
-  }
-  
-  .curricula-page .btn {
-    border: 2px solid;
-  }
-}
-
-
-@media (prefers-reduced-motion: reduce) {
-  .curriculum-card,
-  .curricula-page .btn,
-  .curricula-table-action-btn,
-  .toggle-btn,
-  .curricula-page .filter-btn {
-    transition: none;
-  }
-  
-  .curriculum-card:hover,
-  .curricula-page .btn:hover,
-  .toggle-btn:hover {
-    transform: none;
-  }
-}}
 
 /* Pagination Styles */
 .pagination-container {
@@ -2073,7 +1763,6 @@
   transform: translateX(-2px);
 }
 
-
 .pagination-container.loading {
   opacity: 0.7;
   pointer-events: none;
@@ -2215,7 +1904,6 @@
   }
 }
 
-
 @media (prefers-color-scheme: dark) {
   .pagination-container {
     background: rgba(0, 0, 0, 0.1);
@@ -2230,12 +1918,12 @@
   }
 }
 
-
 @media print {
   .pagination-container {
     display: none;
   }
 }
+
 .loading-progress {
   margin-top: 1rem;
   text-align: center;
@@ -2272,7 +1960,6 @@
   margin: 0.5rem 0;
 }
 
-
 .curricula-loading-spinner {
   display: flex;
   flex-direction: column;
@@ -2289,11 +1976,6 @@
   border-top: 4px solid #3b82f6;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 
 .loading-spinner p {
@@ -2355,238 +2037,6 @@
   font-size: 0.75rem;
 }
 
-
-.admin-school-status-summary {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.status-mini {
-  font-size: 0.75rem;
-  padding: 0.125rem 0.5rem;
-  border-radius: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.status-mini.approved {
-  background: rgba(0, 191, 99, 0.15);
-  color: var(--must-green-dark);
-}
-
-.status-mini.pending {
-  background: rgba(240, 180, 28, 0.15);
-  color: #b45309;
-}
-
-.status-mini.draft {
-  background: rgba(107, 114, 128, 0.15);
-  color: #374151;
-}
-
-.status-mini.rejected {
-  background: rgba(239, 68, 68, 0.15);
-  color: #dc2626;
-}
-
-
-.admin-program-status {
-  display: flex;
-  gap: 0.25rem;
-  margin-top: 0.5rem;
-  justify-content: flex-start;
-}
-
-.status-micro {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  font-size: 0.6rem;
-  font-weight: 600;
-  border-radius: 10px;
-  color: white;
-  text-align: center;
-  line-height: 1;
-}
-
-.status-micro.approved {
-  background: var(--must-green-primary);
-}
-
-.status-micro.pending {
-  background: var(--must-gold);
-}
-
-.status-micro.draft {
-  background: #6b7280;
-}
-
-.status-micro.rejected {
-  background: #ef4444;
-}
-
-
-.admin-school-details {
-  flex: 1;
-}
-
-.admin-school-details h3 {
-  margin: 0 0 0.25rem 0;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.admin-school-meta {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  margin-bottom: 0.5rem;
-}
-
-
-.admin-program-card {
-  position: relative;
-  overflow: hidden;
-}
-
-.admin-program-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 3px;
-  background: var(--gradient-green);
-  transform: scaleX(0);
-  transition: transform 0.3s ease;
-}
-
-.admin-program-card:hover::before {
-  transform: scaleX(1);
-}
-
-.admin-program-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.admin-program-name {
-  font-weight: 600;
-  color: var(--text-primary);
-  font-size: 0.95rem;
-  flex: 1;
-}
-
-.admin-program-count {
-  background: var(--must-gold);
-  color: white;
-  padding: 0.25rem 0.6rem;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.admin-program-meta {
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
-}
-
-
-.admin-schools-section.loading {
-  opacity: 0.7;
-}
-
-.admin-schools-section.loading .admin-school-header {
-  pointer-events: none;
-  cursor: wait;
-}
-
-.admin-schools-section.loading .admin-program-card {
-  pointer-events: none;
-  cursor: wait;
-}
-
-.admin-schools-section .empty-state {
-  margin: 2rem 0;
-  padding: 3rem 2rem;
-}
-
-.admin-schools-section .empty-state i {
-  font-size: 4rem;
-  color: var(--text-muted);
-  margin-bottom: 1.5rem;
-}
-
-.admin-schools-section .empty-state h3 {
-  font-size: 1.5rem;
-  color: var(--text-primary);
-  margin-bottom: 0.75rem;
-}
-
-.admin-schools-section .empty-state p {
-  font-size: 1rem;
-  color: var(--text-secondary);
-  max-width: 400px;
-  margin: 0 auto;
-}
-
-.admin-school-item:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-lg);
-}
-
-.admin-program-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.admin-program-card:hover .admin-program-name {
-  color: var(--must-green-primary);
-}
-
-
-.admin-school-item.search-highlight {
-  border-color: var(--must-green-primary);
-  box-shadow: 0 0 0 2px rgba(0, 191, 99, 0.1);
-}
-
-.admin-program-card.search-highlight {
-  border-color: var(--must-green-primary);
-  box-shadow: 0 0 0 2px rgba(0, 191, 99, 0.1);
-}
-
-
-.status-micro[title],
-.status-mini[title] {
-  cursor: help;
-}
-
-
-.admin-programs-container {
-  animation: slideDown 0.3s ease-out;
-  transform-origin: top;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px) scaleY(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scaleY(1);
-  }
-}
-
-
 @media (max-width: 768px) {
   .breadcrumb-navigation {
     padding: 0.75rem 1rem;
@@ -2600,34 +2050,6 @@
 
   .breadcrumb-separator {
     font-size: 0.7rem;
-  }
-
-  .admin-school-status-summary {
-    gap: 0.25rem;
-  }
-
-  .status-mini {
-    font-size: 0.7rem;
-    padding: 0.1rem 0.4rem;
-  }
-
-  .admin-program-status {
-    gap: 0.2rem;
-    justify-content: center;
-  }
-
-  .status-micro {
-    min-width: 18px;
-    height: 18px;
-    font-size: 0.55rem;
-  }
-
-  .admin-school-details h3 {
-    font-size: 1rem;
-  }
-
-  .admin-school-meta {
-    font-size: 0.8rem;
   }
 }
 
@@ -2646,35 +2068,9 @@
   .breadcrumb-separator {
     display: none;
   }
-
-  .admin-school-status-summary {
-    justify-content: center;
-    margin-top: 0.75rem;
-  }
-
-  .admin-program-status {
-    justify-content: center;
-    margin-top: 0.75rem;
-  }
-
-  .admin-program-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-
-  .admin-program-count {
-    align-self: flex-end;
-  }
 }
 
-
 @media (prefers-contrast: high) {
-  .status-mini,
-  .status-micro {
-    border: 1px solid currentColor;
-  }
-
   .breadcrumb-item {
     border: 1px solid var(--border-color);
   }
@@ -2684,68 +2080,46 @@
   }
 }
 
-
 @media (prefers-reduced-motion: reduce) {
-  .admin-programs-container {
-    animation: none;
-  }
-
-  .admin-school-item:hover,
-  .admin-program-card:hover {
-    transform: none;
-  }
-
-  .admin-program-card::before {
-    transition: none;
-  }
-
-  .breadcrumb-item,
-  .status-mini,
-  .status-micro {
+  .breadcrumb-item {
     transition: none;
   }
 }
-
 
 @media print {
-  .breadcrumb-navigation,
-  .admin-school-status-summary,
-  .admin-program-status {
+  .breadcrumb-navigation {
     display: none;
-  }
-
-  .admin-school-item {
-    break-inside: avoid;
-    box-shadow: none;
-    border: 1px solid #ccc;
-  }
-
-  .admin-programs-container {
-    break-inside: avoid;
   }
 }
 
-
-.breadcrumb-item:focus,
-.admin-school-header:focus,
-.admin-program-card:focus {
+.breadcrumb-item:focus {
   outline: 2px solid var(--must-green-primary);
   outline-offset: 2px;
 }
 
-
-.status-mini.loading,
-.status-micro.loading {
-  background: var(--background-secondary);
-  color: transparent;
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
+@media (prefers-contrast: high) {
+  .curricula-table-container {
+    border: 2px solid var(--text-secondary);
   }
-  50% {
-    opacity: 0.5;
+  
+  .curricula-page .btn {
+    border: 2px solid;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .curriculum-card,
+  .curricula-page .btn,
+  .curricula-table-action-btn,
+  .toggle-btn,
+  .curricula-page .filter-btn {
+    transition: none;
+  }
+  
+  .curriculum-card:hover,
+  .curricula-page .btn:hover,
+  .toggle-btn:hover {
+    transform: none;
+  }
+}
+

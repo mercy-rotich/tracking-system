@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { getStatusBadge } from '../../../components/Admin/AdminAllCurricula/BadgeComponents';
-import Pagination from './Pagination';
+import { getStatusBadge } from '../BadgeComponents';
+import Pagination from '../Pagination';
+import departmentService from '../../../../services/departmentService';
+import './SchoolsView.css'
 
 const SchoolsView = ({
   schools,
@@ -15,13 +17,11 @@ const SchoolsView = ({
   statusFilter,
   sortBy,
   
-  
   onEdit,
   onDelete,
   onApprove,
   onReject,
   onRefresh,
-  
   
   curriculumService,
   getSchoolName,
@@ -37,7 +37,12 @@ const SchoolsView = ({
   const [isLoadingSchoolsData, setIsLoadingSchoolsData] = useState(false);
   const [schoolMapping, setSchoolMapping] = useState(new Map());
   
-  // Program view pagination
+  
+  const [schoolDepartments, setSchoolDepartments] = useState(new Map());
+  const [isLoadingDepartments, setIsLoadingDepartments] = useState(new Set());
+  const [departmentErrors, setDepartmentErrors] = useState(new Map());
+  
+  
   const [programCurrentPage, setProgramCurrentPage] = useState(0);
   const [programPageSize] = useState(20);
   const [programTotalPages, setProgramTotalPages] = useState(0);
@@ -46,18 +51,101 @@ const SchoolsView = ({
   const [programTotalElements, setProgramTotalElements] = useState(0);
 
   
+  const [showInteractionHint, setShowInteractionHint] = useState(true);
+
   useEffect(() => {
     if (schools.length > 0 && schoolsViewData.length > 0) {
       createSchoolMapping();
     }
   }, [schools, schoolsViewData]);
 
-  
   useEffect(() => {
     if (!showingCurriculaFor) {
       loadSchoolsViewData();
     }
   }, [searchTerm, selectedSchool, selectedProgram, selectedDepartment, statusFilter, sortBy]);
+
+
+  const loadSchoolDepartments = async (schoolId) => {
+    if (schoolDepartments.has(schoolId) || isLoadingDepartments.has(schoolId)) {
+      return;
+    }
+
+    console.log(`🏢 Loading departments for school: ${schoolId}`);
+    
+    
+    setIsLoadingDepartments(prev => new Set(prev).add(schoolId));
+    
+    try {
+      const departments = await departmentService.getDepartmentsBySchool(schoolId, 0, 100);
+      
+      setSchoolDepartments(prev => new Map(prev).set(schoolId, departments));
+      setDepartmentErrors(prev => {
+        const newErrors = new Map(prev);
+        newErrors.delete(schoolId);
+        return newErrors;
+      });
+      
+      console.log(`✅ Loaded ${departments.length} departments for school ${schoolId}`);
+      
+    } catch (error) {
+      console.error(`❌ Error loading departments for school ${schoolId}:`, error);
+      
+      let errorMessage = 'Failed to load departments';
+      if (error.message.includes('Unauthorized') || error.message.includes('401')) {
+        errorMessage = 'Authentication required';
+      } else if (error.message.includes('403')) {
+        errorMessage = 'Permission denied';
+      } else if (error.message.includes('404')) {
+        errorMessage = 'Departments not found';
+      } else if (error.message.includes('500')) {
+        errorMessage = 'Server error';
+      }
+      
+      setDepartmentErrors(prev => new Map(prev).set(schoolId, errorMessage));
+      setSchoolDepartments(prev => new Map(prev).set(schoolId, []));
+      
+    } finally {
+      setIsLoadingDepartments(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(schoolId);
+        return newSet;
+      });
+    }
+  };
+
+  
+  const retryLoadDepartments = async (schoolId) => {
+    
+    setDepartmentErrors(prev => {
+      const newErrors = new Map(prev);
+      newErrors.delete(schoolId);
+      return newErrors;
+    });
+    setSchoolDepartments(prev => {
+      const newDepts = new Map(prev);
+      newDepts.delete(schoolId);
+      return newDepts;
+    });
+    
+    
+    await loadSchoolDepartments(schoolId);
+  };
+
+  
+  const getDepartmentsForSchool = (schoolId) => {
+    return schoolDepartments.get(schoolId) || [];
+  };
+
+  
+  const isDepartmentsLoading = (schoolId) => {
+    return isLoadingDepartments.has(schoolId);
+  };
+
+  // Get department error for a school
+  const getDepartmentError = (schoolId) => {
+    return departmentErrors.get(schoolId);
+  };
 
   const createSchoolMapping = () => {
     const mapping = new Map();
@@ -72,16 +160,11 @@ const SchoolsView = ({
     schools.forEach(apiSchool => {
       let mappedTo = null;
       
-      // Direct ID match
       if (curriculumSchools.has(apiSchool.id)) {
         mappedTo = apiSchool.id;
-      }
-      // Code match
-      else if (apiSchool.code && curriculumSchools.has(apiSchool.code)) {
+      } else if (apiSchool.code && curriculumSchools.has(apiSchool.code)) {
         mappedTo = apiSchool.code;
-      }
-      // Exact name match
-      else {
+      } else {
         for (const [id, name] of curriculumSchools.entries()) {
           if (name === apiSchool.name) {
             mappedTo = id;
@@ -89,7 +172,6 @@ const SchoolsView = ({
           }
         }
       }
-      
       
       if (!mappedTo) {
         for (const [id, name] of curriculumSchools.entries()) {
@@ -146,7 +228,6 @@ const SchoolsView = ({
         filteredCurricula = filteredCurricula.filter(curriculum => curriculum.status === statusFilter);
       }
       
-      // Apply sorting
       filteredCurricula.sort((a, b) => {
         switch (sortBy) {
           case 'newest':
@@ -176,27 +257,21 @@ const SchoolsView = ({
     const school = schools.find(s => s.id === schoolId);
     let schoolCurricula = [];
     
-    
     const mappedId = schoolMapping.get(schoolId);
     if (mappedId) {
       schoolCurricula = schoolsViewData.filter(c => c.schoolId?.toString() === mappedId?.toString());
     }
     
-  
     if (schoolCurricula.length === 0) {
-      // Direct ID match
       schoolCurricula = schoolsViewData.filter(c => c.schoolId?.toString() === schoolId?.toString());
       
-      // Code match
       if (schoolCurricula.length === 0 && school?.code) {
         schoolCurricula = schoolsViewData.filter(c => c.schoolId?.toString() === school.code?.toString());
       }
       
-      // Exact name match
       if (schoolCurricula.length === 0 && school?.name) {
         schoolCurricula = schoolsViewData.filter(c => c.schoolName === school.name);
       }
-      
       
       if (schoolCurricula.length === 0 && school?.name) {
         const schoolKeywords = school.name.toLowerCase().split(' ').filter(word => 
@@ -211,8 +286,6 @@ const SchoolsView = ({
       }
     }
     
-    const departments = [...new Set(schoolCurricula.map(c => c.department))].filter(Boolean);
-    
     const statusStats = {
       approved: schoolCurricula.filter(c => c.status === 'approved').length,
       pending: schoolCurricula.filter(c => c.status === 'pending').length,
@@ -220,9 +293,14 @@ const SchoolsView = ({
       rejected: schoolCurricula.filter(c => c.status === 'rejected').length
     };
     
+    // Get departments count from backend data
+    const backendDepartments = getDepartmentsForSchool(schoolId);
+    const curriculumDepartments = [...new Set(schoolCurricula.map(c => c.department))].filter(Boolean);
+    const totalDepartments = Math.max(backendDepartments.length, curriculumDepartments.length);
+    
     return {
       total: schoolCurricula.length,
-      departments: departments.length,
+      departments: totalDepartments,
       programs: getProgramsForSchoolEnhanced(schoolId, schoolCurricula).length,
       statusStats,
       matchedCurricula: schoolCurricula
@@ -257,20 +335,29 @@ const SchoolsView = ({
 
   const loadProgramViewData = async (schoolId, programId, page = 0) => {
     try {
-      const mappedId = schoolMapping.get(schoolId) || schoolId;
-      const result = await curriculumService.getCurriculumsBySchool(mappedId, page, programPageSize);
+      console.log(`🔄 Loading program view data for school ${schoolId}, program ${programId}, page ${page}`);
       
+      const mappedId = schoolMapping.get(schoolId) || schoolId;
+      
+
+      const result = await curriculumService.getCurriculumsBySchool(mappedId, 0, 1000);
+      console.log(`📊 Loaded ${result.curriculums.length} total curricula for school ${mappedId}`);
+      
+      // Filter by program first
       let filteredCurricula = result.curriculums.filter(c => c.programId === programId);
+      console.log(`📊 After program filter (${programId}): ${filteredCurricula.length} curricula`);
       
       if (selectedDepartment !== 'all') {
         filteredCurricula = filteredCurricula.filter(curriculum => curriculum.department === selectedDepartment);
+        console.log(`📊 After department filter (${selectedDepartment}): ${filteredCurricula.length} curricula`);
       }
       
       if (statusFilter !== 'all') {
         filteredCurricula = filteredCurricula.filter(curriculum => curriculum.status === statusFilter);
+        console.log(`📊 After status filter (${statusFilter}): ${filteredCurricula.length} curricula`);
       }
       
-      
+    
       filteredCurricula.sort((a, b) => {
         switch (sortBy) {
           case 'newest':
@@ -286,23 +373,32 @@ const SchoolsView = ({
         }
       });
       
-      setProgramViewData(filteredCurricula);
+      // Apply pagination to the filtered results
+      const startIndex = page * programPageSize;
+      const endIndex = startIndex + programPageSize;
+      const paginatedCurricula = filteredCurricula.slice(startIndex, endIndex);
       
-      const totalProgramCurricula = result.pagination?.totalElements || filteredCurricula.length;
-      const estimatedProgramTotal = Math.ceil(totalProgramCurricula * (filteredCurricula.length / Math.max(result.curriculums.length, 1)));
+      console.log(`📊 Final paginated curricula (page ${page}): ${paginatedCurricula.length} of ${filteredCurricula.length} total`);
       
-      setProgramTotalElements(estimatedProgramTotal);
-      setProgramTotalPages(Math.ceil(estimatedProgramTotal / programPageSize));
-      setProgramHasNext(page < Math.ceil(estimatedProgramTotal / programPageSize) - 1);
+      setProgramViewData(paginatedCurricula);
+      
+      // Update pagination info based on filtered results
+      setProgramTotalElements(filteredCurricula.length);
+      setProgramTotalPages(Math.ceil(filteredCurricula.length / programPageSize));
+      setProgramHasNext(endIndex < filteredCurricula.length);
       setProgramHasPrevious(page > 0);
       
     } catch (error) {
-      console.error('Error loading program view data:', error);
+      console.error('❌ Error loading program view data:', error);
       setProgramViewData([]);
+      setProgramTotalElements(0);
+      setProgramTotalPages(0);
+      setProgramHasNext(false);
+      setProgramHasPrevious(false);
     }
   };
 
-  const toggleSchool = (schoolId) => {
+  const toggleSchool = async (schoolId) => {
     const newExpanded = new Set(expandedSchools);
     if (newExpanded.has(schoolId)) {
       newExpanded.delete(schoolId);
@@ -313,13 +409,22 @@ const SchoolsView = ({
       }
     } else {
       newExpanded.add(schoolId);
+      
+      await loadSchoolDepartments(schoolId);
+      
+      setShowInteractionHint(false);
     }
     setExpandedSchools(newExpanded);
   };
 
   const handleProgramClick = async (schoolId, programId) => {
+    console.log(`🖱️ Program clicked: school ${schoolId}, program ${programId}`);
+    
     const school = findSchool ? findSchool(schoolId) : schools.find(s => s.id === schoolId);
     const program = programs.find(p => p.id === programId);
+    
+    console.log(`🏫 School found:`, school);
+    console.log(`🎓 Program found:`, program);
     
     setShowingCurriculaFor({ schoolId, programId });
     setSelectedProgramView({ schoolId, programId });
@@ -331,6 +436,7 @@ const SchoolsView = ({
       { label: program?.name || 'Unknown Program', action: null }
     ]);
     
+    console.log(`🔄 Loading program view data...`);
     await loadProgramViewData(schoolId, programId, 0);
   };
 
@@ -479,13 +585,281 @@ const SchoolsView = ({
     );
   };
 
-  //  program view rendering
+  // UPDATED: Render academic programs with their departments using original styling
+  const renderSchoolAcademicPrograms = (schoolId) => {
+    const stats = getSchoolStatsEnhanced(schoolId);
+    const schoolCurricula = stats.matchedCurricula || [];
+    const schoolPrograms = getProgramsForSchoolEnhanced(schoolId, schoolCurricula);
+    const backendDepartments = getDepartmentsForSchool(schoolId);
+    const isLoading = isDepartmentsLoading(schoolId);
+    const error = getDepartmentError(schoolId);
+
+    if (isLoading) {
+      return (
+        <div className="admin-programs-container">
+          <div className="admin-departments-loading">
+            <i className="fas fa-spinner fa-spin"></i>
+            <span>Loading departments...</span>
+          </div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="admin-programs-container">
+          <div className="admin-departments-error">
+            <div>
+              <i className="fas fa-exclamation-triangle"></i>
+              <span>{error}</span>
+            </div>
+            <button 
+              className="btn btn-sm btn-outline"
+              onClick={() => retryLoadDepartments(schoolId)}
+            >
+              <i className="fas fa-redo"></i>
+              Retry
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (schoolPrograms.length === 0) {
+      return (
+        <div className="admin-programs-container">
+          <div className="admin-departments-empty">
+            <i className="fas fa-graduation-cap"></i>
+            <span>No academic programs with curricula found</span>
+          </div>
+        </div>
+      );
+    }
+
+    
+    const enhancedPrograms = schoolPrograms.map(program => {
+      const programCurricula = schoolCurricula.filter(c => c.programId === program.id);
+      const curriculumDepartments = [...new Set(programCurricula.map(c => c.department))].filter(Boolean);
+      
+    
+      const matchedBackendDepts = backendDepartments.filter(backendDept => 
+        curriculumDepartments.some(currDept => 
+          backendDept.name.toLowerCase() === currDept.toLowerCase()
+        )
+      );
+      
+  
+      const allDepartments = [];
+      
+      
+      matchedBackendDepts.forEach(dept => {
+        const curriculumCount = programCurricula.filter(c => c.department === dept.name).length;
+        allDepartments.push({
+          ...dept,
+          curriculumCount,
+          source: 'backend'
+        });
+      });
+      
+  
+      curriculumDepartments.forEach(deptName => {
+        const alreadyAdded = allDepartments.some(d => d.name.toLowerCase() === deptName.toLowerCase());
+        if (!alreadyAdded) {
+          const curriculumCount = programCurricula.filter(c => c.department === deptName).length;
+          allDepartments.push({
+            id: `curriculum_${deptName.replace(/\s+/g, '_')}`,
+            name: deptName,
+            curriculumCount,
+            source: 'curriculum'
+          });
+        }
+      });
+
+      return {
+        ...program,
+        enhancedDepartments: allDepartments
+      };
+    });
+
+    return (
+      <div className="admin-programs-container">
+        <div className="admin-programs-grid">
+          {enhancedPrograms.map(program => (
+            <div key={program.id} className="admin-program-card">
+              <div 
+                className="admin-program-header"
+                onClick={() => handleProgramClick(schoolId, program.id)}
+                title={`Click to view ${program.count} curricula in ${program.enhancedDepartments.length} departments`}
+              >
+                <span className="admin-program-name">{program.name}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
+                  <span style={{ 
+                    fontSize: '0.7rem', 
+                    color: 'var(--text-secondary)', 
+                    fontWeight: '500',
+                    textAlign: 'center'
+                  }}>
+                    Curricula
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span className="admin-program-count">{program.count}</span>
+                    <i className="fas fa-chevron-right" style={{ 
+                      color: 'var(--must-green-primary)', 
+                      fontSize: '0.875rem',
+                      transition: 'transform 0.2s ease'
+                    }}></i>
+                  </div>
+                </div>
+              </div>
+              <div 
+                className="admin-program-meta"
+                onClick={() => handleProgramClick(schoolId, program.id)}
+              >
+                {program.enhancedDepartments.length} departments • {program.count} curricula
+                <div style={{ 
+                  fontSize: '0.75rem', 
+                  color: 'var(--must-green-primary)', 
+                  marginTop: '0.25rem',
+                  fontWeight: '500'
+                }}>
+                  <i className="fas fa-mouse-pointer" style={{ marginRight: '0.25rem' }}></i>
+                  Click to view curricula
+                </div>
+              </div>
+              <div className="admin-program-status">
+                {program.statusStats.approved > 0 && (
+                  <span className="status-micro approved" title={`${program.statusStats.approved} approved`}>
+                    {program.statusStats.approved}
+                  </span>
+                )}
+                {program.statusStats.pending > 0 && (
+                  <span className="status-micro pending" title={`${program.statusStats.pending} pending`}>
+                    {program.statusStats.pending}
+                  </span>
+                )}
+                {program.statusStats.draft > 0 && (
+                  <span className="status-micro draft" title={`${program.statusStats.draft} draft`}>
+                    {program.statusStats.draft}
+                  </span>
+                )}
+                {program.statusStats.rejected > 0 && (
+                  <span className="status-micro rejected" title={`${program.statusStats.rejected} rejected`}>
+                    {program.statusStats.rejected}
+                  </span>
+                )}
+              </div>
+              
+              
+              {program.enhancedDepartments.length > 0 && (
+                <div style={{ 
+                  marginTop: '1rem', 
+                  padding: '0.75rem', 
+                  background: 'var(--background-secondary)', 
+                  borderRadius: '6px',
+                  fontSize: '0.8rem',
+                  maxWidth: '100%',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    fontWeight: '600', 
+                    marginBottom: '0.5rem', 
+                    color: 'var(--text-primary)' 
+                  }}>
+                    <span>Departments</span>
+                    <span>Curricula</span>
+                  </div>
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '0.25rem',
+                    maxWidth: '100%'
+                  }}>
+                    {program.enhancedDepartments.map((dept, index) => (
+                      <div key={dept.id || index} style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        color: 'var(--text-secondary)',
+                        minWidth: 0
+                      }}>
+                        <span style={{ 
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          flex: 1,
+                          marginRight: '0.5rem'
+                        }}>
+                          {dept.name}
+                        </span>
+                        <span style={{ 
+                          fontSize: '0.75rem', 
+                          color: 'var(--text-muted)',
+                          fontWeight: '500',
+                          flexShrink: 0
+                        }}>
+                          {dept.curriculumCount}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Call-to-action footer */}
+              <div style={{
+                marginTop: '1rem',
+                padding: '0.75rem',
+                background: 'linear-gradient(135deg, rgba(0, 191, 99, 0.1), rgba(0, 191, 99, 0.05))',
+                borderRadius: '6px',
+                border: '1px solid rgba(0, 191, 99, 0.2)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onClick={() => handleProgramClick(schoolId, program.id)}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 191, 99, 0.15), rgba(0, 191, 99, 0.08))';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 191, 99, 0.1), rgba(0, 191, 99, 0.05))';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+              >
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  color: 'var(--must-green-primary)',
+                  fontWeight: '600',
+                  fontSize: '0.875rem'
+                }}>
+                  <i className="fas fa-table"></i>
+                  <span>View Curricula Table</span>
+                  <i className="fas fa-arrow-right"></i>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Program view rendering 
   if (showingCurriculaFor) {
-    const programCurricula = getCurriculaForProgram(showingCurriculaFor.schoolId, showingCurriculaFor.programId);
+    console.log(`🔍 Rendering program view for:`, showingCurriculaFor);
+    console.log(`📊 Program view data:`, programViewData);
+    
     const school = findSchool ? findSchool(showingCurriculaFor.schoolId) : schools.find(s => s.id === showingCurriculaFor.schoolId);
     const program = programs.find(p => p.id === showingCurriculaFor.programId);
 
-    if (isLoading) {
+    console.log(`🏫 School for program view:`, school);
+    console.log(`🎓 Program for program view:`, program);
+
+    if (isLoading || isLoadingSchoolsData) {
       return (
         <div className="curricula-table-container" style={{ marginTop: '2rem' }}>
           {renderBreadcrumbs()}
@@ -499,37 +873,48 @@ const SchoolsView = ({
       );
     }
 
-    if (programCurricula.length === 0) {
+    if (!programViewData || programViewData.length === 0) {
+      console.log(`⚠️ No program curricula found`);
       return (
         <div className="curricula-table-container" style={{ marginTop: '2rem' }}>
           {renderBreadcrumbs()}
           <div className="curricula-table-program-header">
             <div className="curricula-table-program-info">
               <h3 className="curricula-table-program-title">
-                {program?.name} - {school?.name || getSchoolName(showingCurriculaFor.schoolId)}
+                {program?.name || 'Unknown Program'} - {school?.name || getSchoolName(showingCurriculaFor.schoolId) || 'Unknown School'}
               </h3>
-              <div className="curricula-table-program-actions">
-                <button 
-                  className="btn btn-sm btn-outline"
-                  onClick={handleBackToSchools}
-                >
-                  <i className="fas fa-arrow-left"></i>
-                  Back to Schools
-                </button>
-              </div>
+              <p className="curricula-table-program-subtitle">
+                No curricula found with current filters
+              </p>
+            </div>
+            <div className="curricula-table-program-actions">
+              <button 
+                className="btn btn-sm btn-outline"
+                onClick={handleBackToSchools}
+              >
+                <i className="fas fa-arrow-left"></i>
+                Back to Schools
+              </button>
             </div>
           </div>
           <div className="empty-state">
             <i className="fas fa-book-open"></i>
             <h3>No curricula found</h3>
             <p>No curricula available for this program with current filters.</p>
+            <button 
+              className="btn btn-primary" 
+              onClick={() => loadProgramViewData(showingCurriculaFor.schoolId, showingCurriculaFor.programId, 0)}
+            >
+              <i className="fas fa-refresh"></i>
+              Retry Loading
+            </button>
           </div>
         </div>
       );
     }
 
-    // Group curricula by department
-    const groupedByDepartment = programCurricula.reduce((acc, curriculum) => {
+    // Group curricula by department for the program view
+    const groupedByDepartment = programViewData.reduce((acc, curriculum) => {
       const department = curriculum.department || 'Unknown Department';
       if (!acc[department]) {
         acc[department] = [];
@@ -539,6 +924,7 @@ const SchoolsView = ({
     }, {});
 
     const departmentNames = Object.keys(groupedByDepartment).sort();
+    console.log(`📊 Grouped by departments:`, departmentNames, groupedByDepartment);
 
     return (
       <div className="curricula-table-container" style={{ marginTop: '2rem' }}>
@@ -546,10 +932,10 @@ const SchoolsView = ({
         <div className="curricula-table-program-header">
           <div className="curricula-table-program-info">
             <h3 className="curricula-table-program-title">
-              {program?.name} - {school?.name || getSchoolName(showingCurriculaFor.schoolId)}
+              {program?.name || 'Unknown Program'} - {school?.name || getSchoolName(showingCurriculaFor.schoolId) || 'Unknown School'}
             </h3>
             <p className="curricula-table-program-subtitle">
-              {programCurricula.length} curricula across {departmentNames.length} departments
+              {programViewData.length} curricula across {departmentNames.length} departments
             </p>
           </div>
           <div className="curricula-table-program-actions">
@@ -622,19 +1008,21 @@ const SchoolsView = ({
           })}
         </div>
 
-        <Pagination
-          currentPage={programCurrentPage}
-          pageSize={programPageSize}
-          totalElements={programTotalElements}
-          totalPages={programTotalPages}
-          hasNext={programHasNext}
-          hasPrevious={programHasPrevious}
-          onPageChange={goToProgramPage}
-          onPreviousPage={goToPreviousProgramPage}
-          onNextPage={goToNextProgramPage}
-          onPageSizeChange={() => {}} 
-          isLoading={isLoading}
-        />
+        {programTotalPages > 1 && (
+          <Pagination
+            currentPage={programCurrentPage}
+            pageSize={programPageSize}
+            totalElements={programTotalElements}
+            totalPages={programTotalPages}
+            hasNext={programHasNext}
+            hasPrevious={programHasPrevious}
+            onPageChange={goToProgramPage}
+            onPreviousPage={goToPreviousProgramPage}
+            onNextPage={goToNextProgramPage}
+            onPageSizeChange={() => {}} 
+            isLoading={isLoading}
+          />
+        )}
       </div>
     );
   }
@@ -689,7 +1077,6 @@ const SchoolsView = ({
     );
   }
 
-
   const schoolsWithData = schools.map(school => {
     const stats = getSchoolStatsEnhanced(school.id);
     return { ...school, stats };
@@ -717,6 +1104,28 @@ const SchoolsView = ({
   // Main schools view rendering
   return (
     <div className="admin-schools-section">
+      {/* Global interaction hint */}
+      {showInteractionHint && schoolsWithData.length > 0 && (
+        <div className="global-interaction-hint">
+          <div className="global-interaction-hint-content">
+            <div className="global-interaction-hint-text">
+              <i className="fas fa-lightbulb"></i>
+              <span>💡 Tip: Click on any school card below to view its academic programs</span>
+            </div>
+            <button 
+              className="global-interaction-hint-close"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowInteractionHint(false);
+              }}
+              title="Dismiss hint"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="admin-section-header">
         <h2 className="admin-section-title">
           <i className="fas fa-university"></i>
@@ -729,13 +1138,12 @@ const SchoolsView = ({
       
       <div className="admin-schools-list">
         {schoolsWithData.map((school) => {
-          const schoolPrograms = getProgramsForSchoolEnhanced(school.id, school.stats.matchedCurricula);
           const isExpanded = expandedSchools.has(school.id);
 
           return (
             <div key={school.id} className="admin-school-item">
               <div 
-                className="admin-school-header" 
+                className={`admin-school-header ${isExpanded ? 'expanded' : ''}`}
                 onClick={() => toggleSchool(school.id)}
               >
                 <div className="admin-school-info">
@@ -750,6 +1158,13 @@ const SchoolsView = ({
                     <div className="admin-school-meta">
                       {school.stats.programs} Academic levels • {school.stats.departments} departments • {school.stats.total} curricula
                     </div>
+
+                    {/* Interaction hint */}
+                    <div className="admin-school-interaction-hint">
+                      <i className="fas fa-mouse-pointer"></i>
+                      <span>{isExpanded ? 'Click to collapse academic programs' : 'Click to view academic programs'}</span>
+                    </div>
+                    
                     <div className="admin-school-status-summary">
                       {school.stats.statusStats.approved > 0 && (
                         <span className="status-mini approved">{school.stats.statusStats.approved} approved</span>
@@ -766,45 +1181,28 @@ const SchoolsView = ({
                     </div>
                   </div>
                 </div>
-                <div className="admin-school-stats">
-                  <span className="admin-stat-badge">{school.stats.total}</span>
-                  <i className={`fas fa-chevron-down admin-expand-icon ${isExpanded ? 'expanded' : ''}`}></i>
+
+            
+                <div className="admin-school-actions">
+                  <div className="admin-school-stats">
+                    <span className="admin-stat-badge">{school.stats.total}</span>
+                  </div>
+                  
+                  <div className="admin-school-expand-area">
+                    <div className="admin-expand-button">
+                      <span className="admin-expand-text">
+                        {isExpanded ? 'Hide' : 'View'}
+                      </span>
+                      <i className={`fas fa-chevron-down admin-expand-icon ${isExpanded ? 'expanded' : ''}`}></i>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {isExpanded && (
-                <div className="admin-programs-container">
-                  <div className="admin-programs-grid">
-                    {schoolPrograms.map(program => (
-                      <div 
-                        key={program.id} 
-                        className="admin-program-card"
-                        onClick={() => handleProgramClick(school.id, program.id)}
-                      >
-                        <div className="admin-program-header">
-                          <span className="admin-program-name">{program.name}</span>
-                          <span className="admin-program-count">{program.count}</span>
-                        </div>
-                        <div className="admin-program-meta">
-                          {program.departments} departments
-                        </div>
-                        <div className="admin-program-status">
-                          {program.statusStats.approved > 0 && (
-                            <span className="status-micro approved" title="Approved">{program.statusStats.approved}</span>
-                          )}
-                          {program.statusStats.pending > 0 && (
-                            <span className="status-micro pending" title="Pending">{program.statusStats.pending}</span>
-                          )}
-                          {program.statusStats.draft > 0 && (
-                            <span className="status-micro draft" title="Draft">{program.statusStats.draft}</span>
-                          )}
-                          {program.statusStats.rejected > 0 && (
-                            <span className="status-micro rejected" title="Rejected">{program.statusStats.rejected}</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                <div className="admin-school-expanded-content">
+                 
+                  {renderSchoolAcademicPrograms(school.id)}
                 </div>
               )}
             </div>

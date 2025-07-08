@@ -5,13 +5,15 @@ import PageHeader from '../../../components/Admin/AdminAllCurricula/PageHeader';
 import StatsGrid from '../../../components/Admin/AdminAllCurricula/StatusGrid';
 import FilterSection from '../../../components/Admin/AdminAllCurricula/FilterSection';
 import CurriculumTable from '../../../components/Admin/AdminAllCurricula/CurriculumTable';
-import SchoolsView from '../../../components/Admin/AdminAllCurricula/SchoolsView';
+import SchoolsView from '../../../components/Admin/AdminAllCurricula/SchoolsView/SchoolsView';
 import CurriculumModal from '../../../components/Admin/AdminAllCurricula/CurriculumModal';
 import DeleteConfirmationModal from '../../../components/Admin/AdminAllCurricula/DeleteConfirmationModal';
 import curriculumService from '../../../services/curriculumService';
+import departmentService from '../../../services/departmentService';
 import { useCurriculumData } from '../../../hooks/useCurriculumData';
 import { useFilters } from '../../../hooks/useFilters';
 import { usePagination } from '../../../hooks/usePagination';
+import { useDepartments } from '../../../hooks/useDepartments';
 
 const AdminCurriculaPage = () => {
   const [viewMode, setViewMode] = useState('schools');
@@ -72,12 +74,35 @@ const AdminCurriculaPage = () => {
     resetToFirstPage
   } = usePagination();
 
+  
+  const {
+    departments: allDepartments,
+    loading: departmentsLoading,
+    error: departmentsError,
+    refetch: refetchDepartments,
+    getDepartmentsBySchoolId,
+    getDepartmentStatistics
+  } = useDepartments(null, {
+    autoLoad: true,
+    enableSearch: false,
+    size: 1000 
+  });
+
   useEffect(() => {
     const initializeData = async () => {
       try {
         setIsInitialized(false);
+        
+        
         await loadSchoolsAndDepartments();
+        
         await loadStatsOverview();
+        
+       
+        if (viewMode === 'schools') {
+          await refetchDepartments();
+        }
+        
         setIsInitialized(true);
       } catch (error) {
         console.error('Error initializing AdminCurriculaPage:', error);
@@ -121,6 +146,12 @@ const AdminCurriculaPage = () => {
     }
   }, [searchTerm, selectedSchool, selectedProgram, selectedDepartment, statusFilter]);
 
+  useEffect(() => {
+    if (viewMode === 'schools' && isInitialized && !departmentsLoading && allDepartments.length === 0) {
+      refetchDepartments();
+    }
+  }, [viewMode, isInitialized]);
+
   const showNotification = (message, type) => {
     setNotification({ show: true, message, type });
     setTimeout(() => {
@@ -148,15 +179,41 @@ const AdminCurriculaPage = () => {
   };
 
   const getAvailableDepartments = () => {
-    return departments.map(dept => dept.name).sort();
+   
+    const departmentNames = new Set();
+    
+   
+    departments.forEach(dept => {
+      if (dept.name) departmentNames.add(dept.name);
+    });
+    
+    
+    allDepartments.forEach(dept => {
+      if (dept.name) departmentNames.add(dept.name);
+    });
+    
+   
+    curricula.forEach(curriculum => {
+      if (curriculum.department) departmentNames.add(curriculum.department);
+    });
+    
+    return Array.from(departmentNames).sort();
   };
 
   const handleViewModeChange = async (newMode) => {
     setViewMode(newMode);
     
-    if (newMode === 'schools' && (!schools || schools.length === 0)) {
+    if (newMode === 'schools') {
       try {
-        await loadSchoolsAndDepartments();
+       
+        if (!schools || schools.length === 0) {
+          await loadSchoolsAndDepartments();
+        }
+        
+        
+        if (allDepartments.length === 0 && !departmentsLoading) {
+          await refetchDepartments();
+        }
       } catch (error) {
         console.error('Error in handleViewModeChange:', error);
         showNotification('Failed to load schools view data', 'error');
@@ -201,6 +258,11 @@ const AdminCurriculaPage = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       await refreshData();
       
+      
+      if (viewMode === 'schools') {
+        await refetchDepartments();
+      }
+      
       const actionPast = showAddModal ? 'added' : 'updated';
       showNotification(`Curriculum ${actionPast} successfully!`, 'success');
     } catch (error) {
@@ -217,6 +279,11 @@ const AdminCurriculaPage = () => {
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
       await refreshData();
+      
+      if (viewMode === 'schools') {
+        await refetchDepartments();
+      }
+      
       showNotification(`"${selectedCurriculum.title}" has been deleted.`, 'success');
     } catch (error) {
       console.error('Error deleting curriculum:', error);
@@ -230,11 +297,26 @@ const AdminCurriculaPage = () => {
   const handleRefreshData = async () => {
     try {
       await refreshData();
+      
+     
+      if (viewMode === 'schools') {
+        await refetchDepartments();
+      }
+      
       showNotification('Data refreshed successfully', 'success');
     } catch (error) {
       console.error('Error refreshing data:', error);
       showNotification('Failed to refresh data', 'error');
     }
+  };
+
+ 
+  const findSchoolEnhanced = (schoolId) => {
+   
+    const school = findSchool ? findSchool(schoolId) : null;
+    if (school) return school;
+    
+    return schools.find(s => s.id === schoolId || s.code === schoolId);
   };
 
   if (!isInitialized) {
@@ -337,8 +419,16 @@ const AdminCurriculaPage = () => {
             onRefresh={handleRefreshData}
             
             curriculumService={curriculumService}
+            departmentService={departmentService}
             getSchoolName={getSchoolNameEnhanced}
-            findSchool={findSchool}
+            findSchool={findSchoolEnhanced}
+            
+            // departments data and utilities
+            allDepartments={allDepartments}
+            departmentsLoading={departmentsLoading}
+            departmentsError={departmentsError}
+            getDepartmentsBySchoolId={getDepartmentsBySchoolId}
+            getDepartmentStatistics={getDepartmentStatistics}
           />
         )}
 

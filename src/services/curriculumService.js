@@ -3,7 +3,141 @@ import authService from "./authService";
 class CurriculumService{
   constructor(){
     this.baseURL = import.meta.env.VITE_BASE_URL;
-    console.log( 'Curriculum Service initialized with base URL:' ,this.baseURL)
+    console.log( 'Curriculum Service initialized with base URL:' ,this.baseURL);
+    
+  
+    this.schoolMappingCache = new Map();
+    this.schoolMappingExpiry = null;
+    this.SCHOOL_MAPPING_DURATION = 10 * 60 * 1000; 
+  }
+
+  
+  async loadSchoolMapping() {
+    
+    if (this.schoolMappingExpiry && Date.now() < this.schoolMappingExpiry && this.schoolMappingCache.size > 0) {
+      return this.schoolMappingCache;
+    }
+
+    try {
+      console.log('🔄 [Curriculum Service] Loading school mapping...');
+      
+      
+      let schoolsFromApi = [];
+      try {
+        const schoolsResult = await this.makeRequest('/schools/get-all');
+        schoolsFromApi = Array.isArray(schoolsResult) ? schoolsResult : (schoolsResult.data || []);
+        console.log('✅ [Curriculum Service] Schools from API:', schoolsFromApi);
+      } catch (error) {
+        console.warn('⚠️ [Curriculum Service] Schools API failed:', error.message);
+      }
+      
+    
+      let schoolIdsFromCurricula = new Map();
+      try {
+        const curriculaResult = await this.getAllCurriculums(0, 1000);
+        curriculaResult.curriculums.forEach(curriculum => {
+          if (curriculum.schoolId && curriculum.schoolName) {
+            // Store the schoolId as it appears in the curriculum data
+            const numericId = parseInt(curriculum.schoolId);
+            if (!isNaN(numericId)) {
+              schoolIdsFromCurricula.set(curriculum.schoolName, numericId);
+              console.log(`📝 [Curriculum Service] Found school mapping from curricula: ${curriculum.schoolName} -> ${numericId}`);
+            }
+          }
+        });
+      } catch (error) {
+        console.warn('⚠️ [Curriculum Service] Could not get curricula for school mapping:', error.message);
+      }
+      
+      
+      this.schoolMappingCache.clear();
+      
+     
+      schoolsFromApi.forEach(school => {
+        let numericId = null;
+        
+        
+        numericId = schoolIdsFromCurricula.get(school.name);
+        
+        if (numericId && !isNaN(parseInt(numericId))) {
+          const parsedId = parseInt(numericId);
+          
+          // Map code -> numeric ID
+          if (school.code) {
+            this.schoolMappingCache.set(school.code, parsedId);
+            console.log(`📝 [Curriculum Service] Mapped school code: ${school.code} -> ${parsedId}`);
+          }
+          
+          // Map name -> numeric ID
+          if (school.name) {
+            this.schoolMappingCache.set(school.name, parsedId);
+            console.log(`📝 [Curriculum Service] Mapped school name: ${school.name} -> ${parsedId}`);
+          }
+        } else {
+          console.warn(`⚠️ [Curriculum Service] Could not find numeric ID for school: ${school.name} (${school.code})`);
+        }
+      });
+      
+      
+      schoolIdsFromCurricula.forEach((numericId, schoolName) => {
+        if (!isNaN(parseInt(numericId))) {
+          const parsedId = parseInt(numericId);
+          if (!this.schoolMappingCache.has(schoolName)) {
+            this.schoolMappingCache.set(schoolName, parsedId);
+          }
+          
+         
+          const matchingSchool = schoolsFromApi.find(s => s.name === schoolName);
+          if (matchingSchool && matchingSchool.code && !this.schoolMappingCache.has(matchingSchool.code)) {
+            this.schoolMappingCache.set(matchingSchool.code, parsedId);
+          }
+        }
+      });
+      
+      this.schoolMappingExpiry = Date.now() + this.SCHOOL_MAPPING_DURATION;
+      console.log('✅ [Curriculum Service] School mapping loaded:', Array.from(this.schoolMappingCache.entries()));
+      
+      return this.schoolMappingCache;
+    } catch (error) {
+      console.error('❌ [Curriculum Service] Failed to load school mapping:', error);
+      return this.schoolMappingCache; 
+    }
+  }
+
+  async resolveSchoolId(schoolIdentifier) {
+    
+    if (schoolIdentifier === null || schoolIdentifier === undefined) {
+      throw new Error('School identifier is null or undefined');
+    }
+
+    const schoolIdStr = String(schoolIdentifier);
+    
+   
+    if (/^\d+$/.test(schoolIdStr)) {
+      const numericId = parseInt(schoolIdStr);
+      if (!isNaN(numericId) && numericId > 0) {
+        return numericId;
+      }
+    }
+
+   
+    const mapping = await this.loadSchoolMapping();
+    
+   
+    const numericId = mapping.get(schoolIdentifier);
+    
+    if (numericId !== undefined && numericId !== null) {
+      const parsed = parseInt(String(numericId));
+      if (!isNaN(parsed) && parsed > 0) {
+        console.log(`🔍 [Curriculum Service] Resolved school identifier "${schoolIdentifier}" to ID: ${parsed}`);
+        return parsed;
+      } else {
+        console.warn(`⚠️ [Curriculum Service] School mapping returned invalid numeric ID: ${numericId} for ${schoolIdentifier}`);
+      }
+    }
+
+    const availableKeys = Array.from(mapping.keys()).slice(0, 10); 
+    throw new Error(`Cannot resolve school identifier "${schoolIdentifier}" to a valid numeric ID. Available mappings (first 10): ${availableKeys.join(', ')}. Total mappings: ${mapping.size}`);
   }
 
   //centralized request method to handle all API calls
@@ -152,20 +286,41 @@ class CurriculumService{
       console.log('🔄 Loading schools from dedicated endpoint...');
       const result = await this.makeRequest('/schools/get-all');
       
-  
       const schoolsData = Array.isArray(result) ? result : (result.data || []);
       
+     
+      let schoolIdMapping = new Map();
+      try {
+        
+        const curriculaResult = await this.getAllCurriculums(0, 1000);
+        curriculaResult.curriculums.forEach(curriculum => {
+          if (curriculum.schoolId && curriculum.schoolName) {
+            const numericId = parseInt(curriculum.schoolId);
+            if (!isNaN(numericId)) {
+              schoolIdMapping.set(curriculum.schoolName, numericId);
+            }
+          }
+        });
+      } catch (error) {
+        console.warn('⚠️ Could not get school IDs from curricula:', error.message);
+      }
       
-      const schools = schoolsData.map((school, index) => ({
-        id: school.code || `school_${index}`, // Use code as ID
-        name: school.name,
-        code: school.code,
-        deanId: school.deanId,
-        icon: this.getSchoolIcon(school.name),
-        source: 'api'
-      }));
+      const schools = schoolsData.map((school, index) => {
+       
+        const numericId = schoolIdMapping.get(school.name);
+        
+        return {
+          id: school.code || `school_${index}`, 
+          actualId: numericId || null,
+          name: school.name,
+          code: school.code,
+          deanId: school.deanId,
+          icon: this.getSchoolIcon(school.name),
+          source: 'api'
+        };
+      });
       
-      console.log('✅ Schools loaded from API:', schools);
+      console.log('✅ Schools loaded from API with numeric ID mapping:', schools);
       return schools;
     } catch (error) {
       console.error('❌ Error loading schools from API, falling back to curriculum extraction:', error);
@@ -178,7 +333,6 @@ class CurriculumService{
     try {
       console.log('🔄 Loading schools from multiple sources...');
       
-      
       let schoolsFromApi = [];
       try {
         const apiResult = await this.makeRequest('/schools/get-all');
@@ -186,7 +340,6 @@ class CurriculumService{
       } catch (apiError) {
         console.warn('⚠️ Schools API endpoint failed:', apiError.message);
       }
-      
       
       const curriculumResult = await this.getAllCurriculums(0, 1000);
       const schoolsFromCurricula = new Map();
@@ -201,13 +354,12 @@ class CurriculumService{
         }
       });
       
-      // Merge and transform data
       const mergedSchools = new Map();
       
-      // First, add schools from API
       schoolsFromApi.forEach((school, index) => {
         const schoolData = {
-          id: school.code || `api_school_${index}`,
+          id: school.code || `api_school_${index}`, 
+          actualId: school.id, 
           name: school.name,
           code: school.code,
           deanId: school.deanId,
@@ -217,22 +369,22 @@ class CurriculumService{
         mergedSchools.set(school.code || school.name, schoolData);
       });
       
-    
       schoolsFromCurricula.forEach((school, schoolId) => {
-        // Try to match by name first
+        
         const existingSchool = Array.from(mergedSchools.values())
           .find(s => s.name.toLowerCase() === school.name.toLowerCase());
         
         if (!existingSchool) {
-          // Add missing school from curriculum data
+          
           mergedSchools.set(schoolId, {
             id: schoolId,
+            actualId: schoolId, 
             name: school.name,
             icon: this.getSchoolIcon(school.name),
             source: 'curricula'
           });
         } else {
-          // Update existing school with curriculum ID for reference
+          
           existingSchool.curriculumId = schoolId;
         }
       });
@@ -247,7 +399,6 @@ class CurriculumService{
     }
   }
 
-
   async getSchoolsFromCurriculums() {
     const result = await this.getAllCurriculums(0, 1000);
     const schoolsMap = new Map();
@@ -256,6 +407,7 @@ class CurriculumService{
       if (curriculum.schoolId && curriculum.schoolName) {
         schoolsMap.set(curriculum.schoolId, {
           id: curriculum.schoolId,
+          actualId: curriculum.schoolId, // Assume curriculum data has correct IDs
           name: curriculum.schoolName,
           icon: this.getSchoolIcon(curriculum.schoolName),
           source: 'curricula'
@@ -297,8 +449,19 @@ class CurriculumService{
     return this.transformCurriculumData(result.data);
   }
 
+  
   async getCurriculumsBySchool(schoolId, page = 0, size = 10) {
-    const result = await this.makeRequest(`/users/curriculums/school/${schoolId}`, {
+    
+    let resolvedSchoolId;
+    try {
+      resolvedSchoolId = await this.resolveSchoolId(schoolId);
+      console.log(`🔍 [Curriculum Service] Resolved school ID: ${schoolId} -> ${resolvedSchoolId}`);
+    } catch (resolveError) {
+      console.warn(`⚠️ [Curriculum Service] Could not resolve school ID "${schoolId}", trying original:`, resolveError.message);
+      resolvedSchoolId = schoolId;
+    }
+    
+    const result = await this.makeRequest(`/users/curriculums/school/${resolvedSchoolId}`, {
       params: { page, size }
     });
     return this.processResponse(result, page, size);
@@ -327,18 +490,16 @@ class CurriculumService{
     return { ...this.processResponse(result, page, size), searchCriteria };
   }
 
-   // Search by name with fallback
    async searchByName(name, page = 0, size = 10) {
     if (!name?.trim()) {
       return await this.getAllCurriculums(page, size);
     }
     try {
-      // Try search endpoint first
+      
       return await this.searchCurriculums({ name: name.trim() }, page, size);
     } catch (error) {
       console.warn('🔄 Search endpoint failed, using client-side filtering');
       
-    
       const result = await this.getAllCurriculums(0, 500);
       const filtered = result.curriculums.filter(c => 
         c.title.toLowerCase().includes(name.toLowerCase()) ||
@@ -391,7 +552,18 @@ class CurriculumService{
 
     return await this.getCurriculumsByAcademicLevel(academicLevelId, page, size);
   }
+
+  // Debugging method
+  
 }
 
 const curriculumService = new CurriculumService();
+
+// debugging tools
+if (typeof window !== 'undefined') {
+  window.curriculumService = curriculumService;
+  window.diagnoseCurriculumSchoolIds = () => curriculumService.diagnoseSchoolIdIssue();
+  window.resolveCurriculumSchoolId = (schoolId) => curriculumService.resolveSchoolId(schoolId);
+}
+
 export default curriculumService;
