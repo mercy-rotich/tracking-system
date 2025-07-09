@@ -4,8 +4,8 @@
   margin-left: -3rem;
   margin-top: -0.4rem;
   z-index: 1002;
-  background: white !important;
-  border: 1px solid #e5e7eb !important;
+  background:none;
+  border: none;
   outline: none !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
   padding: 0.5rem;
