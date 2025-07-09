@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import MetricsCards from '../../../components/Admin/AdminDashboard/MetricCards/MetricCards';
 import WorkflowBottlenecks from '../../../components/Admin/AdminDashboard/WorkflowBottlenecks/WorkflowBottlenecks';
 import QuickActions from '../../../components/Admin/AdminDashboard/QuickActions/QuickActions';
@@ -11,6 +11,7 @@ import './AdminDashboardOverview.css';
 const API_BASE_URL = import.meta.env.VITE_BASE_URL;
 
 const AdminDashboardOverview = () => {
+  // State management
   const [showCreateUserModal, setShowCreateUserModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [curriculumStats, setCurriculumStats] = useState({
@@ -28,22 +29,60 @@ const AdminDashboardOverview = () => {
     firstName: '',
     lastName: ''
   });
-  const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+  const [notification, setNotification] = useState({ 
+    show: false, 
+    message: '', 
+    type: '' 
+  });
 
-  
-  useEffect(() => {
-    loadCurriculumStats();
+  // Responsive state management
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
+  const [screenSize, setScreenSize] = useState('desktop');
+
+  // Check screen size and update state
+  const checkScreenSize = useCallback(() => {
+    const width = window.innerWidth;
+    
+    if (width < 768) {
+      setIsMobile(true);
+      setIsTablet(false);
+      setScreenSize('mobile');
+    } else if (width < 1024) {
+      setIsMobile(false);
+      setIsTablet(true);
+      setScreenSize('tablet');
+    } else if (width < 1440) {
+      setIsMobile(false);
+      setIsTablet(false);
+      setScreenSize('desktop');
+    } else {
+      setIsMobile(false);
+      setIsTablet(false);
+      setScreenSize('large');
+    }
   }, []);
 
-  const loadCurriculumStats = async () => {
+  // Screen size effect
+  useEffect(() => {
+    checkScreenSize();
+    
+    const handleResize = () => {
+      checkScreenSize();
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [checkScreenSize]);
+
+  // Load curriculum statistics
+  const loadCurriculumStats = useCallback(async () => {
     try {
       setStatsLoading(true);
       console.log('🔄 Loading curriculum statistics for dashboard...');
       
-    
       const result = await curriculumService.getAllCurriculums(0, 200);
       const totalFromApi = result.pagination?.totalElements || result.curriculums.length;
-      
       
       const statusCounts = result.curriculums.reduce((acc, curr) => {
         acc[curr.status] = (acc[curr.status] || 0) + 1;
@@ -59,7 +98,7 @@ const AdminDashboardOverview = () => {
         rejected: statusCounts.rejected || 0
       };
       
-      
+      // Extrapolate if we have a sample
       if (sampleSize < totalFromApi && sampleSize > 50) {
         const ratio = totalFromApi / sampleSize;
         finalStats = {
@@ -80,25 +119,32 @@ const AdminDashboardOverview = () => {
     } finally {
       setStatsLoading(false);
     }
-  };
+  }, []);
 
-  const handleCreateUser = () => {
+  // Load stats on component mount
+  useEffect(() => {
+    loadCurriculumStats();
+  }, [loadCurriculumStats]);
+
+  // Memoized handlers for better performance
+  const handleCreateUser = useCallback(() => {
     setShowCreateUserModal(true);
-  };
+  }, []);
 
-  const handleExportReport = () => {
+  const handleExportReport = useCallback(() => {
     console.log('Exporting report...');
-  };
+    showNotification('Report export started...', 'success');
+  }, []);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-  };
+  }, []);
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setFormData({
       username: '',
       email: '',
@@ -106,20 +152,20 @@ const AdminDashboardOverview = () => {
       firstName: '',
       lastName: ''
     });
-  };
+  }, []);
 
-  const showNotification = (message, type) => {
+  const showNotification = useCallback((message, type) => {
     setNotification({ show: true, message, type });
     setTimeout(() => {
       setNotification({ show: false, message: '', type: '' });
     }, 5000);
-  };
+  }, []);
 
-  const getAuthToken = () => {
+  const getAuthToken = useCallback(() => {
     return authService.getToken();
-  };
+  }, []);
 
-  const handleSubmitUser = async (e) => {
+  const handleSubmitUser = useCallback(async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
@@ -132,8 +178,6 @@ const AdminDashboardOverview = () => {
         return;
       }
 
-      console.log('Using token for API call:', token ? `${token.substring(0, 20)}...` : 'null');
-
       const response = await fetch(`${API_BASE_URL}/users/create`, {
         method: 'POST',
         headers: {
@@ -142,8 +186,6 @@ const AdminDashboardOverview = () => {
         },
         body: JSON.stringify(formData)
       });
-
-      console.log('API response status:', response.status);
 
       if (response.ok) {
         const result = await response.json();
@@ -166,25 +208,82 @@ const AdminDashboardOverview = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [formData, getAuthToken, resetForm, showNotification]);
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setShowCreateUserModal(false);
     resetForm();
-  };
+  }, [resetForm]);
 
-  const debugAuth = () => {
-    console.log('Debug Auth Status:');
-    console.log('Is Authenticated:', authService.isAuthenticated());
-    console.log('Current User:', authService.getCurrentUser());
-    console.log('Token:', authService.getToken() ? 'Present' : 'Missing');
-    console.log('API Base URL:', API_BASE_URL);
-    authService.debugStorage();
-  };
-
-  const refreshStats = async () => {
+  const refreshStats = useCallback(async () => {
     await loadCurriculumStats();
-  };
+  }, [loadCurriculumStats]);
+
+  // Memoized responsive button layout
+  const buttonLayout = useMemo(() => {
+    const buttons = [
+      {
+        key: 'create-user',
+        className: 'btn btn-primary',
+        onClick: handleCreateUser,
+        icon: 'fas fa-user-plus',
+        text: isMobile ? 'Create User' : 'Create User'
+      },
+      {
+        key: 'export-report',
+        className: 'btn btn-secondary',
+        onClick: handleExportReport,
+        icon: 'fas fa-download',
+        text: isMobile ? 'Export' : 'Export Report'
+      },
+      {
+        key: 'refresh-stats',
+        className: 'btn btn-outline',
+        onClick: refreshStats,
+        disabled: statsLoading,
+        icon: statsLoading ? 'fas fa-spinner fa-spin' : 'fas fa-sync-alt',
+        text: isMobile ? 'Refresh' : 'Refresh Stats'
+      }
+    ];
+
+    return buttons;
+  }, [handleCreateUser, handleExportReport, refreshStats, statsLoading, isMobile]);
+
+  // Responsive grid configuration
+  const gridConfig = useMemo(() => {
+    switch (screenSize) {
+      case 'mobile':
+        return {
+          workflowCols: '1fr',
+          activityCols: '1fr',
+          gap: '1rem'
+        };
+      case 'tablet':
+        return {
+          workflowCols: '1fr',
+          activityCols: '1fr',
+          gap: '1.5rem'
+        };
+      case 'desktop':
+        return {
+          workflowCols: '2fr 1fr',
+          activityCols: '1fr 1fr',
+          gap: '1.5rem'
+        };
+      case 'large':
+        return {
+          workflowCols: '2fr 1fr',
+          activityCols: '1fr 1fr',
+          gap: '2rem'
+        };
+      default:
+        return {
+          workflowCols: '2fr 1fr',
+          activityCols: '1fr 1fr',
+          gap: '1.5rem'
+        };
+    }
+  }, [screenSize]);
 
   return (
     <div className="dashboard-main-content">
@@ -198,6 +297,7 @@ const AdminDashboardOverview = () => {
               <button 
                 className="notification-close"
                 onClick={() => setNotification({ show: false, message: '', type: '' })}
+                aria-label="Close notification"
               >
                 <i className="fas fa-times"></i>
               </button>
@@ -213,34 +313,23 @@ const AdminDashboardOverview = () => {
               <p className="dashboard-subtitle">Complete system overview and management</p>
             </div>
             <div className="header-actions">
-              <button 
-                className="btn btn-primary"
-                onClick={handleCreateUser}
-              >
-                <i className="fas fa-user-plus"></i>
-                Create User
-              </button>
-              <button 
-                className="btn btn-secondary"
-                onClick={handleExportReport}
-              >
-                <i className="fas fa-download"></i>
-                Export Report
-              </button>
-              <button 
-                className="btn btn-outline"
-                onClick={refreshStats}
-                disabled={statsLoading}
-              >
-                <i className={`fas ${statsLoading ? 'fa-spinner fa-spin' : 'fa-sync-alt'}`}></i>
-                Refresh Stats
-              </button>
-             
+              {buttonLayout.map(button => (
+                <button 
+                  key={button.key}
+                  className={button.className}
+                  onClick={button.onClick}
+                  disabled={button.disabled}
+                  aria-label={button.text}
+                >
+                  <i className={button.icon} aria-hidden="true"></i>
+                  <span>{button.text}</span>
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Key Metrics Cards - Pass real curriculum stats */}
+        {/* Key Metrics Cards */}
         <MetricsCards 
           curriculumStats={curriculumStats}
           statsLoading={statsLoading}
@@ -248,13 +337,25 @@ const AdminDashboardOverview = () => {
         />
 
         {/* Workflow Status and Quick Actions */}
-        <div className="workflow-section">
+        <div 
+          className="workflow-section"
+          style={{ 
+            gridTemplateColumns: gridConfig.workflowCols,
+            gap: gridConfig.gap
+          }}
+        >
           <WorkflowBottlenecks curriculumStats={curriculumStats} />
           <QuickActions />
         </div>
 
         {/* Recent Activity and System Alerts */}
-        <div className="activity-section">
+        <div 
+          className="activity-section"
+          style={{ 
+            gridTemplateColumns: gridConfig.activityCols,
+            gap: gridConfig.gap
+          }}
+        >
           <RecentActivity />
           <SystemAlerts />
         </div>
@@ -265,8 +366,12 @@ const AdminDashboardOverview = () => {
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2 className="modal-title">Create New User</h2>
-                <button className="modal-close" onClick={handleCloseModal}>
-                  <i className="fas fa-times"></i>
+                <button 
+                  className="modal-close" 
+                  onClick={handleCloseModal}
+                  aria-label="Close modal"
+                >
+                  <i className="fas fa-times" aria-hidden="true"></i>
                 </button>
               </div>
               
@@ -282,6 +387,7 @@ const AdminDashboardOverview = () => {
                       onChange={handleInputChange}
                       required
                       placeholder="Enter first name"
+                      autoComplete="given-name"
                     />
                   </div>
                   <div className="form-group">
@@ -294,6 +400,7 @@ const AdminDashboardOverview = () => {
                       onChange={handleInputChange}
                       required
                       placeholder="Enter last name"
+                      autoComplete="family-name"
                     />
                   </div>
                 </div>
@@ -308,6 +415,7 @@ const AdminDashboardOverview = () => {
                     onChange={handleInputChange}
                     required
                     placeholder="Enter username"
+                    autoComplete="username"
                   />
                 </div>
 
@@ -321,6 +429,7 @@ const AdminDashboardOverview = () => {
                     onChange={handleInputChange}
                     required
                     placeholder="Enter email address"
+                    autoComplete="email"
                   />
                 </div>
 
@@ -335,6 +444,7 @@ const AdminDashboardOverview = () => {
                     required
                     placeholder="Enter password"
                     minLength="8"
+                    autoComplete="new-password"
                   />
                   <small className="form-help">Password must be at least 8 characters long</small>
                 </div>
@@ -355,13 +465,13 @@ const AdminDashboardOverview = () => {
                   >
                     {isLoading ? (
                       <>
-                        <i className="fas fa-spinner fa-spin"></i>
-                        Creating...
+                        <i className="fas fa-spinner fa-spin" aria-hidden="true"></i>
+                        <span>Creating...</span>
                       </>
                     ) : (
                       <>
-                        <i className="fas fa-user-plus"></i>
-                        Create User
+                        <i className="fas fa-user-plus" aria-hidden="true"></i>
+                        <span>Create User</span>
                       </>
                     )}
                   </button>
