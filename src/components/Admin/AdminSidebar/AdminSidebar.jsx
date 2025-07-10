@@ -1,283 +1,102 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+
+import React, { useState } from 'react';
 import authService from '../../../services/authService';
-import './AdminSidebar.css';
+import Sidebar from '../../common/Sidebar/Sidebar';
 
 const AdminSidebar = () => {
   const [pendingCount] = useState(24);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isOpen, setIsOpen] = useState(true);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
 
   
-  useEffect(() => {
-    const checkIfMobile = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      
-      // On mobile, start with sidebar closed
-      if (mobile) {
-        setIsOpen(false);
-      } else {
-        setIsOpen(true);
+  const sidebarConfig = {
+    type: 'admin',
+    header: {
+      title: 'System Administrator',
+      subtitle: 'Complete System Control',
+      logo: null 
+    },
+    sections: [
+      {
+        id: 'main-navigation',
+        title: null, 
+        items: [
+          { 
+            id: 'admin/dashboard', 
+            label: 'Dashboard Overview', 
+            icon: 'fas fa-tachometer-alt', 
+            path: '/admin/dashboard' 
+          },
+          { 
+            id: 'curricula', 
+            label: 'All Curricula', 
+            icon: 'fas fa-book', 
+            badge: pendingCount, 
+            path: '/admin/admin-all-curricula' 
+          },
+          { 
+            id: 'users', 
+            label: 'User Management', 
+            icon: 'fas fa-users', 
+            path: '/admin/admin-user-management' 
+          },
+          { 
+            id: 'monitoring', 
+            label: 'System Monitoring', 
+            icon: 'fas fa-chart-line', 
+            path: '/admin/admin-system-monitoring' 
+          },
+          { 
+            id: 'reports', 
+            label: 'Reports & Analytics', 
+            icon: 'fas fa-file-download', 
+            path: '/admin/admin-reports' 
+          }
+        ]
+      },
+      {
+        id: 'system-tools',
+        title: 'System Tools',
+        items: [
+          { 
+            id: 'notifications', 
+            label: 'Notifications Center', 
+            icon: 'fas fa-bell', 
+            path: '/admin/notifications' 
+          },
+          { 
+            id: 'audit', 
+            label: 'Audit Logs', 
+            icon: 'fas fa-shield-alt', 
+            path: '/admin/audit' 
+          },
+          { 
+            id: 'settings', 
+            label: 'System Settings', 
+            icon: 'fas fa-cog', 
+            path: '/admin/settings' 
+          }
+        ]
       }
-    };
-    
-    checkIfMobile();
-    window.addEventListener('resize', checkIfMobile);
-    
-    return () => window.removeEventListener('resize', checkIfMobile);
-  }, []);
-
-  
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen);
-  };
-
-  // Close sidebar when clicking outside on mobile
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (isMobile && isOpen && !event.target.closest('.sidebar') && !event.target.closest('.sidebar-toggle-btn')) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isMobile && isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('touchstart', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
-    };
-  }, [isMobile, isOpen]);
-
-  // Prevent body scroll when mobile sidebar is open
-  useEffect(() => {
-    if (isMobile && isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isMobile, isOpen]);
-
-
-  useEffect(() => {
-    const mainContent = document.querySelector('.main-content');
-    const toggleBtn = document.querySelector('.sidebar-toggle-btn');
-    
-    if (mainContent) {
-      if (!isMobile && !isOpen) {
-        mainContent.classList.add('sidebar-collapsed');
-      } else {
-        mainContent.classList.remove('sidebar-collapsed');
-      }
-    }
-    
-    if (toggleBtn) {
-      if (!isMobile && !isOpen) {
-        toggleBtn.classList.add('sidebar-collapsed');
-      } else {
-        toggleBtn.classList.remove('sidebar-collapsed');
-      }
-    }
-  }, [isMobile, isOpen]);
-
-  const navigationItems = [
-    { id: 'admin/dashboard', label: 'Dashboard Overview', icon: 'fas fa-tachometer-alt', path: '/admin/dashboard' },
-    { id: 'curricula', label: 'All Curricula', icon: 'fas fa-book', badge: pendingCount, path: '/admin/admin-all-curricula' },
-    { id: 'users', label: 'User Management', icon: 'fas fa-users', path: '/admin/admin-user-management' },
-    { id: 'monitoring', label: 'System Monitoring', icon: 'fas fa-chart-line', path: '/admin/admin-system-monitoring' },
-    { id: 'reports', label: 'Reports & Analytics', icon: 'fas fa-file-download', path: '/admin/admin-reports' }
-  ];
-
-  const systemToolsItems = [
-    { id: 'notifications', label: 'Notifications Center', icon: 'fas fa-bell', path: '/admin/notifications' },
-    { id: 'audit', label: 'Audit Logs', icon: 'fas fa-shield-alt', path: '/admin/audit' },
-    { id: 'settings', label: 'System Settings', icon: 'fas fa-cog', path: '/admin/settings' }
-  ];
-
-  const handleItemClick = (item) => {
-    
-    navigate(item.path);
-    
-    
-    if (isMobile) {
-      setIsOpen(false);
-    }
+    ]
   };
 
   const handleLogout = async () => {
-    if (isLoggingOut) return; 
-    
     try {
-      setIsLoggingOut(true);
-      console.log(' Starting logout process...');
-      
-      
-      const logoutButton = document.querySelector('.logout-link');
-      if (logoutButton) {
-        logoutButton.classList.add('loading');
-      }
-      
-    
+      console.log('Starting logout process...');
       await authService.logout();
-      
       console.log('✅ Logout successful, redirecting...');
-      
-      
-      if (isMobile && isOpen) {
-        setIsOpen(false);
-      }
-      
       window.location.href = '/admin/login';
-      
     } catch (error) {
       console.error('❌ Logout error:', error);
-      
       window.location.href = '/admin/login';
-    
-      
-    } finally {
-      setIsLoggingOut(false);
-      
-      const logoutButton = document.querySelector('.logout-link');
-      if (logoutButton) {
-        logoutButton.classList.remove('loading');
-      }
     }
   };
 
-  const isActiveItem = (itemPath) => {
-    return location.pathname === itemPath;
-  };
-
   return (
-    <>
-      {/* Toggle Button */}
-      <button 
-        className={`sidebar-toggle-btn ${isOpen ? 'toggle-on' : 'toggle-off'}`}
-        onClick={toggleSidebar}
-        aria-label="Toggle navigation menu"
-        type="button"
-      >
-        <i 
-          className={isOpen ? 'fas fa-toggle-on' : 'fas fa-toggle-off'}
-          aria-hidden="true"
-        ></i>
-      </button>
-
-      {/* Mobile Overlay */}
-      {isMobile && isOpen && (
-        <div 
-          className="sidebar-overlay"
-          onClick={toggleSidebar}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              toggleSidebar();
-            }
-          }}
-          aria-label="Close sidebar"
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside 
-        className={`sidebar ${isOpen ? 'sidebar-open' : ''} ${isMobile ? 'sidebar-mobile' : 'sidebar-desktop'} ${!isMobile && !isOpen ? 'sidebar-collapsed' : ''}`}
-        role="navigation"
-        aria-label="Admin navigation"
-      >
-        {/* Mobile Close Button - Only on very small screens */}
-        {isMobile && (
-          <button 
-            className="sidebar-close-btn"
-            onClick={toggleSidebar}
-            aria-label="Close navigation"
-            type="button"
-          >
-            <i className="fas fa-times"></i>
-          </button>
-        )}
-
-        {/* User Info Section */}
-        <div className="sidebar-header">
-          <h2 className="sidebar-title">System Administrator</h2>
-          <p className="sidebar-subtitle">Complete System Control</p>
-        </div>
-        
-        <nav className="sidebar-nav">
-          {/* Main Navigation */}
-          <div className="sidebar-section">
-            <div className="sidebar-items">
-              {navigationItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => handleItemClick(item)}
-                  className={`sidebar-link ${isActiveItem(item.path) ? 'active' : ''}`}
-                  type="button"
-                  aria-current={isActiveItem(item.path) ? 'page' : undefined}
-                >
-                  <i className={`${item.icon} sidebar-icon`} aria-hidden="true"></i>
-                  <span className="sidebar-text">{item.label}</span>
-                  {item.badge && (
-                    <span className="sidebar-badge" aria-label={`${item.badge} pending items`}>
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-          
-          {/* System Tools Section */}
-          <div className="sidebar-section">
-            <h3 className="sidebar-section-title">System Tools</h3>
-            <div className="sidebar-items">
-              {systemToolsItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => handleItemClick(item)}
-                  className={`sidebar-link ${isActiveItem(item.path) ? 'active' : ''}`}
-                  type="button"
-                  aria-current={isActiveItem(item.path) ? 'page' : undefined}
-                >
-                  <i className={`${item.icon} sidebar-icon`} aria-hidden="true"></i>
-                  <span className="sidebar-text">{item.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-          
-          {/* Logout Section */}
-          <div className="sidebar-logout-section">
-            <button 
-              onClick={handleLogout} 
-              className={`sidebar-link logout-link ${isLoggingOut ? 'loading' : ''}`}
-              type="button"
-              aria-label="Logout from admin panel"
-              disabled={isLoggingOut}
-            >
-              <i 
-                className={`${isLoggingOut ? 'fas fa-spinner fa-spin' : 'fas fa-sign-out-alt'} sidebar-icon`} 
-                aria-hidden="true"
-              ></i>
-              <span className="sidebar-text">
-                {isLoggingOut ? 'Logging out...' : 'Logout'}
-              </span>
-            </button>
-          </div>
-        </nav>
-      </aside>
-    </>
+    <Sidebar 
+      config={sidebarConfig}
+      onLogout={handleLogout}
+      className="admin-sidebar"
+    />
   );
 };
 

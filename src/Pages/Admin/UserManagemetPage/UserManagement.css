@@ -39,8 +39,8 @@
     transition: margin-left 0.3s ease-in-out;
     min-height: 100vh; 
     background-color: var(--gray-50);
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
+    padding-left: rem;
+    padding-right: 0.75rem;
   }
   
   @media (min-width: 768px) {

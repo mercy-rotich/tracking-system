@@ -2,6 +2,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../../context/ThemeContext';
+import logo_image from '../../../assets/logo.jpg'
 import './UserHeader.css';
 
 const UserHeader = ({ onMobileSidebarToggle }) => {
