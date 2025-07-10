@@ -19,10 +19,7 @@ const AdminLayout = () => {
       <AdminHeader onToggleSidebar={toggleSidebar} />
       <AdminSidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
       <main className="admin-main-content">
-        <AdminDashboardOverview/>
-        <AdminCurriculaPage/>
-        <SystemMonitoringPage/>
-        <Reports/>
+        
        
         <Outlet />
       </main>

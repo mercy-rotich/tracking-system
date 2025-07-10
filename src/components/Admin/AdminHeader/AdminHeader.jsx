@@ -1,80 +1,123 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import authService from '../../../services/authService';
 import logo_image from '../../../assets/logo.jpg'
 import './AdminHeader.css';
 
 const AdminHeader = ({ onSearchSubmit, user, systemHealth, notifications }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-  
+  const [searchQuery,setSearchQuery] = useState('');
+  const [showNotifications,setShowNotifications] =useState(false);
+  const [showProfile,setShowProfile] = useState(false);
+  const [isLoggingOut,setIsLoggingOut] = useState(false);
+
   const notificationRef = useRef(null);
   const profileRef = useRef(null);
-
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+  const navigate = useNavigate();
+  //close drpdowns when clicking outside
+  useEffect(()=>{
+    const handleClickOutside = (event) =>{
+      if(notificationRef.current && !notificationRef.current.contains(event.target)){
         setShowNotifications(false);
       }
-      if (profileRef.current && !profileRef.current.contains(event.target)) {
+      if(profileRef.current && !profileRef.current.contains(event.target)) {
         setShowProfile(false);
+
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-  };
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim() && onSearchSubmit) {
-      onSearchSubmit(searchQuery.trim());
+    document.addEventListener('mousedown',handleClickOutside);
+    return() =>{
+      document.removeEventListener('mousedown',handleClickOutside)
     }
+  },[]);
+
+  const handleSearchChange =(e) =>{
+    setSearchQuery(e.target.value);
+
   };
 
-  const handleSearchKeyPress = (e) => {
-    if (e.key === 'Enter') {
+  const handleSearchSubmit = (e)=>{
+    e.preventDefault();
+    if(searchQuery.trim() && onSearchSubmit){
+      onSearchSubmit(searchQuery.trim());
+  }
+  };
+  const handleSearchKeyPress = (e) =>{
+    if(e.key === 'Enter'){
       handleSearchSubmit(e);
     }
   };
-
-  const toggleNotifications = () => {
+  const toggleNotifications = () =>{
     setShowNotifications(!showNotifications);
     setShowProfile(false);
   };
 
-  const toggleProfile = () => {
+  const toggleProfile = ()=>{
     setShowProfile(!showProfile);
     setShowNotifications(false);
   };
+  const handleNotificationClick = (notification) =>{
+    console.log('Notification clicked',notification);
 
-  const handleNotificationClick = (notification) => {
-    console.log('Notification clicked:', notification);
-    // Handle notification click logic here
   };
-
-  const handleProfileAction = (action) => {
-    console.log('Profile action:', action);
+  const handleProfileAction = async (action) =>{
+    console.log('profile action:',action);
     setShowProfile(false);
-    // Handle profile actions here
-  };
 
-  const getSystemHealthStatus = () => {
-    if (!systemHealth) return { status: 'offline', color: 'red', text: 'System Offline' };
-    
+    switch(action){
+      case 'profile':
+        navigate('/admin/profile');
+        break;
+
+      case 'settings':
+        navigate('/admin/settings');
+        break;
+        
+      case 'help':
+        navigate('/admin/help');
+        break;
+
+      case 'logout':
+        await handleLogout();
+        break;
+
+      default:
+        console.log('unknown profile action:',action); 
+          
+
+    }
+  };
+  const handleLogout = async ()=>{
+    if(isLoggingOut) return;
+    try{
+      setIsLoggingOut(true);
+      
+      await authService.logout();
+      setShowProfile(false);
+      setShowNotifications(false);
+
+      window.location.href ='/admin/login';
+
+
+    }catch(error){
+      console.error('Logout error:',error)
+
+      window.location.href ='/admin/login';
+    }finally{
+      setIsLoggingOut(false);
+    }
+  };
+  const getSystemHealthStatus =()=>{
+    if(!systemHealth) return {status: 'offline', color: 'red', text: 'System Offline'}
+
     if (systemHealth >= 98) return { status: 'online', color: 'green', text: 'System Online' };
-    if (systemHealth >= 90) return { status: 'warning', color: 'yellow', text: 'System Warning' };
-    return { status: 'error', color: 'red', text: 'System Error' };
+  if (systemHealth >= 90) return { status: 'warning', color: 'yellow', text: 'System Warning' };
+  return { status: 'error', color: 'red', text: 'System Error' };
   };
-
   const healthStatus = getSystemHealthStatus();
-  const unreadCount = notifications?.filter(n => !n.read).length || 0;
+const unreadCount = notifications?.filter(n => !n.read).length || 0;
+
+ 
 
   return (
     <header className="header">
@@ -190,7 +233,11 @@ const AdminHeader = ({ onSearchSubmit, user, systemHealth, notifications }) => {
             
             {/* Profile Dropdown */}
             <div className="profile-wrapper" ref={profileRef}>
-              <button className="profile-button" onClick={toggleProfile}>
+              <button 
+                className="profile-button" 
+                onClick={toggleProfile}
+                disabled={isLoggingOut}
+              >
                 <div className="profile-info">
                   <div className="profile-text">
                     <span className="profile-name">{user?.name || 'Admin User'}</span>
@@ -228,6 +275,7 @@ const AdminHeader = ({ onSearchSubmit, user, systemHealth, notifications }) => {
                     <button
                       className="dropdown-item"
                       onClick={() => handleProfileAction('profile')}
+                      disabled={isLoggingOut}
                     >
                       <i className="fas fa-user"></i>
                       <span>My Profile</span>
@@ -235,6 +283,7 @@ const AdminHeader = ({ onSearchSubmit, user, systemHealth, notifications }) => {
                     <button
                       className="dropdown-item"
                       onClick={() => handleProfileAction('settings')}
+                      disabled={isLoggingOut}
                     >
                       <i className="fas fa-cog"></i>
                       <span>Settings</span>
@@ -242,17 +291,19 @@ const AdminHeader = ({ onSearchSubmit, user, systemHealth, notifications }) => {
                     <button
                       className="dropdown-item"
                       onClick={() => handleProfileAction('help')}
+                      disabled={isLoggingOut}
                     >
                       <i className="fas fa-question-circle"></i>
                       <span>Help & Support</span>
                     </button>
                     <div className="dropdown-divider"></div>
                     <button
-                      className="dropdown-item logout"
+                      className={`dropdown-item logout ${isLoggingOut ? 'loading' : ''}`}
                       onClick={() => handleProfileAction('logout')}
+                      disabled={isLoggingOut}
                     >
-                      <i className="fas fa-sign-out-alt"></i>
-                      <span>Logout</span>
+                      <i className={`fas ${isLoggingOut ? 'fa-spinner fa-spin' : 'fa-sign-out-alt'}`}></i>
+                      <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
                     </button>
                   </div>
                 </div>

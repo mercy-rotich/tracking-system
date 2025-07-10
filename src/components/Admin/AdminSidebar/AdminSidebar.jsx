@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import authService from '../../../services/authService';
 import './AdminSidebar.css';
 
 const AdminSidebar = () => {
   const [pendingCount] = useState(24);
   const [isMobile, setIsMobile] = useState(false);
-  const [isOpen, setIsOpen] = useState(true); 
+  const [isOpen, setIsOpen] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -15,7 +17,7 @@ const AdminSidebar = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       
-      
+      // On mobile, start with sidebar closed
       if (mobile) {
         setIsOpen(false);
       } else {
@@ -34,7 +36,7 @@ const AdminSidebar = () => {
     setIsOpen(!isOpen);
   };
 
- 
+  // Close sidebar when clicking outside on mobile
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (isMobile && isOpen && !event.target.closest('.sidebar') && !event.target.closest('.sidebar-toggle-btn')) {
@@ -53,6 +55,7 @@ const AdminSidebar = () => {
     };
   }, [isMobile, isOpen]);
 
+  // Prevent body scroll when mobile sidebar is open
   useEffect(() => {
     if (isMobile && isOpen) {
       document.body.style.overflow = 'hidden';
@@ -65,7 +68,7 @@ const AdminSidebar = () => {
     };
   }, [isMobile, isOpen]);
 
-  
+
   useEffect(() => {
     const mainContent = document.querySelector('.main-content');
     const toggleBtn = document.querySelector('.sidebar-toggle-btn');
@@ -102,7 +105,7 @@ const AdminSidebar = () => {
   ];
 
   const handleItemClick = (item) => {
-   
+    
     navigate(item.path);
     
     
@@ -111,14 +114,44 @@ const AdminSidebar = () => {
     }
   };
 
-  const handleLogout = () => {
-    console.log('Logout clicked');
-    localStorage.removeItem('authToken');
-    sessionStorage.removeItem('authToken');
-    navigate('/login');
+  const handleLogout = async () => {
+    if (isLoggingOut) return; 
     
-    if (isMobile && isOpen) {
-      setIsOpen(false);
+    try {
+      setIsLoggingOut(true);
+      console.log(' Starting logout process...');
+      
+      
+      const logoutButton = document.querySelector('.logout-link');
+      if (logoutButton) {
+        logoutButton.classList.add('loading');
+      }
+      
+    
+      await authService.logout();
+      
+      console.log('✅ Logout successful, redirecting...');
+      
+      
+      if (isMobile && isOpen) {
+        setIsOpen(false);
+      }
+      
+      window.location.href = '/admin/login';
+      
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+      
+      window.location.href = '/admin/login';
+    
+      
+    } finally {
+      setIsLoggingOut(false);
+      
+      const logoutButton = document.querySelector('.logout-link');
+      if (logoutButton) {
+        logoutButton.classList.remove('loading');
+      }
     }
   };
 
@@ -128,7 +161,7 @@ const AdminSidebar = () => {
 
   return (
     <>
-      {/* Toggle Button  */}
+      {/* Toggle Button */}
       <button 
         className={`sidebar-toggle-btn ${isOpen ? 'toggle-on' : 'toggle-off'}`}
         onClick={toggleSidebar}
@@ -182,7 +215,7 @@ const AdminSidebar = () => {
         </div>
         
         <nav className="sidebar-nav">
-        
+          {/* Main Navigation */}
           <div className="sidebar-section">
             <div className="sidebar-items">
               {navigationItems.map((item) => (
@@ -205,7 +238,7 @@ const AdminSidebar = () => {
             </div>
           </div>
           
-         
+          {/* System Tools Section */}
           <div className="sidebar-section">
             <h3 className="sidebar-section-title">System Tools</h3>
             <div className="sidebar-items">
@@ -228,12 +261,18 @@ const AdminSidebar = () => {
           <div className="sidebar-logout-section">
             <button 
               onClick={handleLogout} 
-              className="sidebar-link logout-link"
+              className={`sidebar-link logout-link ${isLoggingOut ? 'loading' : ''}`}
               type="button"
               aria-label="Logout from admin panel"
+              disabled={isLoggingOut}
             >
-              <i className="fas fa-sign-out-alt sidebar-icon" aria-hidden="true"></i>
-              <span className="sidebar-text">Logout</span>
+              <i 
+                className={`${isLoggingOut ? 'fas fa-spinner fa-spin' : 'fas fa-sign-out-alt'} sidebar-icon`} 
+                aria-hidden="true"
+              ></i>
+              <span className="sidebar-text">
+                {isLoggingOut ? 'Logging out...' : 'Logout'}
+              </span>
             </button>
           </div>
         </nav>
