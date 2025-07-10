@@ -17,7 +17,7 @@ export const CTASection = () => {
     button.style.pointerEvents = 'none';
     
     setTimeout(() => {
-      navigate('/app')
+      navigate('/app/dashboard')
       
       button.innerHTML = originalHTML;
       button.style.pointerEvents = 'auto';
