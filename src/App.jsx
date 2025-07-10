@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
@@ -9,14 +8,12 @@ import LoginPage from './Pages/users/LoginPage/LoginPage';
 
 import PasswordResetSystem from './Pages/users/PasswordResetSystem';
 
-
 import AdminLayout from './components/Admin/AdminLayout';
 import AdminDashboardOverview from './Pages/Admin/AdminDashboardOverview/AdminDashboardOverview';
 import AdminCurriculaPage from './Pages/Admin/AdminCurriculaPage/AdminCurriculaPage';
 import SystemMonitoringPage from './Pages/Admin/SystemMonitoringPage/SystemMonitoringPage';
 import UserManagementPage from './Pages/Admin/UserManagemetPage/UserManagement';
 import Reports from './Pages/Admin/ReportsPage/Reports';
-
 
 import UsersLayout from './components/Users/UsersLayout/UsersLayout';
 import UserDashboard from './Pages/users/UserDashboard/UserDashboard';
@@ -57,10 +54,10 @@ function App() {
                   <Route path="admin-reports" element={<Reports />} />
                 </Route>
                 
-                <Route path="/admin" element={<Navigate to="/admin/dashboard" />} />
+                <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
                 
                 {/* User Routes */}
-                <Route path="/app" element={<UsersLayout />}>
+                <Route path="/app/*" element={<UsersLayout />}>
                   <Route index element={<Navigate to="/app/dashboard"  />} />
                   <Route path="dashboard" element={<UserDashboard />} />
                   <Route path="curricula" element={<UserCurricula />} />
@@ -69,10 +66,10 @@ function App() {
                 </Route>
                 
                 {/* Legacy redirects */}
-                <Route path="/login" element={<Navigate to="/admin/login"  />} />
+                <Route path="/login" element={<Navigate to="/admin/login" replace />} />
                 
                 {/* Catch all route - redirect to landing page */}
-                <Route path="*" element={<Navigate to="/" />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>
           </Router>
@@ -81,4 +78,5 @@ function App() {
     </AuthProvider>
   );
 }
+
 export default App;

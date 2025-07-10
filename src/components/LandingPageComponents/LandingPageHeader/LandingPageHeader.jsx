@@ -34,8 +34,7 @@ const LandingPageHeader = () => {
     button.style.pointerEvents = 'none';
     
     setTimeout(() => {
-      
-      navigate('/app');
+      navigate('/app/dashboard');
       
       
       button.innerHTML = originalHTML;
