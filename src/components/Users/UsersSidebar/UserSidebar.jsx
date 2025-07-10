@@ -1,6 +1,6 @@
-
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import logo_image from '../../../assets/logo.jpg'
 import './UserSidebar.css';
 
 const UserSidebar = ({ isCollapsed, isMobileOpen, onToggle, onMobileToggle }) => {
@@ -27,11 +27,21 @@ const UserSidebar = ({ isCollapsed, isMobileOpen, onToggle, onMobileToggle }) =>
 
   return (
     <>
+
+
       {/* Mobile Overlay */}
       {isMobileOpen && (
         <div 
           className="user-sidebar-overlay"
           onClick={onMobileToggle}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              onMobileToggle();
+            }
+          }}
+          aria-label="Close sidebar"
         />
       )}
       
@@ -42,19 +52,18 @@ const UserSidebar = ({ isCollapsed, isMobileOpen, onToggle, onMobileToggle }) =>
           onClick={onToggle}
           aria-label="Toggle sidebar"
         >
-          <i className={`fas fa-chevron-${isCollapsed ? 'right' : 'left'}`} />
+          <i className={`fas fa-toggle-${isCollapsed ? 'off' : 'on'}`} />
         </button>
         
         {/* Header */}
         <div className="user-sidebar-header">
           <div className="user-logo-container">
-            <div className="user-logo">
-              <i className="fas fa-graduation-cap" />
+            <div className="user-logo-img">
+              <img src={logo_image} alt="" />
             </div>
             {!isCollapsed && (
               <div className="user-brand-info">
-                <h1>CurricFlow</h1>
-                <p>Curriculum Management</p>
+                <h1>Curriculum Management System</h1>
               </div>
             )}
           </div>
