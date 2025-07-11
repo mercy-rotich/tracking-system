@@ -23,6 +23,7 @@ const AdminCurriculaPage = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCurriculum, setSelectedCurriculum] = useState(null);
+  const [deleteType, setDeleteType] = useState('soft'); 
 
   const {
     curricula,
@@ -74,7 +75,6 @@ const AdminCurriculaPage = () => {
     resetToFirstPage
   } = usePagination();
 
-  
   const {
     departments: allDepartments,
     loading: departmentsLoading,
@@ -93,12 +93,9 @@ const AdminCurriculaPage = () => {
       try {
         setIsInitialized(false);
         
-        
         await loadSchoolsAndDepartments();
-        
         await loadStatsOverview();
         
-       
         if (viewMode === 'schools') {
           await refetchDepartments();
         }
@@ -135,7 +132,7 @@ const AdminCurriculaPage = () => {
       });
     }
   }, [
-    currentPage, pageSize, searchTerm, selectedSchool, 
+    currentPage, pageSize, searchTerm, selectedSchool,
     selectedProgram, selectedDepartment, statusFilter, 
     sortBy, viewMode, isInitialized
   ]);
@@ -179,20 +176,16 @@ const AdminCurriculaPage = () => {
   };
 
   const getAvailableDepartments = () => {
-   
     const departmentNames = new Set();
     
-   
     departments.forEach(dept => {
       if (dept.name) departmentNames.add(dept.name);
     });
-    
     
     allDepartments.forEach(dept => {
       if (dept.name) departmentNames.add(dept.name);
     });
     
-   
     curricula.forEach(curriculum => {
       if (curriculum.department) departmentNames.add(curriculum.department);
     });
@@ -205,11 +198,9 @@ const AdminCurriculaPage = () => {
     
     if (newMode === 'schools') {
       try {
-       
         if (!schools || schools.length === 0) {
           await loadSchoolsAndDepartments();
         }
-        
         
         if (allDepartments.length === 0 && !departmentsLoading) {
           await refetchDepartments();
@@ -226,13 +217,15 @@ const AdminCurriculaPage = () => {
     setShowEditModal(true);
   };
 
-  const handleDelete = (curriculum) => {
+  const handleDelete = (curriculum, isPermanent = false) => {
     setSelectedCurriculum(curriculum);
+    setDeleteType(isPermanent ? 'permanent' : 'soft');
     setShowDeleteModal(true);
   };
 
   const handleApprove = async (curriculum) => {
     try {
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
       await refreshData();
       showNotification(`"${curriculum.title}" has been approved successfully!`, 'success');
@@ -244,6 +237,7 @@ const AdminCurriculaPage = () => {
 
   const handleReject = async (curriculum) => {
     try {
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
       await refreshData();
       showNotification(`"${curriculum.title}" has been rejected.`, 'success');
@@ -253,20 +247,23 @@ const AdminCurriculaPage = () => {
     }
   };
 
-  const handleSaveCurriculum = async (formData) => {
+  const handleSaveCurriculum = async (formDataOrResult) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      await refreshData();
       
+      console.log('✅ Curriculum saved successfully:', formDataOrResult);
+      
+      
+      await refreshData();
       
       if (viewMode === 'schools') {
         await refetchDepartments();
       }
       
-      const actionPast = showAddModal ? 'added' : 'updated';
+      const actionPast = showAddModal ? 'created' : 'updated';
       showNotification(`Curriculum ${actionPast} successfully!`, 'success');
+      
     } catch (error) {
-      console.error('Error saving curriculum:', error);
+      console.error('Error in handleSaveCurriculum:', error);
       showNotification(`Failed to save curriculum: ${error.message}`, 'error');
     } finally {
       setShowAddModal(false);
@@ -277,20 +274,59 @@ const AdminCurriculaPage = () => {
 
   const handleDeleteConfirm = async () => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!selectedCurriculum) {
+        throw new Error('No curriculum selected for deletion');
+      }
+
+      console.log(`🗑️ Deleting curriculum (${deleteType}):`, selectedCurriculum);
+
+      let result;
+      if (deleteType === 'permanent') {
+        // Permanent deletion
+        result = await curriculumService.deleteCurriculumPermanently(selectedCurriculum.id);
+      } else {
+        // Soft deletion (inactivation)
+        
+        const curriculumData = {
+          name: selectedCurriculum.title,
+          code: selectedCurriculum.code,
+          durationSemesters: selectedCurriculum.durationSemesters,
+          schoolId: parseInt(selectedCurriculum.schoolId),
+          departmentId: selectedCurriculum.departmentId,
+          academicLevelId: curriculumService.mapProgramToAcademicLevel(selectedCurriculum.programId)
+        };
+
+        // Add optional dates
+        if (selectedCurriculum.effectiveDate) {
+          curriculumData.effectiveDate = new Date(selectedCurriculum.effectiveDate).toISOString();
+        }
+        if (selectedCurriculum.expiryDate) {
+          curriculumData.expiryDate = new Date(selectedCurriculum.expiryDate).toISOString();
+        }
+
+        result = await curriculumService.inactivateCurriculum(selectedCurriculum.id, curriculumData);
+      }
+
+      console.log('✅ Curriculum deletion result:', result);
+
+      // Refresh data
       await refreshData();
       
       if (viewMode === 'schools') {
         await refetchDepartments();
       }
       
-      showNotification(`"${selectedCurriculum.title}" has been deleted.`, 'success');
+      const actionText = deleteType === 'permanent' ? 'permanently deleted' : 'inactivated';
+      showNotification(`"${selectedCurriculum.title}" has been ${actionText}.`, 'success');
+      
     } catch (error) {
       console.error('Error deleting curriculum:', error);
-      showNotification(`Failed to delete curriculum: ${error.message}`, 'error');
+      const actionText = deleteType === 'permanent' ? 'permanently delete' : 'inactivate';
+      showNotification(`Failed to ${actionText} curriculum: ${error.message}`, 'error');
     } finally {
       setShowDeleteModal(false);
       setSelectedCurriculum(null);
+      setDeleteType('soft');
     }
   };
 
@@ -298,7 +334,6 @@ const AdminCurriculaPage = () => {
     try {
       await refreshData();
       
-     
       if (viewMode === 'schools') {
         await refetchDepartments();
       }
@@ -310,9 +345,7 @@ const AdminCurriculaPage = () => {
     }
   };
 
- 
   const findSchoolEnhanced = (schoolId) => {
-   
     const school = findSchool ? findSchool(schoolId) : null;
     if (school) return school;
     
@@ -423,7 +456,6 @@ const AdminCurriculaPage = () => {
             getSchoolName={getSchoolNameEnhanced}
             findSchool={findSchoolEnhanced}
             
-            // departments data and utilities
             allDepartments={allDepartments}
             departmentsLoading={departmentsLoading}
             departmentsError={departmentsError}
@@ -432,6 +464,7 @@ const AdminCurriculaPage = () => {
           />
         )}
 
+        {/* Add/Edit Modal */}
         {(showAddModal || showEditModal) && (
           <CurriculumModal
             isOpen={showAddModal || showEditModal}
@@ -439,6 +472,7 @@ const AdminCurriculaPage = () => {
             curriculum={selectedCurriculum}
             schools={schools}
             programs={programs}
+            departments={allDepartments}
             onSave={handleSaveCurriculum}
             onClose={() => {
               setShowAddModal(false);
@@ -448,14 +482,17 @@ const AdminCurriculaPage = () => {
           />
         )}
 
+        {/* Delete Confirmation Modal */}
         {showDeleteModal && selectedCurriculum && (
           <DeleteConfirmationModal
             isOpen={showDeleteModal}
             curriculum={selectedCurriculum}
+            deleteType={deleteType}
             onConfirm={handleDeleteConfirm}
             onClose={() => {
               setShowDeleteModal(false);
               setSelectedCurriculum(null);
+              setDeleteType('soft');
             }}
           />
         )}

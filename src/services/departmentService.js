@@ -321,7 +321,7 @@ class DepartmentService {
    
     const cached = this.getCache(cacheKey);
     if (cached) {
-      console.log('📦 Returning cached departments');
+      console.log(' Returning cached departments');
       return cached;
     }
 
