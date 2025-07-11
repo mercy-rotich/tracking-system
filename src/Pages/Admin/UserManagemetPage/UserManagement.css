@@ -33,22 +33,7 @@
   }
   
   
-  .user-management-dashboard-main-content {
-    margin-left: 0;
-    padding-top: 5rem; 
-    transition: margin-left 0.3s ease-in-out;
-    min-height: 100vh; 
-    background-color: var(--gray-50);
-    padding-left: rem;
-    padding-right: 0.75rem;
-  }
-  
-  @media (min-width: 768px) {
-    .user-management-dashboard-main-content {
-      margin-left: 256px; 
-      padding: 5rem 2rem 2rem 2rem;
-    }
-  }
+ 
   
   
   .user-management-loading-container {

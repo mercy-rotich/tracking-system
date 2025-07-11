@@ -8,28 +8,6 @@
 .report-must-blue-bg { background-color: #1a3a6e; }
 
 
-.report-dashboard-main-content {
-    margin-left: 0;
-    padding-top: 5rem; 
-    transition: margin-left 0.3s ease-in-out;
-    min-height: 100vh; 
-    background-color: #f9fafb;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-}
-
-@media (min-width: 768px) {
-    .report-dashboard-main-content {
-        margin-left: 256px; 
-        padding: 5rem 2rem 2rem 2rem;
-    }
-}
-
-
-.report-dashboard-overview {
-    max-width: 1550px;
-    margin: 0 auto;
-}
 
 
 .report-dashboard-header {

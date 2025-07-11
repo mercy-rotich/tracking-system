@@ -8,7 +8,7 @@ import LoginPage from './Pages/users/LoginPage/LoginPage';
 
 import PasswordResetSystem from './Pages/users/PasswordResetSystem';
 
-import AdminLayout from './components/Admin/AdminLayout';
+import AdminLayout from './components/AdminLayout/AdminLayout';
 import AdminDashboardOverview from './Pages/Admin/AdminDashboardOverview/AdminDashboardOverview';
 import AdminCurriculaPage from './Pages/Admin/AdminCurriculaPage/AdminCurriculaPage';
 import SystemMonitoringPage from './Pages/Admin/SystemMonitoringPage/SystemMonitoringPage';

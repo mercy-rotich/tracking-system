@@ -440,7 +440,8 @@ const UserManagementPage = () => {
   
   if (authLoading) {
     return (
-      <div className="user-management-dashboard-main-content">
+      <div className="dashboard-main-content">
+        <div className="dashboard-overview">
         <div className="user-management-main-loading">
           <LoadingSpinner 
             message="Checking permissions..." 
@@ -448,13 +449,14 @@ const UserManagementPage = () => {
             size="large"
           />
         </div>
+        </div>
       </div>
     );
   }
 
   if (!canManageUsers) {
     return (
-      <div className="user-management-dashboard-main-content">
+      <div className="dashboard-main-content">
         <div className="access-denied" style={{
           display: 'flex',
           flexDirection: 'column',
@@ -490,7 +492,7 @@ const UserManagementPage = () => {
   }
 
   return (
-    <div className="user-management-dashboard-main-content">
+    <div className="dashboard-main-content">
       <Notification
         show={notification.show}
         message={notification.message}

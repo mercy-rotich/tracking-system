@@ -321,7 +321,7 @@ const AdminCurriculaPage = () => {
 
   if (!isInitialized) {
     return (
-      <div className='curricula-main-page'>
+      <div className='dashboard-main-content'>
         <div className="curricula-page">
           <div className="content-section">
             <div className="curricula-loading-spinner">
@@ -335,7 +335,7 @@ const AdminCurriculaPage = () => {
   }
 
   return (
-    <div className='curricula-main-page'>
+    <div className='dashboard-main-content'>
       <div className="curricula-page">
         <NotificationBanner 
           notification={notification}

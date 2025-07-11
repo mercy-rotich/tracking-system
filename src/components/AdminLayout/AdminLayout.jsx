@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import AdminHeader from './AdminHeader/AdminHeader';
-import AdminSidebar from './AdminSidebar/AdminSidebar';
+import AdminHeader from '../Admin/AdminHeader/AdminHeader';
+import AdminSidebar from '../Admin/AdminSidebar/AdminSidebar';
 import AdminDashboardOverview from '../../Pages/Admin/AdminDashboardOverview/AdminDashboardOverview';
 import AdminCurriculaPage from '../../Pages/Admin/AdminCurriculaPage/AdminCurriculaPage';
 import SystemMonitoringPage from '../../Pages/Admin/SystemMonitoringPage/SystemMonitoringPage';

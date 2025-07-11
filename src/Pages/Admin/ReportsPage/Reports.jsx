@@ -27,8 +27,8 @@ const Reports = () => {
   };
 
   return (
-    <div className="report-dashboard-main-content">
-      <div className="report-dashboard-overview">
+    <div className="dashboard-main-content">
+      <div className="dashboard-overview">
         {/* Dashboard Header */}
         <div className="report-dashboard-header">
           <div className="report-header-content">
