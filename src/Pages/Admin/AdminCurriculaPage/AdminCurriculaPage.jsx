@@ -15,6 +15,7 @@ import { useFilters } from '../../../hooks/useFilters';
 import { usePagination } from '../../../hooks/usePagination';
 import { useDepartments } from '../../../hooks/useDepartments';
 
+
 const AdminCurriculaPage = () => {
   const [viewMode, setViewMode] = useState('schools');
   const [isInitialized, setIsInitialized] = useState(false);
@@ -24,6 +25,10 @@ const AdminCurriculaPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCurriculum, setSelectedCurriculum] = useState(null);
   const [deleteType, setDeleteType] = useState('soft'); 
+
+ 
+  const [expiringCurriculums, setExpiringCurriculums] = useState([]);
+  const [showExpiringAlert, setShowExpiringAlert] = useState(false);
 
   const {
     curricula,
@@ -35,9 +40,12 @@ const AdminCurriculaPage = () => {
     loadCurriculaData,
     loadSchoolsAndDepartments,
     loadStatsOverview,
+    loadExpiringCurriculums,
     refreshData,
     findSchool,
-    getSchoolName
+    getSchoolName,
+    toggleCurriculumStatus,
+    putCurriculumUnderReview
   } = useCurriculumData();
 
   const {
@@ -93,8 +101,21 @@ const AdminCurriculaPage = () => {
       try {
         setIsInitialized(false);
         
+    
         await loadSchoolsAndDepartments();
         await loadStatsOverview();
+        
+        // Load expiring curriculums and show alert if any
+        try {
+          const expiring = await loadExpiringCurriculums();
+          setExpiringCurriculums(expiring);
+          if (expiring.length > 0) {
+            setShowExpiringAlert(true);
+            showNotification(`⚠️ ${expiring.length} curricula are expiring soon!`, 'warning');
+          }
+        } catch (expiringError) {
+          console.warn('Could not load expiring curriculums:', expiringError);
+        }
         
         if (viewMode === 'schools') {
           await refetchDepartments();
@@ -223,35 +244,74 @@ const AdminCurriculaPage = () => {
     setShowDeleteModal(true);
   };
 
+  // ==================== NEW ACTION HANDLERS ====================
+
   const handleApprove = async (curriculum) => {
     try {
+      console.log('🔄 Handling curriculum approval:', curriculum.id);
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Use the new toggle status endpoint to activate/approve curriculum
+      const result = await toggleCurriculumStatus(curriculum);
+      
       await refreshData();
-      showNotification(`"${curriculum.title}" has been approved successfully!`, 'success');
+      showNotification(`"${curriculum.title}" status has been toggled successfully!`, 'success');
     } catch (error) {
-      console.error('Error approving curriculum:', error);
-      showNotification('Failed to approve curriculum. Please try again.', 'error');
+      console.error('Error toggling curriculum status:', error);
+      showNotification('Failed to update curriculum status. Please try again.', 'error');
     }
   };
 
   const handleReject = async (curriculum) => {
     try {
+      console.log('🔄 Handling curriculum rejection:', curriculum.id);
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // For rejection,  use the soft delete (inactivate) functionality
+      const curriculumData = {
+        name: curriculum.title,
+        code: curriculum.code,
+        durationSemesters: curriculum.durationSemesters,
+        schoolId: parseInt(curriculum.schoolId),
+        departmentId: curriculum.departmentId,
+        academicLevelId: curriculumService.mapProgramToAcademicLevel(curriculum.programId)
+      };
+
+      // Add optional dates
+      if (curriculum.effectiveDate) {
+        curriculumData.effectiveDate = curriculum.effectiveDate;
+      }
+      if (curriculum.expiryDate) {
+        curriculumData.expiryDate = curriculum.expiryDate;
+      }
+
+      const result = await curriculumService.inactivateCurriculum(curriculum.id, curriculumData);
+      
       await refreshData();
-      showNotification(`"${curriculum.title}" has been rejected.`, 'success');
+      showNotification(`"${curriculum.title}" has been rejected and inactivated.`, 'success');
     } catch (error) {
       console.error('Error rejecting curriculum:', error);
       showNotification('Failed to reject curriculum. Please try again.', 'error');
     }
   };
 
+  const handlePutUnderReview = async (curriculum) => {
+    try {
+      console.log('🔄 Putting curriculum under review:', curriculum.id);
+      
+      const result = await putCurriculumUnderReview(curriculum);
+      
+      await refreshData();
+      showNotification(`"${curriculum.title}" has been put under review.`, 'success');
+    } catch (error) {
+      console.error('Error putting curriculum under review:', error);
+      showNotification('Failed to put curriculum under review. Please try again.', 'error');
+    }
+  };
+
+ 
+
   const handleSaveCurriculum = async (formDataOrResult) => {
     try {
-      
       console.log('✅ Curriculum saved successfully:', formDataOrResult);
-      
       
       await refreshData();
       
@@ -282,11 +342,8 @@ const AdminCurriculaPage = () => {
 
       let result;
       if (deleteType === 'permanent') {
-        // Permanent deletion
         result = await curriculumService.deleteCurriculumPermanently(selectedCurriculum.id);
       } else {
-        // Soft deletion (inactivation)
-        
         const curriculumData = {
           name: selectedCurriculum.title,
           code: selectedCurriculum.code,
@@ -296,7 +353,6 @@ const AdminCurriculaPage = () => {
           academicLevelId: curriculumService.mapProgramToAcademicLevel(selectedCurriculum.programId)
         };
 
-        // Add optional dates
         if (selectedCurriculum.effectiveDate) {
           curriculumData.effectiveDate = new Date(selectedCurriculum.effectiveDate).toISOString();
         }
@@ -309,7 +365,6 @@ const AdminCurriculaPage = () => {
 
       console.log('✅ Curriculum deletion result:', result);
 
-      // Refresh data
       await refreshData();
       
       if (viewMode === 'schools') {
@@ -338,6 +393,14 @@ const AdminCurriculaPage = () => {
         await refetchDepartments();
       }
       
+      // Refresh expiring curriculums
+      try {
+        const expiring = await loadExpiringCurriculums();
+        setExpiringCurriculums(expiring);
+      } catch (expiringError) {
+        console.warn('Could not refresh expiring curriculums:', expiringError);
+      }
+      
       showNotification('Data refreshed successfully', 'success');
     } catch (error) {
       console.error('Error refreshing data:', error);
@@ -350,6 +413,22 @@ const AdminCurriculaPage = () => {
     if (school) return school;
     
     return schools.find(s => s.id === schoolId || s.code === schoolId);
+  };
+
+  //EXPIRING CURRICULUMS HANDLER 
+
+  const handleViewExpiringCurriculums = () => {
+    if (expiringCurriculums.length > 0) {
+    
+      setViewMode('table');
+      
+      showNotification(`Viewing ${expiringCurriculums.length} expiring curricula`, 'info');
+    }
+    setShowExpiringAlert(false);
+  };
+
+  const dismissExpiringAlert = () => {
+    setShowExpiringAlert(false);
   };
 
   if (!isInitialized) {
@@ -374,6 +453,58 @@ const AdminCurriculaPage = () => {
           notification={notification}
           onClose={() => setNotification({ show: false, message: '', type: '' })}
         />
+
+        {/* Expiring Curriculums Alert */}
+        {showExpiringAlert && expiringCurriculums.length > 0 && (
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05))',
+            border: '1px solid rgba(245, 158, 11, 0.3)',
+            borderRadius: '8px',
+            padding: '1rem',
+            marginBottom: '1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <i className="fas fa-clock" style={{ color: '#d97706', fontSize: '1.25rem' }}></i>
+              <div>
+                <strong style={{ color: '#92400e' }}>
+                  {expiringCurriculums.length} Curricula Expiring Soon
+                </strong>
+                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: '#d97706' }}>
+                  Some curricula are approaching their expiry dates and may need attention.
+                </p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button 
+                className="btn btn-sm"
+                onClick={handleViewExpiringCurriculums}
+                style={{
+                  background: 'rgba(245, 158, 11, 0.2)',
+                  border: '1px solid rgba(245, 158, 11, 0.4)',
+                  color: '#92400e'
+                }}
+              >
+                <i className="fas fa-eye"></i>
+                View Details
+              </button>
+              <button 
+                onClick={dismissExpiringAlert}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#d97706',
+                  cursor: 'pointer',
+                  padding: '0.25rem'
+                }}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+        )}
 
         <PageHeader onAddNew={() => setShowAddModal(true)} />
 
@@ -427,6 +558,7 @@ const AdminCurriculaPage = () => {
             onDelete={handleDelete}
             onApprove={handleApprove}
             onReject={handleReject}
+            onPutUnderReview={handlePutUnderReview}
             
             getSchoolName={getSchoolNameEnhanced}
             getProgramName={getProgramName}
@@ -449,6 +581,7 @@ const AdminCurriculaPage = () => {
             onDelete={handleDelete}
             onApprove={handleApprove}
             onReject={handleReject}
+            onPutUnderReview={handlePutUnderReview}
             onRefresh={handleRefreshData}
             
             curriculumService={curriculumService}
@@ -464,7 +597,7 @@ const AdminCurriculaPage = () => {
           />
         )}
 
-        {/* Add/Edit Modal */}
+        {/* Add/Edit Modal with Enhanced Department Loading */}
         {(showAddModal || showEditModal) && (
           <CurriculumModal
             isOpen={showAddModal || showEditModal}
@@ -472,7 +605,7 @@ const AdminCurriculaPage = () => {
             curriculum={selectedCurriculum}
             schools={schools}
             programs={programs}
-            departments={allDepartments}
+            departments={allDepartments} 
             onSave={handleSaveCurriculum}
             onClose={() => {
               setShowAddModal(false);
@@ -496,6 +629,7 @@ const AdminCurriculaPage = () => {
             }}
           />
         )}
+        
       </div>
     </div>
   );

@@ -3,16 +3,322 @@ import authService from "./authService";
 class CurriculumService{
   constructor(){
     this.baseURL = import.meta.env.VITE_BASE_URL;
-    console.log( 'Curriculum Service initialized with base URL:' ,this.baseURL);
+    console.log('🔄 Curriculum Service initialized with base URL:', this.baseURL);
     
-    // School mapping cache
+    
     this.schoolMappingCache = new Map();
     this.schoolMappingExpiry = null;
     this.SCHOOL_MAPPING_DURATION = 10 * 60 * 1000; 
   }
 
   
+  buildApiUrl(endpoint) {
+    const url = `${this.baseURL}/${endpoint}`;
+    console.log('📍 Building API URL:', url);
+    return url;
+  }
+
   
+  async getHeaders() {
+    try {
+      const token = await authService.getValidToken();
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      };
+    } catch (error) {
+      console.error('❌ Failed to get valid token:', error);
+      throw new Error('Authentication required. Please log in again.');
+    }
+  }
+
+
+
+  /** 
+   Get curriculum statistics
+    @returns {Promise<Object>} 
+   */
+  async getCurriculumStats() {
+    try {
+      console.log('🔄 [Curriculum Service] Fetching curriculum statistics...');
+      
+      const headers = await this.getHeaders();
+      const url = this.buildApiUrl('api/v1/admin/curriculums/stats');
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch curriculum stats: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ [Curriculum Service] Curriculum stats loaded:', result);
+
+      
+      const stats = result.data;
+      const transformedStats = {
+        total: stats.totalCurriculums || 0,
+        approved: stats.approvedCurriculums || 0,
+        pending: stats.pendingCurriculums || 0,
+        underReview: stats.underReviewCurriculums || 0,
+        rejected: stats.rejectedCurriculums || 0,
+       
+        draft: 0 
+      };
+
+      return {
+        success: true,
+        message: result.message,
+        data: transformedStats,
+        raw: result
+      };
+    } catch (error) {
+      console.error('❌ [Curriculum Service] Failed to fetch curriculum stats:', error);
+      throw new Error(`Failed to fetch curriculum statistics: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get expiring curriculums
+   * @returns {Promise<Object>} 
+   */
+  async getExpiringCurriculums() {
+    try {
+      console.log('🔄 [Curriculum Service] Fetching expiring curriculums...');
+      
+      const headers = await this.getHeaders();
+      const url = this.buildApiUrl('api/v1/admin/curriculums/expiring-soon');
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch expiring curriculums: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ [Curriculum Service] Expiring curriculums loaded:', result);
+
+     
+      const curriculums = Array.isArray(result.data) ? result.data.map(c => this.transformCurriculumData(c)) : [];
+
+      return {
+        success: true,
+        message: result.message,
+        data: curriculums,
+        count: curriculums.length,
+        raw: result
+      };
+    } catch (error) {
+      console.error('❌ [Curriculum Service] Failed to fetch expiring curriculums:', error);
+      throw new Error(`Failed to fetch expiring curriculums: ${error.message}`);
+    }
+  }
+
+  /**
+   * Toggle curriculum active status
+    @param {number|string} curriculumId 
+    @param {Object} curriculumData
+    @returns {Promise<Object>} 
+   */
+  async toggleCurriculumStatus(curriculumId, curriculumData) {
+    try {
+      console.log('🔄 [Curriculum Service] Toggling curriculum status:', curriculumId);
+      
+      if (!curriculumId) {
+        throw new Error('Curriculum ID is required');
+      }
+
+      // Validate required fields
+      const requiredFields = ['name', 'code', 'durationSemesters', 'schoolId', 'departmentId', 'academicLevelId'];
+      for (const field of requiredFields) {
+        if (!curriculumData[field]) {
+          throw new Error(`Missing required field: ${field}`);
+        }
+      }
+
+      const headers = await this.getHeaders();
+      const url = this.buildApiUrl(`api/v1/admin/curriculums/toggle-status/${curriculumId}`);
+      
+      const payload = {
+        name: String(curriculumData.name).trim(),
+        code: String(curriculumData.code).trim().toUpperCase(),
+        durationSemesters: parseInt(curriculumData.durationSemesters),
+        schoolId: parseInt(curriculumData.schoolId),
+        departmentId: parseInt(curriculumData.departmentId),
+        academicLevelId: parseInt(curriculumData.academicLevelId)
+      };
+
+      
+      if (curriculumData.effectiveDate) {
+        payload.effectiveDate = new Date(curriculumData.effectiveDate).toISOString();
+      }
+      if (curriculumData.expiryDate) {
+        payload.expiryDate = new Date(curriculumData.expiryDate).toISOString();
+      }
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to toggle curriculum status: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ [Curriculum Service] Curriculum status toggled:', result);
+
+     
+      const transformedData = result.data ? this.transformCurriculumData(result.data) : null;
+
+      return {
+        success: true,
+        message: result.message,
+        data: transformedData,
+        raw: result
+      };
+    } catch (error) {
+      console.error('❌ [Curriculum Service] Failed to toggle curriculum status:', error);
+      throw new Error(`Failed to toggle curriculum status: ${error.message}`);
+    }
+  }
+
+  /**
+   * Put curriculum under review
+   @param {number|string} curriculumId 
+    @param {Object} curriculumData  
+   * @returns {Promise<Object>} Updated curriculum
+   */
+  async putCurriculumUnderReview(curriculumId, curriculumData) {
+    try {
+      console.log('🔄 [Curriculum Service] Putting curriculum under review:', curriculumId);
+      
+      if (!curriculumId) {
+        throw new Error('Curriculum ID is required');
+      }
+
+     
+      const requiredFields = ['name', 'code', 'durationSemesters', 'schoolId', 'departmentId', 'academicLevelId'];
+      for (const field of requiredFields) {
+        if (!curriculumData[field]) {
+          throw new Error(`Missing required field: ${field}`);
+        }
+      }
+
+      const headers = await this.getHeaders();
+      const url = this.buildApiUrl(`api/v1/admin/curriculums/review/${curriculumId}`);
+      
+    
+      const payload = {
+        name: String(curriculumData.name).trim(),
+        code: String(curriculumData.code).trim().toUpperCase(),
+        durationSemesters: parseInt(curriculumData.durationSemesters),
+        schoolId: parseInt(curriculumData.schoolId),
+        departmentId: parseInt(curriculumData.departmentId),
+        academicLevelId: parseInt(curriculumData.academicLevelId)
+      };
+
+      if (curriculumData.effectiveDate) {
+        payload.effectiveDate = new Date(curriculumData.effectiveDate).toISOString();
+      }
+      if (curriculumData.expiryDate) {
+        payload.expiryDate = new Date(curriculumData.expiryDate).toISOString();
+      }
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to put curriculum under review: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ [Curriculum Service] Curriculum put under review:', result);
+
+      // Transform the response data
+      const transformedData = result.data ? this.transformCurriculumData(result.data) : null;
+
+      return {
+        success: true,
+        message: result.message,
+        data: transformedData,
+        raw: result
+      };
+    } catch (error) {
+      console.error('❌ [Curriculum Service] Failed to put curriculum under review:', error);
+      throw new Error(`Failed to put curriculum under review: ${error.message}`);
+    }
+  }
+
+  
+
+  
+  async loadStatsOverview() {
+    try {
+      console.log('🔄 Loading stats overview from new endpoint...');
+      
+      
+      try {
+        const statsResult = await this.getCurriculumStats();
+        return statsResult.data;
+      } catch (statsError) {
+        console.warn('⚠️ New stats endpoint failed, falling back to old method:', statsError.message);
+        
+        // Fallback 
+        const result = await this.getAllCurriculums(0, 200);
+        const totalFromApi = result.pagination?.totalElements || result.curriculums.length;
+        
+        const statusCounts = result.curriculums.reduce((acc, curr) => {
+          acc[curr.status] = (acc[curr.status] || 0) + 1;
+          return acc;
+        }, {});
+        
+        const sampleSize = result.curriculums.length;
+        let finalStats = {
+          total: totalFromApi,
+          approved: statusCounts.approved || 0,
+          pending: statusCounts.pending || 0,
+          draft: statusCounts.draft || 0,
+          rejected: statusCounts.rejected || 0
+        };
+        
+        
+        if (sampleSize < totalFromApi && sampleSize > 50) {
+          const ratio = totalFromApi / sampleSize;
+          finalStats = {
+            total: totalFromApi,
+            approved: Math.round((statusCounts.approved || 0) * ratio),
+            pending: Math.round((statusCounts.pending || 0) * ratio),
+            draft: Math.round((statusCounts.draft || 0) * ratio),
+            rejected: Math.round((statusCounts.rejected || 0) * ratio)
+          };
+        }
+        
+        return finalStats;
+      }
+    } catch (error) {
+      console.error('❌ Error loading stats:', error);
+      
+      const defaultStats = { total: 0, approved: 0, pending: 0, draft: 0, rejected: 0 };
+      return defaultStats;
+    }
+  }
+
+  //  SCHOOL MAPPING
   async loadSchoolMapping() {
     
     if (this.schoolMappingExpiry && Date.now() < this.schoolMappingExpiry && this.schoolMappingCache.size > 0) {
@@ -123,9 +429,11 @@ class CurriculumService{
       }
     }
 
-    const availableKeys = Array.from(mapping.keys()).slice(0, 10); 
+    const availableKeys = Array.from(mapping.keys()).slice(0, 10);
     throw new Error(`Cannot resolve school identifier "${schoolIdentifier}" to a valid numeric ID. Available mappings (first 10): ${availableKeys.join(', ')}. Total mappings: ${mapping.size}`);
   }
+
+  
 
   // Centralized request method to handle all API calls
   async makeRequest(endpoint, options = {}) {
@@ -138,10 +446,7 @@ class CurriculumService{
       }
     });
 
-    const headers = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`
-    };
+    const headers = await this.getHeaders();
 
     try {
       const response = await fetch(url.toString(), {
@@ -168,16 +473,6 @@ class CurriculumService{
 
   /**
    * Create a new curriculum
-   * @param {Object} curriculumData 
-   * @param {string} curriculumData.name 
-   * @param {string} curriculumData.code
-   * @param {number} curriculumData.durationSemesters
-   * @param {string} curriculumData.effectiveDate 
-   * @param {string} curriculumData.expiryDate 
-   * @param {number} curriculumData.schoolId 
-   * @param {number} curriculumData.departmentId 
-   * @param {number} curriculumData.academicLevelId 
-   * @returns {Promise<Object>} 
    */
   async createCurriculum(curriculumData) {
     try {
@@ -215,7 +510,6 @@ class CurriculumService{
 
       console.log('✅ [Curriculum Service] Curriculum created successfully:', result);
       
-      
       const transformedData = result.data ? this.transformCurriculumData(result.data) : null;
       
       return {
@@ -231,10 +525,55 @@ class CurriculumService{
   }
 
   /**
+   * Update a curriculum
+   */
+  async updateCurriculum(curriculumId, updateData) {
+    try {
+      console.log('🔄 [Curriculum Service] Updating curriculum:', curriculumId, updateData);
+      
+      if (!curriculumId) {
+        throw new Error('Curriculum ID is required');
+      }
+
+      const payload = {};
+      
+      if (updateData.name) payload.name = String(updateData.name).trim();
+      if (updateData.code) payload.code = String(updateData.code).trim().toUpperCase();
+      if (updateData.durationSemesters !== undefined) payload.durationSemesters = parseInt(updateData.durationSemesters);
+      if (updateData.schoolId !== undefined) payload.schoolId = parseInt(updateData.schoolId);
+      if (updateData.departmentId !== undefined) payload.departmentId = parseInt(updateData.departmentId);
+      if (updateData.academicLevelId !== undefined) payload.academicLevelId = parseInt(updateData.academicLevelId);
+      
+      if (updateData.effectiveDate) {
+        payload.effectiveDate = new Date(updateData.effectiveDate).toISOString();
+      }
+      if (updateData.expiryDate) {
+        payload.expiryDate = new Date(updateData.expiryDate).toISOString();
+      }
+
+      const result = await this.makeRequest(`/admin/curriculums/update/${curriculumId}`, {
+        method: 'PUT', 
+        body: payload
+      });
+
+      console.log('✅ [Curriculum Service] Curriculum updated successfully:', result);
+      
+      const transformedData = result.data ? this.transformCurriculumData(result.data) : null;
+      
+      return {
+        success: true,
+        message: result.message || 'Curriculum updated successfully',
+        data: transformedData,
+        raw: result
+      };
+    } catch (error) {
+      console.error('❌ [Curriculum Service] Failed to update curriculum:', error);
+      throw new Error(`Failed to update curriculum: ${error.message}`);
+    }
+  }
+
+  /**
    * Soft delete (inactivate) a curriculum
-   * @param {number|string} curriculumId 
-   * @param {Object} curriculumData
-   * @returns {Promise<Object>} 
    */
   async inactivateCurriculum(curriculumId, curriculumData) {
     try {
@@ -244,7 +583,7 @@ class CurriculumService{
         throw new Error('Curriculum ID is required');
       }
 
-      // If curriculumData is not provided, try to fetch it first
+     
       if (!curriculumData) {
         try {
           const existingCurriculum = await this.getCurriculumById(curriculumId);
@@ -284,8 +623,6 @@ class CurriculumService{
 
   /**
    * Permanently delete a curriculum
-   * @param {number|string} curriculumId
-   * @returns {Promise<Object>} 
    */
   async deleteCurriculumPermanently(curriculumId) {
     try {
@@ -312,59 +649,8 @@ class CurriculumService{
     }
   }
 
-  /** 
-   * @param {number|string} curriculumId
-   * @param {Object} updateData 
-   * @returns {Promise<Object>} 
-   */
-  async updateCurriculum(curriculumId, updateData) {
-    try {
-      console.log('🔄 [Curriculum Service] Updating curriculum:', curriculumId, updateData);
-      
-      if (!curriculumId) {
-        throw new Error('Curriculum ID is required');
-      }
+  // UTILITY METHODS 
 
-     
-      const payload = {};
-      
-      if (updateData.name) payload.name = String(updateData.name).trim();
-      if (updateData.code) payload.code = String(updateData.code).trim().toUpperCase();
-      if (updateData.durationSemesters !== undefined) payload.durationSemesters = parseInt(updateData.durationSemesters);
-      if (updateData.schoolId !== undefined) payload.schoolId = parseInt(updateData.schoolId);
-      if (updateData.departmentId !== undefined) payload.departmentId = parseInt(updateData.departmentId);
-      if (updateData.academicLevelId !== undefined) payload.academicLevelId = parseInt(updateData.academicLevelId);
-      
-      if (updateData.effectiveDate) {
-        payload.effectiveDate = new Date(updateData.effectiveDate).toISOString();
-      }
-      if (updateData.expiryDate) {
-        payload.expiryDate = new Date(updateData.expiryDate).toISOString();
-      }
-
-     
-      const result = await this.makeRequest(`/admin/curriculums/update/${curriculumId}`, {
-        method: 'PUT', 
-        body: payload
-      });
-
-      console.log('✅ [Curriculum Service] Curriculum updated successfully:', result);
-      
-      const transformedData = result.data ? this.transformCurriculumData(result.data) : null;
-      
-      return {
-        success: true,
-        message: result.message || 'Curriculum updated successfully',
-        data: transformedData,
-        raw: result
-      };
-    } catch (error) {
-      console.error('❌ [Curriculum Service] Failed to update curriculum:', error);
-      throw new Error(`Failed to update curriculum: ${error.message}`);
-    }
-  }
-
- 
   mapProgramToAcademicLevel(programId) {
     const academicLevelMap = {
       'bachelor': 1,
@@ -374,7 +660,6 @@ class CurriculumService{
     return academicLevelMap[programId] || 1;
   }
 
-  
   mapAcademicLevelIdToProgram(academicLevelId) {
     const programMap = {
       1: 'bachelor',
@@ -383,71 +668,6 @@ class CurriculumService{
     };
     return programMap[academicLevelId] || 'bachelor';
   }
-
-  
-   // Validate curriculum data before sending to API
-   
-  validateCurriculumData(data) {
-    const errors = [];
-    
-    if (!data.name || !data.name.trim()) {
-      errors.push('Curriculum name is required');
-    }
-    
-    if (!data.code || !data.code.trim()) {
-      errors.push('Curriculum code is required');
-    }
-    
-    if (!data.durationSemesters || data.durationSemesters < 1) {
-      errors.push('Duration semesters must be a positive number');
-    }
-    
-    if (!data.schoolId) {
-      errors.push('School ID is required');
-    }
-    
-    if (!data.departmentId) {
-      errors.push('Department ID is required');
-    }
-    
-    if (!data.academicLevelId) {
-      errors.push('Academic level ID is required');
-    }
-    
-    if (data.effectiveDate && data.expiryDate) {
-      const effective = new Date(data.effectiveDate);
-      const expiry = new Date(data.expiryDate);
-      if (effective >= expiry) {
-        errors.push('Expiry date must be after effective date');
-      }
-    }
-    
-    return errors;
-  }
-
- 
-  formatCurriculumForAPI(formData) {
-    const apiData = {
-      name: formData.title || formData.name,
-      code: formData.code,
-      durationSemesters: parseInt(formData.duration) || parseInt(formData.durationSemesters),
-      schoolId: parseInt(formData.schoolId),
-      departmentId: parseInt(formData.departmentId),
-      academicLevelId: this.mapProgramToAcademicLevel(formData.programId || formData.program)
-    };
-
-    // Add optional dates
-    if (formData.effectiveDate) {
-      apiData.effectiveDate = new Date(formData.effectiveDate).toISOString();
-    }
-    if (formData.expiryDate) {
-      apiData.expiryDate = new Date(formData.expiryDate).toISOString();
-    }
-
-    return apiData;
-  }
-
-  
 
   processResponse(result, page = 0, size = 20) {
     let curriculums = [];
@@ -563,49 +783,6 @@ class CurriculumService{
   }
 
   
-  async getAllSchools() {
-    try {
-      console.log('🔄 Loading schools from dedicated endpoint...');
-      const result = await this.makeRequest('/schools/get-all');
-      
-      const schoolsData = Array.isArray(result) ? result : (result.data || []);
-      
-      let schoolIdMapping = new Map();
-      try {
-        const curriculaResult = await this.getAllCurriculums(0, 1000);
-        curriculaResult.curriculums.forEach(curriculum => {
-          if (curriculum.schoolId && curriculum.schoolName) {
-            const numericId = parseInt(curriculum.schoolId);
-            if (!isNaN(numericId)) {
-              schoolIdMapping.set(curriculum.schoolName, numericId);
-            }
-          }
-        });
-      } catch (error) {
-        console.warn('⚠️ Could not get school IDs from curricula:', error.message);
-      }
-      
-      const schools = schoolsData.map((school, index) => {
-        const numericId = schoolIdMapping.get(school.name);
-        
-        return {
-          id: school.code || `school_${index}`, 
-          actualId: numericId || null,
-          name: school.name,
-          code: school.code,
-          deanId: school.deanId,
-          icon: this.getSchoolIcon(school.name),
-          source: 'api'
-        };
-      });
-      
-      console.log('✅ Schools loaded from API with numeric ID mapping:', schools);
-      return schools;
-    } catch (error) {
-      console.error('❌ Error loading schools from API, falling back to curriculum extraction:', error);
-      return await this.getSchoolsFromCurriculums();
-    }
-  }
 
   async getAllSchoolsEnhanced() {
     try {
@@ -828,11 +1005,13 @@ class CurriculumService{
 
 const curriculumService = new CurriculumService();
 
-// debugging tools
+// Debugging tools
 if (typeof window !== 'undefined') {
   window.curriculumService = curriculumService;
-  window.diagnoseCurriculumSchoolIds = () => curriculumService.diagnoseSchoolIdIssue();
-  window.resolveCurriculumSchoolId = (schoolId) => curriculumService.resolveSchoolId(schoolId);
+  window.testCurriculumStats = () => curriculumService.getCurriculumStats();
+  window.testExpiringCurriculums = () => curriculumService.getExpiringCurriculums();
+  window.testToggleStatus = (id, data) => curriculumService.toggleCurriculumStatus(id, data);
+  window.testPutUnderReview = (id, data) => curriculumService.putCurriculumUnderReview(id, data);
 }
 
 export default curriculumService;

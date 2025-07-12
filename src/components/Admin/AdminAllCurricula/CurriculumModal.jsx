@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import curriculumService from '../../../services/curriculumService';
+import departmentService from '../../../services/departmentService';
 
 const CurriculumModal = ({ 
   isOpen, 
@@ -7,7 +8,7 @@ const CurriculumModal = ({
   curriculum, 
   schools = [], 
   programs = [], 
-  departments = [],
+  departments = [], 
   onSave, 
   onClose 
 }) => {
@@ -26,12 +27,11 @@ const CurriculumModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-  
-  const academicLevelMap = {
-    'bachelor': 1,
-    'masters': 2,
-    'phd': 3
-  };
+ 
+  const [allDepartments, setAllDepartments] = useState([]);
+  const [availableDepartments, setAvailableDepartments] = useState([]);
+  const [isDepartmentsLoading, setIsDepartmentsLoading] = useState(false);
+  const [departmentsError, setDepartmentsError] = useState('');
 
   const academicLevelOptions = [
     { id: 1, label: "Bachelor's Degree", programId: 'bachelor' },
@@ -39,9 +39,25 @@ const CurriculumModal = ({
     { id: 3, label: "PhD Program", programId: 'phd' }
   ];
 
+ 
+  useEffect(() => {
+    if (isOpen) {
+      loadAllDepartments();
+    }
+  }, [isOpen]);
+
+  // Load departments for specific school when school changes
+  useEffect(() => {
+    if (formData.schoolId && formData.schoolId !== '') {
+      loadDepartmentsForSchool(formData.schoolId);
+    } else {
+      setAvailableDepartments(allDepartments);
+    }
+  }, [formData.schoolId, allDepartments]);
+
+ 
   useEffect(() => {
     if (isEdit && curriculum) {
-    
       setFormData({
         name: curriculum.title || '',
         code: curriculum.code || '',
@@ -53,7 +69,6 @@ const CurriculumModal = ({
         expiryDate: curriculum.expiryDate || ''
       });
     } else {
-      
       setFormData({
         name: '',
         code: '',
@@ -69,11 +84,88 @@ const CurriculumModal = ({
     setSubmitError('');
   }, [isEdit, curriculum, isOpen]);
 
+  const loadAllDepartments = async () => {
+    if (isDepartmentsLoading) return;
+
+    setIsDepartmentsLoading(true);
+    setDepartmentsError('');
+    
+    try {
+      console.log('🔄 Loading all departments for curriculum modal...');
+      
+      // Load all departments using the department service
+      const departments = await departmentService.getAllDepartmentsSimple();
+      
+      console.log('✅ Loaded departments for modal:', departments);
+      setAllDepartments(departments);
+      setAvailableDepartments(departments);
+      
+      if (departments.length === 0) {
+        setDepartmentsError('No departments available. Please contact your administrator.');
+      }
+      
+    } catch (error) {
+      console.error('❌ Failed to load departments for modal:', error);
+      setDepartmentsError(`Failed to load departments: ${error.message}`);
+      
+      // Fallback 
+      if (departments && departments.length > 0) {
+        console.log('🔄 Using fallback departments from props');
+        setAllDepartments(departments);
+        setAvailableDepartments(departments);
+        setDepartmentsError('');
+      }
+    } finally {
+      setIsDepartmentsLoading(false);
+    }
+  };
+
+  const loadDepartmentsForSchool = async (schoolId) => {
+    if (!schoolId || schoolId === 'all') {
+      setAvailableDepartments(allDepartments);
+      return;
+    }
+
+    try {
+      console.log(`🔄 Loading departments for school: ${schoolId}`);
+      
+      // Load departments for specific school
+      const schoolDepartments = await departmentService.getDepartmentsBySchool(schoolId, 0, 1000);
+      
+      console.log(`✅ Loaded ${schoolDepartments.length} departments for school ${schoolId}`);
+      setAvailableDepartments(schoolDepartments);
+      
+     
+      if (formData.departmentId) {
+        const isDepartmentAvailable = schoolDepartments.some(dept => dept.id?.toString() === formData.departmentId?.toString());
+        if (!isDepartmentAvailable) {
+          setFormData(prev => ({ ...prev, departmentId: '' }));
+        }
+      }
+      
+    } catch (error) {
+      console.error(`❌ Failed to load departments for school ${schoolId}:`, error);
+      
+      // Fallback to filtering all departments by school
+      const filteredDepartments = allDepartments.filter(dept => 
+        dept.schoolId?.toString() === schoolId?.toString()
+      );
+      
+      if (filteredDepartments.length > 0) {
+        console.log(`🔄 Using filtered departments for school ${schoolId}`);
+        setAvailableDepartments(filteredDepartments);
+      } else {
+        console.log(`⚠️ No departments found for school ${schoolId}, using all departments`);
+        setAvailableDepartments(allDepartments);
+      }
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-
+    // Clear errors for the field being edited
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -113,7 +205,7 @@ const CurriculumModal = ({
       newErrors.academicLevelId = 'Academic level is required';
     }
     
-    
+    // Date validation
     if (formData.effectiveDate && formData.expiryDate) {
       const effective = new Date(formData.effectiveDate);
       const expiry = new Date(formData.expiryDate);
@@ -137,7 +229,7 @@ const CurriculumModal = ({
     setSubmitError('');
 
     try {
-    
+      
       const apiData = {
         name: formData.name.trim(),
         code: formData.code.trim().toUpperCase(),
@@ -147,7 +239,7 @@ const CurriculumModal = ({
         academicLevelId: parseInt(formData.academicLevelId)
       };
 
-    
+      // Add optional dates if provided
       if (formData.effectiveDate) {
         apiData.effectiveDate = new Date(formData.effectiveDate).toISOString();
       }
@@ -157,21 +249,19 @@ const CurriculumModal = ({
 
       let result;
       if (isEdit) {
-        
         result = await curriculumService.updateCurriculum(curriculum.id, apiData);
       } else {
-    
         result = await curriculumService.createCurriculum(apiData);
       }
 
       console.log('✅ Curriculum operation successful:', result);
 
-    
+      // Call the onSave callback
       if (onSave) {
         await onSave(result.data || result);
       }
 
-    
+      
       onClose();
 
     } catch (error) {
@@ -195,11 +285,6 @@ const CurriculumModal = ({
   };
 
   if (!isOpen) return null;
-
-  // Get departments for selected school
-  const availableDepartments = departments.filter(dept => 
-    !formData.schoolId || dept.schoolId?.toString() === formData.schoolId?.toString()
-  );
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
@@ -232,6 +317,38 @@ const CurriculumModal = ({
               }}>
                 <i className="fas fa-exclamation-triangle" style={{ marginRight: '0.5rem' }}></i>
                 {submitError}
+              </div>
+            )}
+
+            {/* Departments Loading Error */}
+            {departmentsError && (
+              <div style={{
+                background: 'rgba(245, 158, 11, 0.1)',
+                border: '1px solid rgba(245, 158, 11, 0.2)',
+                color: '#d97706',
+                padding: '0.75rem',
+                borderRadius: '8px',
+                marginBottom: '1rem',
+                fontSize: '0.875rem'
+              }}>
+                <i className="fas fa-exclamation-triangle" style={{ marginRight: '0.5rem' }}></i>
+                {departmentsError}
+                <button 
+                  type="button"
+                  onClick={loadAllDepartments}
+                  style={{
+                    marginLeft: '0.5rem',
+                    padding: '0.25rem 0.5rem',
+                    fontSize: '0.75rem',
+                    background: 'rgba(245, 158, 11, 0.2)',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                  disabled={isDepartmentsLoading}
+                >
+                  {isDepartmentsLoading ? 'Loading...' : 'Retry'}
+                </button>
               </div>
             )}
 
@@ -409,23 +526,35 @@ const CurriculumModal = ({
                   color: '#374151'
                 }}>
                   Department *
+                  {isDepartmentsLoading && (
+                    <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: '#6b7280' }}>
+                      <i className="fas fa-spinner fa-spin"></i> Loading...
+                    </span>
+                  )}
                 </label>
                 <select
                   name="departmentId"
                   value={formData.departmentId}
                   onChange={handleChange}
-                  disabled={isSubmitting || !formData.schoolId}
+                  disabled={isSubmitting || isDepartmentsLoading || !formData.schoolId}
                   style={{
                     width: '100%',
                     padding: '0.75rem',
                     border: `2px solid ${errors.departmentId ? '#ef4444' : '#e5e7eb'}`,
                     borderRadius: '8px',
                     fontSize: '0.875rem',
-                    backgroundColor: isSubmitting || !formData.schoolId ? '#f9fafb' : '#ffffff'
+                    backgroundColor: isSubmitting || isDepartmentsLoading || !formData.schoolId ? '#f9fafb' : '#ffffff'
                   }}
                 >
                   <option value="">
-                    {!formData.schoolId ? 'Select School First' : 'Select Department'}
+                    {!formData.schoolId 
+                      ? 'Select School First' 
+                      : isDepartmentsLoading 
+                        ? 'Loading Departments...' 
+                        : availableDepartments.length === 0 
+                          ? 'No Departments Available'
+                          : 'Select Department'
+                    }
                   </option>
                   {availableDepartments.map(dept => (
                     <option key={dept.id} value={dept.id}>
@@ -441,6 +570,16 @@ const CurriculumModal = ({
                     display: 'block'
                   }}>
                     {errors.departmentId}
+                  </span>
+                )}
+                {availableDepartments.length === 0 && formData.schoolId && !isDepartmentsLoading && (
+                  <span style={{ 
+                    color: '#d97706', 
+                    fontSize: '0.75rem',
+                    marginTop: '0.25rem',
+                    display: 'block'
+                  }}>
+                    No departments found for this school. Please contact your administrator.
                   </span>
                 )}
               </div>
@@ -566,6 +705,44 @@ const CurriculumModal = ({
               </div>
             </div>
 
+            {/* Department Info Section */}
+            {formData.schoolId && availableDepartments.length > 0 && (
+              <div style={{
+                padding: '1rem',
+                backgroundColor: '#f0f9ff',
+                border: '1px solid #93c5fd',
+                borderRadius: '8px',
+                marginBottom: '1rem'
+              }}>
+                <h4 style={{
+                  margin: '0 0 0.5rem 0',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  color: '#1e40af',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <i className="fas fa-info-circle"></i>
+                  Available Departments ({availableDepartments.length})
+                </h4>
+                <div style={{
+                  fontSize: '0.75rem',
+                  color: '#1e40af',
+                  maxHeight: '60px',
+                  overflowY: 'auto'
+                }}>
+                  {availableDepartments.slice(0, 6).map((dept, index) => (
+                    <span key={dept.id}>
+                      {dept.name}
+                      {index < Math.min(availableDepartments.length - 1, 5) ? ', ' : ''}
+                      {index === 5 && availableDepartments.length > 6 ? ` and ${availableDepartments.length - 6} more...` : ''}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Info Section */}
             <div style={{
               padding: '1rem',
@@ -592,6 +769,7 @@ const CurriculumModal = ({
                 <li>Duration must be between 1 and 20 semesters</li>
                 <li>Effective and expiry dates are optional but recommended</li>
                 <li>All curricula start with "PENDING" status and require approval</li>
+                <li>Departments are loaded automatically based on the selected school</li>
               </ul>
             </div>
           </div>
@@ -609,7 +787,7 @@ const CurriculumModal = ({
             <button 
               type="submit" 
               className="btn btn-primary"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isDepartmentsLoading}
             >
               {isSubmitting ? (
                 <>
