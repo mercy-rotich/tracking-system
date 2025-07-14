@@ -411,9 +411,9 @@
   
   .global-interaction-hint {
     position: sticky;
-    top: 1rem;
+    top: 0;
     z-index: 100;
-    margin-bottom: 1rem;
+    margin-bottom: 0;
     background: linear-gradient(135deg, var(--must-green-primary), #00b35b);
     color: white;
     padding: 1rem;

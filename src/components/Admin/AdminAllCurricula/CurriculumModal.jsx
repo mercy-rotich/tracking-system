@@ -93,7 +93,7 @@ const CurriculumModal = ({
     try {
       console.log('🔄 Loading all departments for curriculum modal...');
       
-      // Load all departments using the department service
+      // Load all departments
       const departments = await departmentService.getAllDepartmentsSimple();
       
       console.log('✅ Loaded departments for modal:', departments);
@@ -165,7 +165,7 @@ const CurriculumModal = ({
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Clear errors for the field being edited
+    
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -239,7 +239,7 @@ const CurriculumModal = ({
         academicLevelId: parseInt(formData.academicLevelId)
       };
 
-      // Add optional dates if provided
+      
       if (formData.effectiveDate) {
         apiData.effectiveDate = new Date(formData.effectiveDate).toISOString();
       }
