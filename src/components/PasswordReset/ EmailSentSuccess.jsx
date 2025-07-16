@@ -1,7 +1,8 @@
-
 import React, { useState } from 'react';
-import { CheckCircle, ArrowLeft, AlertCircle } from 'lucide-react';
+import { CheckCircle, ArrowLeft, AlertCircle, Mail } from 'lucide-react';
 import passwordResetService from '../../services/passwordResetService';
+import logo_image from '../../assets/logo.jpg';
+import '../../Pages/users/LoginPage/LoginPage.css';
 import './Passwordreset.css';
 
 const EmailSentSuccess = ({ email, onBack }) => {
@@ -10,7 +11,7 @@ const EmailSentSuccess = ({ email, onBack }) => {
   const [isResending, setIsResending] = useState(false);
   const [resendError, setResendError] = useState('');
 
-  
+ 
   React.useEffect(() => {
     const timer = setInterval(() => {
       setCountdown((prev) => {
@@ -67,56 +68,101 @@ const EmailSentSuccess = ({ email, onBack }) => {
   return (
     <div className="login-container">
       <div className="login-wrapper">
-        <div className="form-section">
-          <div className="form-card">
-            <div className="form-header">
-              <div className="icon-circle green">
-                <CheckCircle className="icon green" />
-              </div>
-              <h2 className="form-title">Check Your Email</h2>
-              <p className="success-text">
-                We've sent a password reset link to <strong>{email}</strong>. 
-                Please check your inbox and follow the instructions to reset your password.
-              </p>
-              
-              <div className="email-instructions">
-                <h4>Didn't receive the email?</h4>
-                <ul>
-                  <li>Check your spam or junk folder</li>
-                  <li>Make sure you entered the correct email address</li>
-                  <li>Wait a few minutes for the email to arrive</li>
-                  <li>Ensure the email account exists in our system</li>
-                </ul>
-              </div>
-              
-              {resendError && (
-                <div className="error-message" role="alert">
-                  <AlertCircle size={20} />
-                  {resendError}
+        <div className="branding-section">
+          <div className="branding-overlay"></div>
+          <div className="branding-content">
+            <div className="university-header">
+              <div className="logo-container">
+                <div className="logo-circle">
+                  <img src={logo_image} alt="Meru University Logo" />
                 </div>
-              )}
-              
-              <div className="resend-section">
-                {countdown > 0 ? (
-                  <p className="resend-countdown">
-                    You can request another email in {countdown} seconds
-                  </p>
-                ) : (
-                  <button
-                    onClick={handleResendEmail}
-                    disabled={isResending || !canResend}
-                    className="secondary-button resend-button"
-                  >
-                    {isResending ? 'Sending...' : 'Resend Email'}
-                  </button>
-                )}
               </div>
-              
+              <div className="university-info">
+                <h1 className="university-name">Meru University</h1>
+                <p className="university-subtitle">of Science and Technology</p>
+              </div>
+            </div>
+            
+            <h2 className="system-title">Check Your Email</h2>
+            <p className="system-description">
+              We've sent a password reset link to your email address.
+            </p>
+          </div>
+        </div>
+        
+        <div className="form-section">
+          <div className="mobile-header">
+            <div className="mobile-logo-container">
+              <div className="mobile-logo-circle">
+                <img src={logo_image} alt="Meru University Logo" />
+              </div>
+            </div>
+            <div className="mobile-university-info">
+              <h1 className="mobile-university-name">Meru University</h1>
+              <p className="mobile-university-subtitle">of Science and Technology</p>
+            </div>
+          </div>
+          
+          <div className="success-content">
+            <div className="success-icon-wrapper">
+              <CheckCircle className="success-icon" size={48} />
+            </div>
+            
+            <h2 className="form-title">Check Your Email</h2>
+            <p className="success-description">
+              We've sent a password reset link to <strong>{email}</strong>. 
+              Please check your inbox and follow the instructions to reset your password.
+            </p>
+            
+            <div className="email-instructions">
+              <h4>Didn't receive the email?</h4>
+              <ul>
+                <li>Check your spam or junk folder</li>
+                <li>Make sure you entered the correct email address</li>
+                <li>Wait a few minutes for the email to arrive</li>
+                <li>Ensure the email account exists in our system</li>
+              </ul>
+            </div>
+            
+            {resendError && (
+              <div className="error-message" role="alert">
+                <AlertCircle size={20} />
+                {resendError}
+              </div>
+            )}
+            
+            <div className="resend-section">
+              {countdown > 0 ? (
+                <p className="resend-countdown">
+                  You can request another email in {countdown} seconds
+                </p>
+              ) : (
+                <button
+                  onClick={handleResendEmail}
+                  disabled={isResending || !canResend}
+                  className="submit-button secondary"
+                >
+                  {isResending ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin"></i>
+                      <span>Sending...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Mail size={16} />
+                      Resend Email
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+            
+            <div className="back-to-login">
               <button
                 onClick={onBack}
-                className="inline-button"
+                className="back-link"
               >
-                <ArrowLeft className="icon" />
+                <ArrowLeft size={16} />
                 Back to forgot password
               </button>
             </div>
