@@ -639,35 +639,7 @@ clearRoleData() {
   localStorage.removeItem('userRoles');
 }
 
-async logout(force = false) {
-  try {
-    const token = this.getToken();
-    
-    if (token && !force) {
-      await fetch(`${this.baseURL}/auth/logout`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-    }
-  } catch (error) {
-    console.error('Logout error:', error);
-  } finally {
-    
-    localStorage.removeItem('sessionToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('tokenExpiry');
-    localStorage.removeItem('user');
-    localStorage.removeItem('loginTime');
-    this.clearRoleData(); 
-    
-    this.stopBackgroundServices();
-    
-    console.log(' Logged out and cleared all data including roles');
-  }
-}
+
 }
 
 const authService = new AuthService();

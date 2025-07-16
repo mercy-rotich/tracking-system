@@ -1,13 +1,10 @@
-
 :root {
   --must-green: #00BF63;
   --must-green-hover: #00a854;
   --must-green-light: #e6f7f0;
   --must-dark: #2D1A12;
   --must-gold: #f0b41c;
-  --must-gold-light: #fef3c7;
   --must-blue: #1a3a6e;
-  --must-blue-light: #dbeafe;
   --gray-50: #f9fafb;
   --gray-100: #f3f4f6;
   --gray-200: #e5e7eb;
@@ -19,6 +16,7 @@
   --gray-800: #1f2937;
   --gray-900: #111827;
   --sidebar-width: 256px;
+  --header-height: 4rem;
 }
 
 
@@ -26,16 +24,44 @@
   background-color: var(--must-green);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   position: fixed;
-  z-index: 50;
+  z-index: 30;
   top: 0;
-  transition: left 0.3s ease-in-out, width 0.3s ease-in-out;
+  height: var(--header-height);
 }
+
 
 .header {
   left: 0;
+  right: 0;
   width: 100%;
 }
 
+
+@media (min-width: 768px) {
+  .header {
+    left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+  }
+}
+
+.header-container {
+  max-width: none;
+  margin: 0;
+  padding: 0 1rem;
+  height: 100%;
+}
+
+@media (min-width: 640px) {
+  .header-container {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .header-container {
+    padding: 0 2rem;
+  }
+}
 
 @media (min-width: 768px) {
   .header {
@@ -58,24 +84,6 @@
 .sidebar-visible .header {
   left: var(--sidebar-width) !important;
   width: calc(100% - var(--sidebar-width)) !important;
-}
-
-.header-container {
-  max-width: none;
-  margin: 0;
-  padding: 0 1rem;
-}
-
-@media (min-width: 640px) {
-  .header-container {
-    padding: 0 1.5rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .header-container {
-    padding: 0 2rem;
-  }
 }
 
 .header-content {
@@ -907,3 +915,21 @@
     opacity: 1;
   }
 }
+/* Enhanced Admin Header CSS with proper responsive behavior */
+
+
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+  gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .header-content {
+    gap: 1rem;
+  }
+}
+
