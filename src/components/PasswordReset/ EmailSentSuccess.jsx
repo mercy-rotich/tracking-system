@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { CheckCircle, ArrowLeft, AlertCircle, Mail } from 'lucide-react';
 import passwordResetService from '../../services/passwordResetService';
 import logo_image from '../../assets/logo.jpg';
-import '../../Pages/users/LoginPage/LoginPage.css';
-import './Passwordreset.css';
+import '../../Pages/users/LoginPage/LoginPage.css'
 
 const EmailSentSuccess = ({ email, onBack }) => {
   const [canResend, setCanResend] = useState(false);
@@ -11,7 +10,6 @@ const EmailSentSuccess = ({ email, onBack }) => {
   const [isResending, setIsResending] = useState(false);
   const [resendError, setResendError] = useState('');
 
- 
   React.useEffect(() => {
     const timer = setInterval(() => {
       setCountdown((prev) => {
@@ -68,6 +66,7 @@ const EmailSentSuccess = ({ email, onBack }) => {
   return (
     <div className="login-container">
       <div className="login-wrapper">
+        {/* Branding Section - Left Side */}
         <div className="branding-section">
           <div className="branding-overlay"></div>
           <div className="branding-content">
@@ -83,14 +82,28 @@ const EmailSentSuccess = ({ email, onBack }) => {
               </div>
             </div>
             
-            <h2 className="system-title">Check Your Email</h2>
-            <p className="system-description">
-              We've sent a password reset link to your email address.
-            </p>
+            <div>
+              <h2 className="system-title">Curriculum Tracking System</h2>
+              <p className="system-description">
+                Streamline and monitor the curriculum approval process from creation to accreditation.
+              </p>
+            </div>
+
+            <div className="features-card">
+              <h3 className="features-title">Key Features</h3>
+              <ul className="features-list">
+                <li>Track curriculum status in real-time</li>
+                <li>Receive notifications on important updates</li>
+                <li>Access comprehensive audit trails</li>
+                <li>Manage document versions efficiently</li>
+              </ul>
+            </div>
           </div>
         </div>
         
+        {/* Form Section - Right Side */}
         <div className="form-section">
+          {/* Mobile Header - Only visible on small screens */}
           <div className="mobile-header">
             <div className="mobile-logo-container">
               <div className="mobile-logo-circle">
@@ -103,18 +116,18 @@ const EmailSentSuccess = ({ email, onBack }) => {
             </div>
           </div>
           
-          <div className="success-content">
-            <div className="success-icon-wrapper">
-              <CheckCircle className="success-icon" size={48} />
+          <div className="password-reset-success-content">
+            <div className="password-reset-success-icon-wrapper">
+              <CheckCircle className="password-reset-success-icon" size={48} />
             </div>
             
             <h2 className="form-title">Check Your Email</h2>
-            <p className="success-description">
+            <p className="password-reset-success-description">
               We've sent a password reset link to <strong>{email}</strong>. 
               Please check your inbox and follow the instructions to reset your password.
             </p>
             
-            <div className="email-instructions">
+            <div className="password-reset-email-instructions">
               <h4>Didn't receive the email?</h4>
               <ul>
                 <li>Check your spam or junk folder</li>
@@ -125,22 +138,22 @@ const EmailSentSuccess = ({ email, onBack }) => {
             </div>
             
             {resendError && (
-              <div className="error-message" role="alert">
+              <div className="password-reset-error-message" role="alert">
                 <AlertCircle size={20} />
                 {resendError}
               </div>
             )}
             
-            <div className="resend-section">
+            <div className="password-reset-resend-section">
               {countdown > 0 ? (
-                <p className="resend-countdown">
+                <p className="password-reset-resend-countdown">
                   You can request another email in {countdown} seconds
                 </p>
               ) : (
                 <button
                   onClick={handleResendEmail}
                   disabled={isResending || !canResend}
-                  className="submit-button secondary"
+                  className={`submit-button ${isResending ? 'password-reset-submit-button-loading' : ''} password-reset-submit-button-secondary`}
                 >
                   {isResending ? (
                     <>
@@ -157,10 +170,10 @@ const EmailSentSuccess = ({ email, onBack }) => {
               )}
             </div>
             
-            <div className="back-to-login">
+            <div className="password-reset-back-to-login">
               <button
                 onClick={onBack}
-                className="back-link"
+                className="password-reset-back-link"
               >
                 <ArrowLeft size={16} />
                 Back to forgot password

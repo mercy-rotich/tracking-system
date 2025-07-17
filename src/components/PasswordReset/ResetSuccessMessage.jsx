@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { CheckCircle } from 'lucide-react';
 import logo_image from '../../assets/logo.jpg';
@@ -111,17 +110,17 @@ const ResetSuccessMessage = () => {
             </div>
           </div>
           
-          <div className="success-content">
-            <div className="success-icon-wrapper">
-              <CheckCircle className="success-icon" size={48} />
+          <div className="password-reset-success-content">
+            <div className="password-reset-success-icon-wrapper">
+              <CheckCircle className="password-reset-success-icon" size={48} />
             </div>
             
             <h2 className="form-title">Password Reset Successful</h2>
-            <p className="success-description">
+            <p className="password-reset-success-description">
               Your password has been successfully reset. You can now login with your new password.
             </p>
             
-            <div className="redirect-info">
+            <div className="password-reset-redirect-info">
               <p>
                 You will be redirected to the login page in {countdown} seconds...
               </p>
