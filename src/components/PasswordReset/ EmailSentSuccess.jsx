@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { CheckCircle, ArrowLeft, AlertCircle, Mail } from 'lucide-react';
 import passwordResetService from '../../services/passwordResetService';
 import logo_image from '../../assets/logo.jpg';
-import '../../Pages/users/LoginPage/LoginPage.css'
+import '../../Pages/users/LoginPage/LoginPage.css';
+import './Passwordreset.css'; 
 
 const EmailSentSuccess = ({ email, onBack }) => {
   const [canResend, setCanResend] = useState(false);
@@ -83,19 +84,19 @@ const EmailSentSuccess = ({ email, onBack }) => {
             </div>
             
             <div>
-              <h2 className="system-title">Curriculum Tracking System</h2>
+              <h2 className="system-title">Email Sent</h2>
               <p className="system-description">
-                Streamline and monitor the curriculum approval process from creation to accreditation.
+                Check your inbox for password reset instructions.
               </p>
             </div>
 
             <div className="features-card">
-              <h3 className="features-title">Key Features</h3>
+              <h3 className="features-title">Next Steps</h3>
               <ul className="features-list">
-                <li>Track curriculum status in real-time</li>
-                <li>Receive notifications on important updates</li>
-                <li>Access comprehensive audit trails</li>
-                <li>Manage document versions efficiently</li>
+                <li>Check your email inbox</li>
+                <li>Look in spam/junk folder if needed</li>
+                <li>Click the reset link in the email</li>
+                <li>Create your new secure password</li>
               </ul>
             </div>
           </div>
@@ -116,6 +117,7 @@ const EmailSentSuccess = ({ email, onBack }) => {
             </div>
           </div>
           
+          {/* Success Content */}
           <div className="password-reset-success-content">
             <div className="password-reset-success-icon-wrapper">
               <CheckCircle className="password-reset-success-icon" size={48} />
@@ -153,7 +155,7 @@ const EmailSentSuccess = ({ email, onBack }) => {
                 <button
                   onClick={handleResendEmail}
                   disabled={isResending || !canResend}
-                  className={`submit-button ${isResending ? 'password-reset-submit-button-loading' : ''} password-reset-submit-button-secondary`}
+                  className={`submit-button ${isResending ? 'loading' : ''} password-reset-submit-button-secondary`}
                 >
                   {isResending ? (
                     <>
