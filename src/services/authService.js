@@ -37,16 +37,16 @@ class AuthService{
 
   logoutSync(){
     try{
-      const token = this.getToken();
-      if(token){
-        navigator.sendBeacon(`${this.baseURL}/auth/logout`,JSON.stringify({token}));
-      }
-    }catch (error){
-      console.error('sync logout error:',error);
-    }finally{
+      console.log(' Performing sync logout (client-side only)');
       this.clearStorage();
       this.stopBackgroundServices();
-      console.log('sync logout completed');
+      console.log('sync logout completed')
+    }catch (error){
+      console.error('sync logout error:',error);
+    
+      this.clearStorage();
+      this.stopBackgroundServices();
+      
     }
   }
 
@@ -232,7 +232,7 @@ class AuthService{
     this.failedQueue = [];
 
     if(error.message.includes('refresh token') || error.message.includes('unauthorized')) {
-      this.logoutSync(true)
+      this.logout()
     }
 
     throw error;
@@ -316,7 +316,7 @@ startSessionCheck(){
           console.error('❌ Failed to recover session:', refreshError);
         }
       }
-      this.logoutSync(true);
+      this.logout();
     }
   },5*60*1000);
 
@@ -353,32 +353,25 @@ isAuthenticated() {
   }
 }
 
-async logout(force = false) {
-  try{
-    const token = this.getToken();
-
-    if(token && !force) {
-      await fetch(`${this.baseURL}/auth/logout`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-    
-    }
-  }catch (error) {
-    console.error('Logout error:', error);
-  }finally {
+async logout() {
+  
+    console.log(' Performing client-side logout...');
     this.clearStorage();
     this.stopBackgroundServices();
-    console.log('🔐 Logged out successfully');
+
+    console.log(' Logged out successfully');
+    if(typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('authLogout', {
+        detail: {timestamp: new Date().toISOString()}
+      }));
+    }
   }
-}
+
 
 clearStorage() {
   ['sessionToken', 'refreshToken', 'tokenExpiry', 'user', 'loginTime', 'userPermissions', 'userRoles']
     .forEach(key => localStorage.removeItem(key));
+    console.log('🧹 Local storage cleared');
 }
 
 // Get valid token
