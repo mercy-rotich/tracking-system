@@ -1,608 +1,474 @@
-
-class AuthService {
-  constructor() {
+class AuthService{
+  constructor(){
     this.baseURL = import.meta.env.VITE_BASE_URL;
     this.refreshTokenInterval = null;
     this.sessionCheckInterval = null;
     this.isRefreshing = false;
     this.failedQueue = [];
-    this.lastActivity = Date.now();
-    this.refreshBuffer = 5 * 60 * 1000; 
-    this.activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-    
-   
-    this.initializeActivityMonitoring();
-    
-   
+    this.refreshBuffer = 5 * 60 * 1000;
+
     this.initializePageExitHandlers();
+
   }
 
-  
-  initializeActivityMonitoring() {
-    const updateActivity = () => {
-      this.lastActivity = Date.now();
-      console.log('🔄 User activity detected at:', new Date().toISOString());
-    };
+  initializePageExitHandlers(){
+    //logs out user when closing tab/browser
 
-    this.activityEvents.forEach(event => {
-      document.addEventListener(event, updateActivity, true);
-    });
-
-    
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) {
-        updateActivity();
-        
-        this.checkAndRefreshToken();
-      }
-    });
-  }
-
- 
-  initializePageExitHandlers() {
-   
-    window.addEventListener('beforeunload', (event) => {
-      console.log(' Page is about to unload, logging out...');
-      
+    window.addEventListener('beforeunload',() => {
+      console.log('page unloading,looging out....');
       this.logoutSync();
+
     });
 
-    
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        console.log(' Page hidden, preparing for potential exit...');
-       
+    //refreshes token when returning to the tab
+    document.addEventListener('visibilitychange',() =>{
+      if(!document.hidden){
+        this.checkAndrefreshToken();
       }
     });
-    window.addEventListener('blur', () => {
-      console.log(' Window lost focus');
-      
-    });
 
-    window.addEventListener('focus', () => {
-      console.log(' Window gained focus, checking token...');
-      this.checkAndRefreshToken();
-    });
+     // Check token when window gains focus
+     window.addEventListener('focus', () => {
+      console.log('window focused,checking token ...');
+      this.checkAndrefreshToken();
+     })
+
   }
 
-  logoutSync() {
-    try {
+  logoutSync(){
+    try{
       const token = this.getToken();
-      
-      if (token) {
-        
-        const logoutData = JSON.stringify({ token });
-        navigator.sendBeacon(`${this.baseURL}/auth/logout`, logoutData);
+      if(token){
+        navigator.sendBeacon(`${this.baseURL}/auth/logout`,JSON.stringify({token}));
       }
-    } catch (error) {
-      console.error('Sync logout error:', error);
-    } finally {
-      
-      localStorage.removeItem('sessionToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('tokenExpiry');
-      localStorage.removeItem('user');
-      localStorage.removeItem('loginTime');
-      
+    }catch (error){
+      console.error('sync logout error:',error);
+    }finally{
+      this.clearStorage();
       this.stopBackgroundServices();
-      
-      console.log('🔐 Sync logout completed');
+      console.log('sync logout completed');
     }
   }
 
-  async login(credentials) {
-    try {
-      console.log(' Starting login process with credentials:', {
-        username: credentials.username,
-        hasPassword: !!credentials.password,
-        rememberMe: credentials.rememberMe
-      });
+  async login(credentials){
+    try{
+      
+        console.log('🔐 Starting login process');
+  
+        const response = await fetch(`${this.baseURL}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(credentials),
+        });
 
-      const response = await fetch(`${this.baseURL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials),
-      });
-
-      console.log(' Login response status:', response.status);
-
-      if (!response.ok) {
+      if(!response.ok){
         const errorData = await response.json();
-        console.error('❌ Login failed with error:', errorData);
         throw new Error(errorData.message || 'Invalid credentials');
       }
 
       const data = await response.json();
-      
-      // Extract tokens and user data
-      let sessionToken = null;
-      let refreshToken = null;
-      let tokenExpiry = null;
-      let userData = null;
-
       const responseData = data.data || data;
-      
-      sessionToken = responseData.token || 
-                    responseData.accessToken || 
-                    responseData.access_token || 
-                    responseData.jwt || 
-                    responseData.authToken ||
-                    data.token ||
-                    data.accessToken ||
-                    data.access_token ||
-                    data.jwt ||
-                    data.authToken;
 
-      refreshToken = responseData.refreshToken || 
-                    responseData.refresh_token || 
-                    data.refreshToken || 
-                    data.refresh_token;
+      //extract token information
+      const tokenInfo = this.extractTokenInfo(responseData, data);
+      const userInfo = this.extractUserInfo(responseData,data,credentials);
 
-      tokenExpiry = responseData.expiresAt || 
-                   responseData.expires_at || 
-                   responseData.expiry || 
-                   responseData.exp ||
-                   responseData.expiresIn ||
-                   data.expiresAt || 
-                   data.expires_at || 
-                   data.expiry || 
-                   data.exp ||
-                   data.expiresIn;
-
-      userData = responseData.user || 
-                responseData.userData || 
-                responseData.profile ||
-                data.user || 
-                data.userData || 
-                data.profile;
-
-      if (!userData && (data.username || data.email || data.id)) {
-        userData = {
-          id: data.id || data.userId || data.user_id,
-          username: data.username || data.user || credentials.username,
-          email: data.email,
-          firstName: data.firstName || data.first_name,
-          lastName: data.lastName || data.last_name,
-          role: data.role || data.userRole
-        };
+      if(!tokenInfo.accessToken){
+        throw new Error('Login response missing required token');
       }
 
-      if (!sessionToken) {
-        throw new Error(`Login response missing required token. Available fields: ${Object.keys(data).join(', ')}`);
-      }
-
-      if (tokenExpiry && typeof tokenExpiry === 'number' && tokenExpiry < Date.now()) {
-        
-        tokenExpiry = new Date(Date.now() + (tokenExpiry * 1000)).toISOString();
-      } else if (tokenExpiry && typeof tokenExpiry === 'number') {
-       
-        tokenExpiry = new Date(tokenExpiry).toISOString();
-      }
-      
-     
-      localStorage.setItem('sessionToken', sessionToken);
-      localStorage.setItem('refreshToken', refreshToken || '');
-      localStorage.setItem('tokenExpiry', tokenExpiry || '');
-      localStorage.setItem('user', JSON.stringify(userData || { username: credentials.username }));
-      localStorage.setItem('loginTime', new Date().toISOString());
-      
-      console.log('💾 Tokens stored successfully');
-
-     
+      //store authentication token
+      this.storeAuthData(tokenInfo,userInfo);
       this.startBackgroundServices();
 
-      return {
+      console.log('✅ Login successful');
+      return{
         ...data,
-        token: sessionToken,
-        refreshToken: refreshToken,
-        user: userData || { username: credentials.username },
-        expiresAt: tokenExpiry
+        token:tokenInfo.accessToken,
+        user:userInfo
       };
-    } catch (error) {
-      console.error('💥 Login error:', error);
+
+    }catch(error){
+      console.error('❌ Login error:', error);
       throw error;
     }
   }
 
+  //extract token information from response
 
-  startBackgroundServices() {
-    this.startTokenRefresh();
-    this.startSessionCheck();
-    console.log('Background authentication services started (no inactivity monitoring)');
-  }
-
-  stopBackgroundServices() {
-    this.stopTokenRefresh();
-    this.stopSessionCheck();
-    console.log(' Background authentication services stopped');
-  }
-
-  async refreshToken() {
-    if (this.isRefreshing) {
-      return new Promise((resolve, reject) => {
-        this.failedQueue.push({ resolve, reject });
-      });
-    }
-
-    this.isRefreshing = true;
-    console.log('🔄 Starting token refresh...');
-
-    try {
-      const refreshToken = localStorage.getItem('refreshToken');
-      
-      if (!refreshToken) {
-        throw new Error('No refresh token available');
-      }
-
-      const response = await fetch(`${this.baseURL}/auth/refresh`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ refreshToken }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Token refresh failed');
-      }
-
-      const data = await response.json();
-      
-     
-      const newToken = data.token || data.accessToken || data.access_token;
-      const newRefreshToken = data.refreshToken || data.refresh_token || refreshToken;
-      const newExpiry = data.expiresAt || data.expires_at || data.expiry;
-
-      if (!newToken) {
-        throw new Error('Refresh response missing new token');
-      }
-
-  
-      localStorage.setItem('sessionToken', newToken);
-      localStorage.setItem('refreshToken', newRefreshToken);
-      if (newExpiry) {
-        localStorage.setItem('tokenExpiry', newExpiry);
-      }
-
-      console.log('✅ Token refreshed successfully');
-
-      
-      this.failedQueue.forEach(({ resolve }) => resolve(newToken));
-      this.failedQueue = [];
-
-      return newToken;
-    } catch (error) {
-      console.error('❌ Token refresh failed:', error);
-      
-      
-      this.failedQueue.forEach(({ reject }) => reject(error));
-      this.failedQueue = [];
-      
-      // Only logout if it's a critical error (not network issues)
-      if (error.message.includes('refresh token') || error.message.includes('unauthorized')) {
-        console.log('🔐 Logging out due to refresh token failure');
-        this.logout(true);
-      }
-      
-      throw error;
-    } finally {
-      this.isRefreshing = false;
-    }
-  }
-
-  
-  shouldRefreshToken() {
-    const tokenExpiry = localStorage.getItem('tokenExpiry');
-    if (!tokenExpiry) return false;
-    
-    const expiryTime = new Date(tokenExpiry).getTime();
-    const currentTime = Date.now();
-    const timeUntilExpiry = expiryTime - currentTime;
-    
-    
-    return timeUntilExpiry < this.refreshBuffer;
-  }
-
-  async checkAndRefreshToken() {
-    if (!this.isAuthenticated()) {
-      return false;
-    }
-
-    if (this.shouldRefreshToken()) {
-      try {
-        await this.refreshToken();
-        return true;
-      } catch (error) {
-        console.error('Background token refresh failed:', error);
-        return false;
-      }
-    }
-    
-    return true;
-  }
-
-  startTokenRefresh() {
-    this.stopTokenRefresh(); 
-    
-    this.refreshTokenInterval = setInterval(async () => {
-      if (this.isAuthenticated()) {
-        await this.checkAndRefreshToken();
-      }
-    }, 60000);
-
-    console.log(' Token refresh monitoring started (every 60 seconds)');
-  }
-
-  stopTokenRefresh() {
-    if (this.refreshTokenInterval) {
-      clearInterval(this.refreshTokenInterval);
-      this.refreshTokenInterval = null;
-      console.log('⏰ Token refresh monitoring stopped');
-    }
-  }
-
- 
-  async validateSession() {
-    const token = this.getToken();
-    if (!token) throw new Error('No token available');
-
-    const response = await fetch(`${this.baseURL}/auth/validate`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      
-      if (response.status === 401 && localStorage.getItem('refreshToken')) {
-        console.log('🔄 Session invalid, attempting token refresh...');
-        await this.refreshToken();
-        return { valid: true, refreshed: true };
-      }
-      throw new Error('Session invalid');
-    }
-
-    return response.json();
-  }
-
-  startSessionCheck() {
-    this.stopSessionCheck(); 
-    
-    this.sessionCheckInterval = setInterval(async () => {
-      try {
-        await this.validateSession();
-        console.log('✅ Session validation successful');
-      } catch (error) {
-        console.error('❌ Session validation failed:', error);
-        
-        
-        if (localStorage.getItem('refreshToken')) {
-          try {
-            await this.refreshToken();
-            console.log('✅ Session recovered via token refresh');
-            return;
-          } catch (refreshError) {
-            console.error('❌ Failed to recover session:', refreshError);
-          }
-        }
-        
-        
-        this.logout(true);
-      }
-    }, 5 * 60 * 1000); 
-
-    console.log('🔍 Session validation monitoring started (every 5 minutes)');
-  }
-
-  stopSessionCheck() {
-    if (this.sessionCheckInterval) {
-      clearInterval(this.sessionCheckInterval);
-      this.sessionCheckInterval = null;
-      console.log('🔍 Session validation monitoring stopped');
-    }
-  }
-
-  async ensureValidToken() {
-    if (!this.isAuthenticated()) {
-      throw new Error('Not authenticated');
-    }
-
-    if (this.shouldRefreshToken()) {
-      await this.refreshToken();
-    }
-
-    return this.getToken();
-  }
-  isAuthenticated() {
-    try {
-      const token = this.getToken();
-      const tokenExpiry = localStorage.getItem('tokenExpiry');
-      const user = this.getCurrentUser();
-      
-      const authStatus = {
-        hasToken: !!token,
-        hasExpiry: !!tokenExpiry,
-        hasUser: !!user,
-        isExpired: tokenExpiry ? new Date(tokenExpiry).getTime() <= Date.now() : true,
-        expiryDate: tokenExpiry ? new Date(tokenExpiry).toISOString() : null,
-        currentTime: new Date().toISOString()
-      };
-      
-      const isValid = authStatus.hasToken && authStatus.hasUser && !authStatus.isExpired;
-      
-      return isValid;
-    } catch (error) {
-      console.error('❌ Error checking authentication:', error);
-      return false;
-    }
-  }
-
-  
-  async logout(force = false) {
-    try {
-      const token = this.getToken();
-      
-      if (token && !force) {
-        await fetch(`${this.baseURL}/auth/logout`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-      }
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      
-      localStorage.removeItem('sessionToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('tokenExpiry');
-      localStorage.removeItem('user');
-      localStorage.removeItem('loginTime');
-      
-     
-      this.stopBackgroundServices();
-      
-      console.log(' Logged out and cleared all data');
-    }
-  }
-
-  async getValidToken() {
-    if (!this.isAuthenticated()) {
-      throw new Error('Not authenticated');
-    }
-
-    if (this.shouldRefreshToken()) {
-      await this.refreshToken();
-    }
-
-    return this.getToken();
-  }
-
-  getToken() {
-    try {
-      const token = localStorage.getItem('sessionToken');
-      return token;
-    } catch (error) {
-      console.error('❌ Error getting token:', error);
-      return null;
-    }
-  }
-
-  getCurrentUser() {
-    try {
-      const userStr = localStorage.getItem('user');
-      if (!userStr) return null;
-      return JSON.parse(userStr);
-    } catch (error) {
-      console.error('❌ Error parsing user data:', error);
-      localStorage.removeUser('user');
-      return null;
-    }
-  }
-
-  
-  debugStorage() {
-    const loginTime = localStorage.getItem('loginTime');
-    const tokenExpiry = localStorage.getItem('tokenExpiry');
-    const timeSinceLogin = loginTime ? Date.now() - new Date(loginTime).getTime() : 0;
-    const timeUntilExpiry = tokenExpiry ? new Date(tokenExpiry).getTime() - Date.now() : 0;
-    
-    console.log('🔍 Storage Debug Report:', {
-      sessionToken: localStorage.getItem('sessionToken') ? 'Present' : 'Missing',
-      refreshToken: localStorage.getItem('refreshToken') ? 'Present' : 'Missing',
-      tokenExpiry: localStorage.getItem('tokenExpiry') ? 'Present' : 'Missing',
-      user: localStorage.getItem('user') ? 'Present' : 'Missing',
-      loginTime: loginTime,
-      timeSinceLogin: `${Math.round(timeSinceLogin / 60000)} minutes`,
-      timeUntilExpiry: `${Math.round(timeUntilExpiry / 60000)} minutes`,
-      lastActivity: new Date(this.lastActivity).toISOString(),
-      timeSinceActivity: `${Math.round((Date.now() - this.lastActivity) / 60000)} minutes`,
-      backgroundServices: {
-        tokenRefresh: !!this.refreshTokenInterval,
-        sessionCheck: !!this.sessionCheckInterval
-      },
-      logoutPolicy: 'Only on page exit - no inactivity timeout'
-    });
-  }
-
-  getAuthStatus() {
-    return {
-      isAuthenticated: this.isAuthenticated(),
-      shouldRefresh: this.shouldRefreshToken(),
-      isRefreshing: this.isRefreshing,
-      lastActivity: new Date(this.lastActivity).toISOString(),
-      servicesRunning: {
-        tokenRefresh: !!this.refreshTokenInterval,
-        sessionCheck: !!this.sessionCheckInterval
-      },
-      logoutPolicy: 'Page exit only'
+  extractTokenInfo(responseData,data){
+    return{
+      accessToken: responseData.accessToken || responseData.token || data.accessToken || data.token,
+      refreshToken: responseData.refreshToken || data.refreshToken,
+      expiresIn: responseData.expiresIn || data.expiresIn,
+      tokenType: responseData.tokenType || data.tokenType || 'Bearer'
     };
   }
 
-  //check permissions
-  async getUserRolesAndPermissions() {
-  try {
-    const token = this.getToken();
-    
-    if (!token) {
-      throw new Error('No authentication token available');
+  //extract user information from response
+  extractUserInfo(responseData,data,credentials){
+    const user =  responseData.user || data.user || responseData;
+    return{
+      id:user.userId || user.id,
+      username:user.username || credentials.username,
+      email: user.email,
+      firstName:user.firstName,
+      lastName: user.lastName,
+      roles: user.roles || []
+
+    };
+  }
+
+  //store authentication data
+  storeAuthData(tokenInfo,userInfo){
+    const storage = {
+      sessionToken: tokenInfo.accessToken,
+      refreshToken: tokenInfo.refreshToken || '',
+      tokenExpiry: this.calculateExpiry(tokenInfo.expiresIn),
+      user: JSON.stringify(userInfo),
+      loginTime: new Date().toISOString()
+    };
+
+    Object.entries(storage).forEach(([key,value]) =>{
+      localStorage.setItem(key,value);
+    });
+    console.log('Authentication data stored');
+  }
+
+  validateTokenFormat(token){
+    if(!token) return false;
+
+    try{
+      const parts = token.split('.');
+      if(parts.length !== 3 ) return false;
+
+      //decode payload to check expiration
+      const payload = JSON.parse(atob(parts[1]));
+      const currentTime = Math.floor(Date.now() / 1000);
+
+      if(payload.exp && payload.exp < currentTime){
+        console.warn('⚠️ Token has expired')
+        return false;
+      }
+
+      return true;
+    }catch (error){
+      console.error('❌ Invalid token format:', error);
+      return false;
     }
+  }
 
-    console.log(' Fetching user roles and permissions...');
+  calculateExpiry(expiresIn){
+    if(!expiresIn) return '';
 
-    const response = await fetch(`${this.baseURL}/auth/roles`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+    const expiryTime = typeof expiresIn === 'number'
+    ?Date.now() + expiresIn
+    :new Date(expiresIn).getTime();
+
+    return new Date(expiryTime).toISOString();
+  }
+
+  startBackgroundServices(){
+    this.startTokenRefresh();
+    this.startSessionCheck();
+    console.log('Background services started')
+  }
+  
+  stopBackgroundServices(){
+    [this.refreshTokenInterval, this.sessionCheckInterval].forEach(interval =>{
+      if(interval) clearInterval(interval)
+    });
+  this.refreshTokenInterval = null;
+  this.sessionCheckInterval = null;
+  console.log(' Background services stopped');
+ }
+
+ async refreshToken(){
+  if (this.isRefreshing){
+    return new Promise((resolve,reject) =>{
+      this.failedQueue.push({resolve,reject});
+    });
+  }
+
+  this.isRefreshing = true;
+  console.log('🔄 Refreshing token...');
+
+  try{
+    const refreshToken = localStorage.getItem('refreshToken');
+    if(!refreshToken) throw new Error('No refresh token available');
+
+    const response = await fetch(`${this.baseURL}/auth/refresh`, {
+      method:'POST',
+      headers:{'content-Type': 'application/json'},
+      body: JSON.stringify({refreshToken}),
     });
 
-    if (!response.ok) {
-      if (response.status === 401) {
-        
-        await this.refreshToken();
-        return this.getUserRolesAndPermissions(); 
-      }
-      throw new Error(`Failed to fetch roles: ${response.status}`);
+    if(!response.ok) {
+      const errorData = await response.json().catch(() =>({}));
+      throw new Error(errorData.message || 'Token refresh failed');
     }
 
-    const result = await response.json();
-    console.log('✅ User roles and permissions:', result.data);
+    const data = await response.json();
+    const newToken = data.accessToken || data.token;
+
+    if(!newToken) throw new Error('Refresh response missing nwe token');
+
+    localStorage.setItem('sessionToken', newToken);
+    localStorage.setItem('refreshToken', data.refreshToken || refreshToken);
+    if(data.expiresIn){
+      localStorage.setItem('tokenExpiry',this.calculateExpiry(data.expiresIn));
+    }
+
+    //resolve queue requests
+    this.failedQueue.forEach(({resolve}) => resolve(newToken));
+    this.failedQueue = [];
+
+    console.log('✅ Token refreshed successfully')
+    return newToken;
+  }catch(error){
+    console.error('❌ Token refresh failed:', error);
     
+    this.failedQueue.forEach(({reject}) => reject(error));
+    this.failedQueue = [];
+
+    if(error.message.includes('refresh token') || error.message.includes('unauthorized')) {
+      this.logoutSync(true)
+    }
+
+    throw error;
     
-    localStorage.setItem('userPermissions', JSON.stringify(result.data.permissions));
-    localStorage.setItem('userRoles', JSON.stringify(result.data.roles));
+  }finally {
+    this.isRefreshing = false;
+  }
+ }
+
+ //check if token should be refreshed
+ shouldRefreshToken() {
+  const tokenExpiry = localStorage.getItem('tokenExpiry');
+  if(!tokenExpiry) return false;
+
+  const timeUntilExpiry = new Date(tokenExpiry).getTime() - Date.now();
+  return timeUntilExpiry < this.refreshBuffer;
+ }
+
+ //check and refresh token if needed
+ async checkAndrefreshToken() {
+  if(!this.isAuthenticated()) return false;
+  if(this.shouldRefreshToken()){
+    try{
+      await this.refreshToken();
+      return true;
+    }catch (error) {
+      console.error('Background token refresh failed:', error);
+      return false;
+    }
+  }
+  return true;
+
+ }
+ //start token refresh monitoring
+ startTokenRefresh() {
+  if(this.refreshTokenInterval) clearInterval(this.refreshTokenInterval);
+  this.refreshTokenInterval = setInterval(async () => {
+    if(this.isAuthenticated()) {
+      await this.checkAndrefreshToken();
+    }
+  },60000);
+
+  console.log('⏰ Token refresh monitoring started')
+}
+
+async validateSession() {
+  const token = this.getToken();
+  if(!token) throw new Error('No token available');
+
+  const response = await fetch(`${this.baseURL}/auth/validate`, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if(!response.ok) {
+    if(response.status === 401 && localStorage.getItem('refreshToken')) {
+      await this.refreshToken();
+      return {valid: true,refreshed:true};
+    }
+    throw new Error('Session invalid');
+  }
+
+  return response.json();
+}
+
+//start session validation monitoring
+startSessionCheck(){
+  if(this.sessionCheckInterval) clearInterval(this.sessionCheckInterval);
+
+  this.sessionCheckInterval = setInterval(async () => {
+    try{
+      await this.validateSession();
+      console.log('✅ Session valid')
+    }catch (error) {
+      console.error('❌ Session validation failed:', error);
+
+      if(localStorage.getItem('refreshToken')) {
+        try{
+          await this.refreshToken();
+          return;
+        } catch(refreshError) {
+          console.error('❌ Failed to recover session:', refreshError);
+        }
+      }
+      this.logoutSync(true);
+    }
+  },5*60*1000);
+
+  console.log('🔍 Session validation started');
+}
+
+//authentication check
+isAuthenticated() {
+  try {
+    const token = this.getToken();
+    const tokenExpiry = localStorage.getItem('tokenExpiry');
+    const user = this.getCurrentUser();
     
-    return result.data;
+    // Enhanced validation
+    const hasValidToken = token && this.validateTokenFormat(token);
+    const hasUser = user && user.id;
+    const notExpired = !tokenExpiry || new Date(tokenExpiry).getTime() > Date.now();
+    
+    const isValid = hasValidToken && hasUser && notExpired;
+    
+    if (!isValid) {
+      console.warn('⚠️ Authentication validation failed:', {
+        hasValidToken,
+        hasUser,
+        notExpired,
+        tokenExpiry
+      });
+    }
+    
+    return isValid;
   } catch (error) {
+    console.error('❌ Authentication check error:', error);
+    return false;
+  }
+}
+
+async logout(force = false) {
+  try{
+    const token = this.getToken();
+
+    if(token && !force) {
+      await fetch(`${this.baseURL}/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    
+    }
+  }catch (error) {
+    console.error('Logout error:', error);
+  }finally {
+    this.clearStorage();
+    this.stopBackgroundServices();
+    console.log('🔐 Logged out successfully');
+  }
+}
+
+clearStorage() {
+  ['sessionToken', 'refreshToken', 'tokenExpiry', 'user', 'loginTime', 'userPermissions', 'userRoles']
+    .forEach(key => localStorage.removeItem(key));
+}
+
+// Get valid token
+async getValidToken() {
+  if (!this.isAuthenticated()) {
+    throw new Error('Not authenticated');
+  }
+
+  if (this.shouldRefreshToken()) {
+    await this.refreshToken();
+  }
+
+  return this.getToken();
+}
+
+//get token with validation
+getToken() {
+  try{
+    const token = localStorage.getItem('sessionToken');
+    if(!token || !this.validateTokenFormat(token)) {
+      return null;
+
+    }
+    return token;
+
+  }catch (error){
+    console.error('❌ Error getting token:', error);
+      return null;
+  }
+}
+
+getCurrentUser(){
+  try{
+    const userStr = localStorage.getItem('user');
+    return userStr ? JSON.parse(userStr) : null;
+  }catch(error){
+    console.error('❌ Error parsing user data:', error);
+    localStorage.removeItem('user');
+    return null;
+  }
+}
+
+//roles and permissions methods
+async getUserRolesAndPermissions(){
+  try{
+    const token = this.getToken();
+    if(!token) throw new Error('No authentication token available')
+
+      const response = await fetch(`${this.baseURL}/auth/roles`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if(!response.ok) {
+        if(response.status === 401) {
+          await this.refreshToken();
+          return this.getUserRolesAndPermissions();
+        }
+        throw new Error (`Failed to fetch roles: ${response.status}`)
+      }
+      const result = await response.json();
+
+       // Store permissions and roles
+       localStorage.setItem('userPermissions', JSON.stringify(result.data.permissions));
+       localStorage.setItem('userRoles', JSON.stringify(result.data.roles));
+
+       return result.data;
+  }catch (error) {
     console.error('❌ Error fetching user roles:', error);
     throw error;
   }
 }
 
-
+// Permission and role checks
 hasPermission(permission) {
   try {
     const permissions = JSON.parse(localStorage.getItem('userPermissions') || '{}');
     return permissions[permission] === true;
-  } catch (error) {
+  }catch (error) {
     console.error('Error checking permission:', error);
     return false;
   }
 }
-
-hasRole(role) {
-  try {
-    const roles = JSON.parse(localStorage.getItem('userRoles') || '[]');
+hasRole(role){
+  try{
+    const roles = JSON.parse(localStorage.getItem('userRoles')|| '[]');
     return roles.includes(role);
-  } catch (error) {
+  }catch(error){
     console.error('Error checking role:', error);
     return false;
   }
@@ -618,39 +484,39 @@ hasAnyRole(rolesList) {
   }
 }
 
-
-canManageUsers() {
+ canManageUsers() {
   return this.hasPermission('canManageUsers');
-}
+ }
 
-
-isAdmin() {
+ isAdmin() {
   return this.hasPermission('isAdmin') || this.hasRole('ADMIN');
 }
-
 
 isDean() {
   return this.hasPermission('isDean') || this.hasRole('DEAN');
 }
 
-
-clearRoleData() {
-  localStorage.removeItem('userPermissions');
-  localStorage.removeItem('userRoles');
+// Debug methods
+getAuthStatus() {
+  return {
+    isAuthenticated: this.isAuthenticated(),
+    shouldRefresh: this.shouldRefreshToken(),
+    isRefreshing: this.isRefreshing,
+    servicesRunning: {
+      tokenRefresh: !!this.refreshTokenInterval,
+      sessionCheck: !!this.sessionCheckInterval
+    }
+  };
 }
-
-
 }
-
+// Create singleton instance
 const authService = new AuthService();
 
-
-window.debugAuth = () => authService.debugStorage();
-window.authStatus = () => authService.getAuthStatus();
-window.forceRefresh = () => authService.refreshToken();
-window.manualLogout = () => authService.logout();
-
-
-
+// Debug helpers
+if (typeof window !== 'undefined') {
+  window.debugAuth = () => console.log(authService.getAuthStatus());
+  window.forceRefresh = () => authService.refreshToken();
+  window.manualLogout = () => authService.logout();
+}
 
 export default authService;
