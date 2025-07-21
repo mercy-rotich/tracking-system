@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './Sidebar.css';
 
@@ -9,9 +8,10 @@ const Sidebar = ({
   className = '',
   children 
 }) => {
-  const [isMobile, setIsMobile] = useState(false);
-  const [isOpen, setIsOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isOpen, setIsOpen] = useState(!isMobile); 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -19,31 +19,81 @@ const Sidebar = ({
   useEffect(() => {
     const checkIfMobile = () => {
       const mobile = window.innerWidth < 768;
+      const wasMobile = isMobile;
+      
       setIsMobile(mobile);
       
-      // On mobile, start with sidebar closed
-      if (mobile) {
-        setIsOpen(false);
-      } else {
-        setIsOpen(true);
+     
+      if (wasMobile !== mobile) {
+        if (mobile) {
+          setIsOpen(false); 
+        } else {
+          setIsOpen(true); 
+        }
       }
     };
     
+    
     checkIfMobile();
+    setIsInitialized(true);
+    
     window.addEventListener('resize', checkIfMobile);
     
     return () => window.removeEventListener('resize', checkIfMobile);
-  }, []);
+  }, [isMobile]);
 
+  const updateLayoutClasses = useCallback(() => {
+    const body = document.body;
+    const mainContent = document.querySelector('.main-content, .dashboard-main-content');
+    const toggleBtn = document.querySelector('.sidebar-toggle-btn');
+    
+   
+    if (mainContent) {
+      if (!isMobile && !isOpen) {
+        mainContent.classList.add('sidebar-collapsed');
+      } else {
+        mainContent.classList.remove('sidebar-collapsed');
+      }
+    }
+    
+    
+    if (toggleBtn) {
+      if (!isMobile && !isOpen) {
+        toggleBtn.classList.add('sidebar-collapsed');
+      } else {
+        toggleBtn.classList.remove('sidebar-collapsed');
+      }
+    }
+
+    if (isMobile) {
+      if (isOpen) {
+        body.classList.add('sidebar-open');
+        body.style.overflow = 'hidden';
+      } else {
+        body.classList.remove('sidebar-open');
+        body.style.overflow = 'unset';
+      }
+    } else {
+      body.classList.remove('sidebar-open');
+      body.style.overflow = 'unset';
+    }
+  }, [isMobile, isOpen]);
+
+  useEffect(() => {
+    if (isInitialized) {
+      updateLayoutClasses();
+    }
+  }, [isInitialized, updateLayoutClasses]);
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
   };
 
-  // Close sidebar when clicking outside on mobile
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (isMobile && isOpen && !event.target.closest('.sidebar') && !event.target.closest('.sidebar-toggle-btn')) {
+      if (isMobile && isOpen && 
+          !event.target.closest('.sidebar') && 
+          !event.target.closest('.sidebar-toggle-btn')) {
         setIsOpen(false);
       }
     };
@@ -59,45 +109,10 @@ const Sidebar = ({
     };
   }, [isMobile, isOpen]);
 
-  // Prevent body scroll when mobile sidebar is open
-  useEffect(() => {
-    if (isMobile && isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isMobile, isOpen]);
-
-
-  useEffect(() => {
-    const mainContent = document.querySelector('.main-content');
-    const toggleBtn = document.querySelector('.sidebar-toggle-btn');
-    
-    if (mainContent) {
-      if (!isMobile && !isOpen) {
-        mainContent.classList.add('sidebar-collapsed');
-      } else {
-        mainContent.classList.remove('sidebar-collapsed');
-      }
-    }
-    
-    if (toggleBtn) {
-      if (!isMobile && !isOpen) {
-        toggleBtn.classList.add('sidebar-collapsed');
-      } else {
-        toggleBtn.classList.remove('sidebar-collapsed');
-      }
-    }
-  }, [isMobile, isOpen]);
-
   const handleItemClick = (item) => {
     navigate(item.path);
     
-    // Close mobile sidebar after navigation
+    
     if (isMobile) {
       setIsOpen(false);
     }
@@ -168,6 +183,11 @@ const Sidebar = ({
     );
   };
 
+  
+  if (!isInitialized) {
+    return null;
+  }
+
   return (
     <>
       {/* Toggle Button */}
@@ -204,6 +224,7 @@ const Sidebar = ({
         className={`sidebar ${isOpen ? 'sidebar-open' : ''} ${isMobile ? 'sidebar-mobile' : 'sidebar-desktop'} ${!isMobile && !isOpen ? 'sidebar-collapsed' : ''} ${className}`}
         role="navigation"
         aria-label={`${config.type} navigation`}
+        style={!isInitialized ? { visibility: 'hidden' } : {}}
       >
         {/* Mobile Close Button */}
         {isMobile && (
@@ -219,7 +240,15 @@ const Sidebar = ({
 
         {/* Header Section */}
         <div className="sidebar-header">
-        
+          {config.header.logo && (
+            <div className="sidebar-logo">
+              <img 
+                src={config.header.logo} 
+                alt="Logo" 
+                className="sidebar-logo-img"
+              />
+            </div>
+          )}
           <div className="sidebar-header-text">
             <h2 className="sidebar-title">{config.header.title}</h2>
             {config.header.subtitle && (
