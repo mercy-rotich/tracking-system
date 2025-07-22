@@ -21,7 +21,7 @@ import UserCurricula from './Pages/users/UserCurricula/UserCurricula';
 import Analytics from './Pages/users/Analytics/Analytics';
 import UserSettings from './Pages/users/UserSettings/UserSettings';
 import LandingPage from './Pages/LandingPage/LandingPage';
-import NotificationsPage from './Pages/NotificationsPage/NotificationsPage';
+import NotificationsPage from './Pages/Admin/NotificationsPage/NotificationsPage';
 
 function App() {
   return (
