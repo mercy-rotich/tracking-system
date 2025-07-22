@@ -1,20 +1,8 @@
 :root {
-  --must-green: #00BF63;
+ 
   --must-green-hover: #00a854;
   --must-green-light: #e6f7f0;
   --must-dark: #2D1A12;
-  --must-gold: #f0b41c;
-  --must-blue: #1a3a6e;
-  --gray-50: #f9fafb;
-  --gray-100: #f3f4f6;
-  --gray-200: #e5e7eb;
-  --gray-300: #d1d5db;
-  --gray-400: #9ca3af;
-  --gray-500: #6b7280;
-  --gray-600: #4b5563;
-  --gray-700: #374151;
-  --gray-800: #1f2937;
-  --gray-900: #111827;
   --sidebar-width: 256px;
   --header-height: 4rem;
 }

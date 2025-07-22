@@ -60,7 +60,7 @@ const AdminSidebar = () => {
             id: 'notifications', 
             label: 'Notifications Center', 
             icon: 'fas fa-bell', 
-            path: '/admin/notifications' 
+            path: '/admin/admin-notifications' 
           },
           { 
             id: 'audit', 
