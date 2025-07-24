@@ -1,0 +1,283 @@
+
+
+   .tracking-workflow-stage {
+    border: 2px solid var(--tracking-border);
+    border-radius: 8px;
+    padding: 1rem;
+    background-color: var(--tracking-bg-card);
+    transition: all 0.3s ease;
+    position: relative;
+    min-height: 200px;
+  }
+  
+  .tracking-workflow-stage-active {
+    border-color: var(--tracking-primary);
+    background-color: rgba(0, 214, 102, 0.02);
+  }
+  
+  .tracking-workflow-stage:hover {
+    box-shadow: var(--tracking-shadow-md);
+    transform: translateY(-1px);
+  }
+  
+  .tracking-stage-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+  
+  .tracking-stage-status .tracking-flex {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .tracking-stage-content {
+    margin-bottom: 1rem;
+  }
+  
+  .tracking-stage-assignee {
+    margin-bottom: 0.5rem;
+  }
+  
+  .tracking-stage-assignee > div:first-child {
+    font-size: 0.75rem;
+    color: var(--tracking-text-muted);
+    margin-bottom: 0.25rem;
+  }
+  
+  .tracking-stage-assignee > div:last-child {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--tracking-text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .tracking-stage-dates {
+    margin-bottom: 0.5rem;
+  }
+  
+  .tracking-stage-dates > div {
+    font-size: 0.75rem;
+    color: var(--tracking-text-muted);
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .tracking-stage-dates i {
+    width: 12px;
+    text-align: center;
+  }
+  
+  .tracking-stage-documents {
+    margin-bottom: 0.5rem;
+  }
+  
+  .tracking-stage-documents > div:first-child {
+    font-size: 0.75rem;
+    color: var(--tracking-text-muted);
+    margin-bottom: 0.25rem;
+  }
+  
+  .tracking-stage-documents .tracking-flex {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+  }
+  
+  .tracking-stage-documents .tracking-badge {
+    font-size: 0.65rem;
+    padding: 0.125rem 0.375rem;
+  }
+  
+  .tracking-stage-notes {
+    margin-bottom: 0.5rem;
+  }
+  
+  .tracking-stage-notes > div:first-child {
+    font-size: 0.75rem;
+    color: var(--tracking-text-muted);
+    margin-bottom: 0.25rem;
+  }
+  
+  .tracking-stage-notes > div:last-child {
+    font-size: 0.75rem;
+    color: var(--tracking-text-secondary);
+    line-height: 1.3;
+    max-height: 3rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .tracking-stage-actions {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    right: 0.5rem;
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+  }
+  
+  .tracking-workflow-stage:hover .tracking-stage-actions {
+    opacity: 1;
+  }
+  
+  .tracking-stage-actions .tracking-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.65rem;
+    flex: 1;
+    min-width: auto;
+    min-height: auto;
+    border-radius: 4px;
+  }
+  
+  .tracking-stage-secondary-actions {
+    display: flex;
+    gap: 0.25rem;
+    width: 100%;
+    margin-top: 0.25rem;
+  }
+  
+  .tracking-stage-secondary-actions .tracking-btn {
+    flex: 1;
+    min-width: auto;
+  }
+  
+  .tracking-stage-dates i[style*="color: var(--tracking-success)"] {
+    color: var(--tracking-success) !important;
+  }
+  
+  .tracking-stage-dates i[style*="color: var(--tracking-primary)"] {
+    color: var(--tracking-primary) !important;
+  }
+  
+  @media (max-width: 1200px) {
+    .tracking-workflow-stage {
+      min-height: 180px;
+      padding: 0.875rem;
+    }
+    
+    .tracking-stage-actions .tracking-btn {
+      font-size: 0.6rem;
+      padding: 0.2rem 0.4rem;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .tracking-workflow-stage {
+      min-height: 160px;
+      padding: 0.75rem;
+    }
+    
+    .tracking-stage-assignee > div:last-child {
+      font-size: 0.8125rem;
+    }
+    
+    .tracking-stage-dates > div {
+      font-size: 0.6875rem;
+    }
+    
+    .tracking-stage-notes > div:last-child {
+      font-size: 0.6875rem;
+    }
+    
+    .tracking-stage-actions {
+      bottom: 0.375rem;
+      left: 0.375rem;
+      right: 0.375rem;
+    }
+    
+    .tracking-stage-actions .tracking-btn {
+      font-size: 0.5625rem;
+      padding: 0.2rem 0.3rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .tracking-workflow-stage {
+      min-height: 140px;
+      padding: 0.625rem;
+    }
+    
+    .tracking-stage-status {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .tracking-stage-assignee > div:first-child,
+    .tracking-stage-dates > div,
+    .tracking-stage-notes > div:first-child {
+      font-size: 0.625rem;
+    }
+    
+    .tracking-stage-assignee > div:last-child {
+      font-size: 0.75rem;
+    }
+    
+    .tracking-stage-notes > div:last-child {
+      font-size: 0.625rem;
+      max-height: 2.5rem;
+    }
+    
+    .tracking-stage-actions .tracking-btn {
+      font-size: 0.5rem;
+      padding: 0.15rem 0.25rem;
+    }
+    
+    .tracking-stage-secondary-actions {
+      flex-direction: column;
+      gap: 0.125rem;
+    }
+  }
+  
+  @media print {
+    .tracking-stage-actions {
+      display: none;
+    }
+    
+    .tracking-workflow-stage {
+      break-inside: avoid;
+      min-height: auto;
+      border: 1px solid #000;
+      box-shadow: none;
+    }
+    
+    .tracking-workflow-stage:hover {
+      transform: none;
+    }
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    .tracking-workflow-stage {
+      transition: none;
+    }
+    
+    .tracking-workflow-stage:hover {
+      transform: none;
+    }
+    
+    .tracking-stage-actions {
+      transition: none;
+    }
+  }
+  
+  /* High contrast mode */
+  @media (prefers-contrast: high) {
+    .tracking-workflow-stage {
+      border-width: 3px;
+    }
+    
+    .tracking-workflow-stage-active {
+      border-width: 3px;
+    }
+  }

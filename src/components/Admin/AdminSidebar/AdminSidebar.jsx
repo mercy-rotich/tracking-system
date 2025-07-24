@@ -33,6 +33,14 @@ const AdminSidebar = () => {
             path: '/admin/admin-all-curricula' 
           },
           { 
+            id: 'tracking', 
+            label: 'Curriculum Tracking', 
+            icon: 'fas fa-route', 
+            
+            badgeColor: 'warning',
+            path: '/admin/admin-curriculum-tracking' 
+          },
+          { 
             id: 'users', 
             label: 'User Management', 
             icon: 'fas fa-users', 

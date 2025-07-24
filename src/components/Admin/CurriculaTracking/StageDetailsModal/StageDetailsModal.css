@@ -1,0 +1,613 @@
+
+
+   .tracking-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--tracking-bg-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 2rem;
+    backdrop-filter: blur(4px);
+    animation: tracking-fade-in 0.2s ease-out;
+  }
+  
+  .tracking-modal-content {
+    background: var(--tracking-bg-card);
+    border-radius: 12px;
+    box-shadow: var(--tracking-shadow-xl);
+    max-width: 800px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    border: 1px solid var(--tracking-border);
+    animation: tracking-slide-up 0.3s ease-out;
+  }
+  
+  /* Modal Header*/
+  
+  .tracking-modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--tracking-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--tracking-bg-secondary);
+    border-radius: 12px 12px 0 0;
+  }
+  
+  .tracking-modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--tracking-text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .tracking-modal-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    color: var(--tracking-text-secondary);
+    transition: all 0.2s ease;
+    font-size: 1.25rem;
+  }
+  
+  .tracking-modal-close:hover {
+    background: var(--tracking-bg-secondary);
+    color: var(--tracking-text-primary);
+  }
+  
+  /* Modal Body*/
+  
+  .tracking-modal-body {
+    padding: 1.5rem;
+  }
+  
+  /* Curriculum Summary*/
+  
+  .tracking-curriculum-summary {
+    margin-bottom: 1.5rem;
+  }
+  
+  .tracking-curriculum-summary .tracking-card-body {
+    padding: 1rem;
+  }
+  
+  .tracking-curriculum-summary h4 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--tracking-text-primary);
+    margin: 0 0 0.75rem 0;
+  }
+  
+  .tracking-curriculum-summary .tracking-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  /*Stage Status Overview*/
+  
+  .tracking-stage-status-overview {
+    margin-bottom: 1.5rem;
+  }
+  
+  .tracking-stage-status-overview .tracking-flex {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .tracking-stage-status-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+  }
+  
+  .tracking-stage-status-overview h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--tracking-text-primary);
+    margin: 0 0 0.25rem 0;
+  }
+  
+  .tracking-stage-status-overview p {
+    color: var(--tracking-text-secondary);
+    font-size: 0.875rem;
+    margin: 0;
+  }
+  
+  /*Tab Navigation*/
+  
+  .tracking-tab-navigation {
+    margin-bottom: 1rem;
+  }
+  
+  .tracking-tab-navigation .tracking-flex {
+    display: flex;
+    gap: 0.25rem;
+    border-bottom: 1px solid var(--tracking-border);
+  }
+  
+  .tracking-tab-btn {
+    padding: 0.75rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--tracking-text-secondary);
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .tracking-tab-btn:hover {
+    background: var(--tracking-bg-secondary);
+    color: var(--tracking-text-primary);
+  }
+  
+  .tracking-tab-btn.active {
+    background: var(--tracking-primary);
+    color: white;
+    box-shadow: var(--tracking-shadow-sm);
+  }
+  
+  /*Tab Content*/
+  
+  .tracking-tab-content {
+    min-height: 300px;
+  }
+  
+  /* Overview Tab */
+  .tracking-overview-tab .tracking-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .tracking-info-group h5 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--tracking-text-primary);
+    margin: 0 0 0.5rem 0;
+  }
+  
+  .tracking-info-group p {
+    color: var(--tracking-text-secondary);
+    margin: 0;
+    font-size: 0.875rem;
+  }
+  
+  /* Timeline Tab */
+  .tracking-timeline-tab {
+    position: relative;
+  }
+  
+  .tracking-timeline {
+    position: relative;
+    padding-left: 1.5rem;
+  }
+  
+  .tracking-timeline::before {
+    content: '';
+    position: absolute;
+    left: 0.75rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--tracking-border);
+  }
+  
+  .tracking-timeline-item {
+    position: relative;
+    padding-bottom: 2rem;
+  }
+  
+  .tracking-timeline-item:last-child {
+    padding-bottom: 0;
+  }
+  
+  .tracking-timeline-marker {
+    position: absolute;
+    left: -0.75rem;
+    top: 0.25rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 2px solid var(--tracking-bg-card);
+  }
+  
+  .tracking-timeline-marker-pending {
+    background: var(--tracking-text-muted);
+    color: var(--tracking-text-inverse);
+  }
+  
+  .tracking-timeline-marker-active {
+    background: var(--tracking-primary);
+    color: var(--tracking-text-inverse);
+    animation: tracking-pulse 2s infinite;
+  }
+  
+  .tracking-timeline-marker-completed {
+    background: var(--tracking-success);
+    color: var(--tracking-text-inverse);
+  }
+  
+  .tracking-timeline-content {
+    margin-left: 1rem;
+  }
+  
+  .tracking-timeline-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--tracking-text-primary);
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .tracking-timeline-meta {
+    font-size: 0.875rem;
+    color: var(--tracking-text-secondary);
+    margin-bottom: 0.5rem;
+  }
+  
+  .tracking-timeline-meta > div {
+    margin-bottom: 0.25rem;
+  }
+  
+  .tracking-timeline-description {
+    font-size: 0.875rem;
+    color: var(--tracking-text-secondary);
+    line-height: 1.5;
+  }
+  
+  /* Documents Tab */
+  .tracking-documents-tab {
+    min-height: 200px;
+  }
+  
+  .tracking-documents-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .tracking-document-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    border: 1px solid var(--tracking-border);
+    border-radius: 8px;
+    background: var(--tracking-bg-secondary);
+  }
+  
+  .tracking-document-item .tracking-flex {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  
+  .tracking-document-item i {
+    color: var(--tracking-primary);
+    font-size: 1.125rem;
+  }
+  
+  .tracking-document-item .tracking-flex:last-child {
+    gap: 0.5rem;
+  }
+  
+  .tracking-empty-state {
+    text-align: center;
+    padding: 1.5rem;
+    color: var(--tracking-text-secondary);
+  }
+  
+  .tracking-empty-state i {
+    font-size: 2rem;
+    color: var(--tracking-text-muted);
+    margin-bottom: 1rem;
+  }
+  
+  .tracking-empty-state p {
+    margin: 0;
+    font-size: 0.875rem;
+  }
+  
+  /* Notes & Feedback Tab */
+  .tracking-notes-tab {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .tracking-notes-section h5 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--tracking-text-primary);
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .tracking-notes-content {
+    padding: 1rem;
+    background: var(--tracking-bg-secondary);
+    border-radius: 8px;
+    line-height: 1.5;
+    font-size: 0.875rem;
+    color: var(--tracking-text-primary);
+  }
+  
+  .tracking-feedback-content {
+    padding: 1rem;
+    background: rgba(0, 214, 102, 0.05);
+    border: 1px solid rgba(0, 214, 102, 0.2);
+    border-radius: 8px;
+    line-height: 1.5;
+    font-size: 0.875rem;
+    color: var(--tracking-text-primary);
+  }
+  
+  .tracking-add-notes {
+    margin-top: 1rem;
+  }
+  
+  .tracking-action-feedback {
+    margin-top: 1.5rem;
+  }
+  
+  .tracking-action-feedback h5 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--tracking-text-primary);
+    margin: 0 0 0.5rem 0;
+  }
+  
+  .tracking-action-feedback .tracking-form-group {
+    margin: 0;
+  }
+  
+  .tracking-action-feedback textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+  
+  /*Modal Footer*/
+  
+  .tracking-modal-footer {
+    padding: 1.5rem;
+    border-top: 1px solid var(--tracking-border);
+    background: var(--tracking-bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    border-radius: 0 0 12px 12px;
+    flex-wrap: wrap;
+  }
+  
+  /*Utility Classes*/
+  
+  .tracking-mb-2 {
+    margin-bottom: 0.5rem;
+  }
+  
+  .tracking-mb-4 {
+    margin-bottom: 1rem;
+  }
+  
+  .tracking-mb-6 {
+    margin-bottom: 1.5rem;
+  }
+  
+  .tracking-mt-4 {
+    margin-top: 1rem;
+  }
+  
+  .tracking-mt-6 {
+    margin-top: 1.5rem;
+  }
+  
+  .tracking-ml-2 {
+    margin-left: 0.5rem;
+  }
+  
+  .tracking-flex {
+    display: flex;
+  }
+  
+  .tracking-items-center {
+    align-items: center;
+  }
+  
+  .tracking-justify-between {
+    justify-content: space-between;
+  }
+  
+  .tracking-gap-4 {
+    gap: 1rem;
+  }
+  
+  .tracking-gap-2 {
+    gap: 0.5rem;
+  }
+  
+  /*Responsive Design*/
+  
+  @media (max-width: 768px) {
+    .tracking-modal-overlay {
+      padding: 1rem;
+    }
+  
+    .tracking-modal-content {
+      max-height: 95vh;
+    }
+  
+    .tracking-modal-header,
+    .tracking-modal-body,
+    .tracking-modal-footer {
+      padding: 1rem;
+    }
+  
+    .tracking-overview-tab .tracking-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    .tracking-curriculum-summary .tracking-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    .tracking-tab-btn {
+      padding: 0.625rem 0.75rem;
+      font-size: 0.8125rem;
+    }
+  
+    .tracking-modal-footer {
+      flex-direction: column-reverse;
+      align-items: stretch;
+    }
+  
+    .tracking-modal-footer .tracking-btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .tracking-modal-overlay {
+      padding: 0.5rem;
+    }
+  
+    .tracking-modal-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+  
+    .tracking-modal-close {
+      align-self: flex-end;
+    }
+  
+    .tracking-stage-status-overview .tracking-flex {
+      flex-direction: column;
+      text-align: center;
+      gap: 0.75rem;
+    }
+  
+    .tracking-document-item {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+    }
+  
+    .tracking-document-item .tracking-flex:last-child {
+      justify-content: center;
+    }
+  }
+  
+  /* Animations*/
+  
+  @keyframes tracking-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes tracking-slide-up {
+    from { 
+      opacity: 0;
+      transform: translateY(2rem) scale(0.95);
+    }
+    to { 
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  
+  @keyframes tracking-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
+  }
+  
+  /* Accessibility*/
+  
+  @media (prefers-reduced-motion: reduce) {
+    .tracking-modal-overlay,
+    .tracking-modal-content,
+    .tracking-tab-btn,
+    .tracking-modal-close {
+      animation: none;
+      transition: none;
+    }
+  
+    .tracking-timeline-marker-active {
+      animation: none;
+    }
+  }
+  
+  /* High contrast mode */
+  @media (prefers-contrast: high) {
+    .tracking-modal-content {
+      border: 2px solid var(--tracking-border-dark);
+    }
+  
+    .tracking-tab-btn {
+      border: 1px solid var(--tracking-border);
+    }
+  
+    .tracking-tab-btn.active {
+      border-color: var(--tracking-primary);
+    }
+  }
+  
+  /*Print Styles*/
+  
+  @media print {
+    .tracking-modal-overlay {
+      position: static;
+      background: none;
+      backdrop-filter: none;
+    }
+  
+    .tracking-modal-content {
+      box-shadow: none;
+      border: 1px solid #000;
+      max-height: none;
+    }
+  
+    .tracking-modal-footer {
+      display: none;
+    }
+  
+    .tracking-tab-navigation {
+      display: none;
+    }
+  }
+
+
+  

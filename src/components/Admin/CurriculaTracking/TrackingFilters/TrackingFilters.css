@@ -1,0 +1,240 @@
+
+
+   .tracking-filters {
+    margin-bottom: 2rem;
+  }
+  
+  .tracking-filters-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    align-items: end;
+  }
+  
+  @media (min-width: 768px) {
+    .tracking-filters-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .tracking-filters-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+  
+
+  
+  .tracking-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .tracking-form-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--tracking-text-primary);
+  }
+  
+  .tracking-form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--tracking-border);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+    background: var(--tracking-bg-card);
+    color: var(--tracking-text-primary);
+  }
+  
+  .tracking-form-control:focus {
+    outline: none;
+    border-color: var(--tracking-primary);
+    box-shadow: 0 0 0 3px rgba(0, 214, 102, 0.1);
+  }
+  
+  .tracking-form-control:disabled {
+    background: var(--tracking-bg-secondary);
+    color: var(--tracking-text-muted);
+    cursor: not-allowed;
+  }
+  
+  .tracking-form-control.error {
+    border-color: var(--tracking-danger);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  }
+  
+  
+  .tracking-search-container {
+    position: relative;
+    flex: 1;
+    max-width: 400px;
+  }
+  
+  .tracking-search-input {
+    padding-left: 3rem;
+  }
+  
+  .tracking-search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--tracking-text-muted);
+    font-size: 1rem;
+    pointer-events: none;
+  }
+  
+  
+  .tracking-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+    cursor: pointer;
+  }
+  
+  .tracking-select:focus {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2300D666' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  }
+  
+  
+  .tracking-active-filters {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--tracking-bg-secondary);
+    border-radius: 8px;
+    border-left: 4px solid var(--tracking-primary);
+  }
+  
+  .tracking-active-filters .tracking-flex {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .tracking-active-filters .tracking-badge {
+    position: relative;
+    padding-right: 2rem;
+  }
+  
+  .tracking-active-filters .tracking-badge button {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0.125rem;
+    border-radius: 2px;
+    transition: all 0.2s ease;
+  }
+  
+  .tracking-active-filters .tracking-badge button:hover {
+    background: rgba(0, 0, 0, 0.1);
+  }
+  
+  .tracking-filters .tracking-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--tracking-border);
+    background: var(--tracking-bg-secondary);
+    border-radius: 12px 12px 0 0;
+  }
+  
+  .tracking-filters .tracking-card-body {
+    padding: 1.5rem;
+  }
+  
+  .tracking-section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--tracking-text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .tracking-section-title .tracking-icon {
+    color: var(--tracking-primary);
+    font-size: 1.125rem;
+  }
+  
+  @media (max-width: 768px) {
+    .tracking-filters-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .tracking-search-container {
+      max-width: none;
+    }
+    
+    .tracking-active-filters .tracking-flex {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+    
+    .tracking-active-filters .tracking-badge {
+      width: 100%;
+      justify-content: space-between;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .tracking-filters .tracking-card-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    
+    .tracking-filters .tracking-card-body {
+      padding: 1rem;
+    }
+    
+    .tracking-form-control {
+      padding: 0.875rem 0.75rem;
+      font-size: 1rem;
+    }
+    
+    .tracking-search-input {
+      padding-left: 2.75rem;
+    }
+    
+    .tracking-search-icon {
+      left: 0.875rem;
+    }
+  }
+  
+  
+  .tracking-form-control:focus {
+    outline: 2px solid var(--tracking-primary);
+    outline-offset: 2px;
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    .tracking-form-control {
+      transition: none;
+    }
+  }
+  
+  /* High contrast mode */
+  @media (prefers-contrast: high) {
+    .tracking-form-control {
+      border-width: 2px;
+    }
+    
+    .tracking-form-control:focus {
+      border-width: 3px;
+    }
+  }

@@ -1,0 +1,98 @@
+
+
+   :root {
+   
+    --tracking-primary: #00D666;
+    --tracking-primary-dark: #00BF63;
+    --tracking-primary-light: #33E088;
+    --tracking-secondary: #1a3a6e;
+    --tracking-secondary-dark: #153458;
+    --tracking-accent: #f0b41c;
+    --tracking-accent-dark: #d4940f;
+    --tracking-danger: #ef4444;
+    --tracking-warning: #f59e0b;
+    --tracking-success: #10b981;
+    
+    /* Background colors */
+    --tracking-bg-primary: #f9fafb;
+    --tracking-bg-secondary: #f3f4f6;
+    --tracking-bg-card: #ffffff;
+    --tracking-bg-overlay: rgba(0, 0, 0, 0.5);
+    
+    /* Text colors */
+    --tracking-text-primary: #1f2937;
+    --tracking-text-secondary: #6b7280;
+    --tracking-text-muted: #9ca3af;
+    --tracking-text-inverse: #ffffff;
+    
+    /* Border and shadow */
+    --tracking-border: #e5e7eb;
+    --tracking-border-light: #f3f4f6;
+    --tracking-border-dark: #d1d5db;
+    --tracking-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --tracking-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --tracking-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --tracking-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    
+    
+    --tracking-gradient-primary: linear-gradient(135deg, #00D666 0%, #00BF63 50%, #00a855 100%);
+    --tracking-gradient-secondary: linear-gradient(135deg, #1a3a6e 0%, #153458 100%);
+    --tracking-gradient-card: linear-gradient(145deg, #ffffff 0%, #f9fafb 100%);
+    
+   
+    --tracking-stage-pending: #6b7280;
+    --tracking-stage-active: #3b82f6;
+    --tracking-stage-completed: #10b981;
+    --tracking-stage-rejected: #ef4444;
+    --tracking-stage-hold: #f59e0b;
+    
+    /* Priority colors */
+    --tracking-priority-high: #ef4444;
+    --tracking-priority-medium: #f59e0b;
+    --tracking-priority-low: #6b7280;
+    
+    /* Responsive breakpoints */
+    --tracking-breakpoint-sm: 640px;
+    --tracking-breakpoint-md: 768px;
+    --tracking-breakpoint-lg: 1024px;
+    --tracking-breakpoint-xl: 1280px;
+
+
+    
+    --tracking-success-bg: rgba(16, 185, 129, 0.95);
+    --tracking-success-border: rgba(16, 185, 129, 0.8);
+    
+    --tracking-error: #ef4444;
+    --tracking-error-bg: rgba(239, 68, 68, 0.95);
+    --tracking-error-border: rgba(239, 68, 68, 0.8);
+    
+    --tracking-warning: #f59e0b;
+    --tracking-warning-bg: rgba(245, 158, 11, 0.95);
+    --tracking-warning-border: rgba(245, 158, 11, 0.8);
+    
+    --tracking-info: #3b82f6;
+    --tracking-info-bg: rgba(59, 130, 246, 0.95);
+    --tracking-info-border: rgba(59, 130, 246, 0.8);
+    
+    --tracking-neutral: #6b7280;
+    --tracking-neutral-bg: rgba(107, 114, 128, 0.95);
+    --tracking-neutral-border: rgba(107, 114, 128, 0.8);
+  }
+  
+ 
+  
+  .tracking-page {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+  
+  @media (min-width: 768px) {
+    .tracking-page {
+      padding: 0 2rem;
+    }
+  }
+  
+
+  
+  

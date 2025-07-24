@@ -1,0 +1,259 @@
+
+  .tracking-notification-banner {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    left: 1rem;
+    z-index: 1000;
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border: 1px solid;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    animation: tracking-slide-down 0.3s ease-out;
+    backdrop-filter: blur(8px);
+    color: white;
+  }
+  
+  /*Notification Banner Backdrop */
+  
+  .tracking-notification-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999;
+    pointer-events: none;
+    background: rgba(0, 0, 0, 0.1);
+    opacity: 1;
+    transition: opacity 0.3s ease;
+  }
+  
+  /* Banner Type Variants*/
+  
+  .tracking-notification-banner.tracking-notification-success {
+    background-color: var(--tracking-success-bg);
+    border-color: var(--tracking-success-border);
+  }
+  
+  .tracking-notification-banner.tracking-notification-error {
+    background-color: var(--tracking-error-bg);
+    border-color: var(--tracking-error-border);
+  }
+  
+  .tracking-notification-banner.tracking-notification-warning {
+    background-color: var(--tracking-warning-bg);
+    border-color: var(--tracking-warning-border);
+  }
+  
+  .tracking-notification-banner.tracking-notification-info {
+    background-color: var(--tracking-info-bg);
+    border-color: var(--tracking-info-border);
+  }
+  
+  .tracking-notification-banner.tracking-notification-neutral {
+    background-color: var(--tracking-neutral-bg);
+    border-color: var(--tracking-neutral-border);
+  }
+  
+  /*Notification Banner Content*/
+  
+  .tracking-notification-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+  
+  .tracking-notification-content {
+    flex: 1;
+  }
+  
+  .tracking-notification-message {
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.4;
+    margin: 0;
+  }
+  
+  /* Notification Banner Close Button*/
+  
+  .tracking-notification-close {
+    background: none;
+    border: none;
+    color: currentColor;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+  }
+  
+  .tracking-notification-close:hover {
+    opacity: 1;
+  }
+  
+  .tracking-notification-close:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.3);
+    outline-offset: 2px;
+  }
+  
+  /*Notification Banner Progress Bar*/
+  
+  .tracking-notification-progress-container {
+    position: fixed;
+    top: calc(1rem + 60px);
+    right: 1rem;
+    left: 1rem;
+    z-index: 1001;
+    max-width: 500px;
+    margin: 0 auto;
+    height: 3px;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  
+  .tracking-notification-progress-bar {
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 2px;
+    animation: tracking-notification-progress 5s linear forwards;
+    transform-origin: left;
+  }
+  
+  /*Notification Banner Icons by Type*/
+  
+  .tracking-notification-icon.tracking-notification-success::before {
+    content: "\f058"; /* fa-check-circle */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+  }
+  
+  .tracking-notification-icon.tracking-notification-error::before {
+    content: "\f06a"; /* fa-exclamation-circle */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+  }
+  
+  .tracking-notification-icon.tracking-notification-warning::before {
+    content: "\f071"; /* fa-exclamation-triangle */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+  }
+  
+  .tracking-notification-icon.tracking-notification-info::before {
+    content: "\f05a"; /* fa-info-circle */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+  }
+  
+  .tracking-notification-icon.tracking-notification-neutral::before {
+    content: "\f0f3"; /* fa-bell */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+  }
+  
+ 
+  
+  @keyframes tracking-slide-down {
+    from {
+      opacity: 0;
+      transform: translateY(-100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes tracking-notification-progress {
+    from {
+      transform: scaleX(1);
+    }
+    to {
+      transform: scaleX(0);
+    }
+  }
+  
+  
+  
+  @media (min-width: 640px) {
+    .tracking-notification-banner {
+      left: auto;
+      right: 1rem;
+      max-width: 450px;
+    }
+    
+    .tracking-notification-progress-container {
+      left: auto;
+      right: 1rem;
+      max-width: 450px;
+    }
+  }
+  
+  @media (max-width: 479px) {
+    .tracking-notification-banner {
+      top: 0.5rem;
+      left: 0.5rem;
+      right: 0.5rem;
+      padding: 0.875rem 1rem;
+    }
+    
+    .tracking-notification-progress-container {
+      top: calc(0.5rem + 55px);
+      left: 0.5rem;
+      right: 0.5rem;
+    }
+    
+    .tracking-notification-message {
+      font-size: 0.8rem;
+    }
+    
+    .tracking-notification-icon {
+      font-size: 1.125rem;
+    }
+  }
+  
+  /*Accessibility*/
+  
+  @media (prefers-reduced-motion: reduce) {
+    .tracking-notification-banner {
+      animation: none;
+    }
+    
+    .tracking-notification-progress-bar {
+      animation: none;
+    }
+  }
+  
+  /* High contrast mode */
+  @media (prefers-contrast: high) {
+    .tracking-notification-banner {
+      border-width: 2px;
+      backdrop-filter: none;
+    }
+    
+    .tracking-notification-close {
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+  }
+  
+  /*Print Styles*/
+  
+  @media print {
+    .tracking-notification-banner,
+    .tracking-notification-backdrop,
+    .tracking-notification-progress-container {
+      display: none;
+    }
+  }

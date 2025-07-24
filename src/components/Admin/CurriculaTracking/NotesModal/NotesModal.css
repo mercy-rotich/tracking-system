@@ -1,0 +1,513 @@
+/* ==========================================================================
+   Notes Modal Component Styles
+   ========================================================================== */
+
+/* ==========================================================================
+   Notes Info Section
+   ========================================================================== */
+
+.tracking-notes-info {
+  margin-bottom: 1rem;
+}
+
+.tracking-notes-info .tracking-flex {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--tracking-bg-secondary);
+  border-radius: 8px;
+}
+
+.tracking-notes-info i {
+  color: var(--tracking-primary);
+  font-size: 1.125rem;
+}
+
+.tracking-notes-info > div > div:first-child {
+  font-weight: 600;
+  color: var(--tracking-text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.tracking-notes-info > div > div:last-child {
+  font-size: 0.875rem;
+  color: var(--tracking-text-secondary);
+}
+
+/* ==========================================================================
+   Note Type Selection
+   ========================================================================== */
+
+.tracking-note-type-selection {
+  margin-bottom: 1rem;
+}
+
+.tracking-note-type-selection h5 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--tracking-text-primary);
+  margin: 0 0 0.75rem 0;
+}
+
+.tracking-note-type-selection .tracking-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.tracking-note-type-option {
+  padding: 1rem;
+  border: 2px solid var(--tracking-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--tracking-bg-card);
+}
+
+.tracking-note-type-option:hover {
+  border-color: var(--tracking-primary);
+  background: rgba(0, 214, 102, 0.02);
+}
+
+.tracking-note-type-option.selected {
+  border-color: var(--tracking-primary);
+  background: rgba(0, 214, 102, 0.05);
+}
+
+.tracking-note-type-option .tracking-flex {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.tracking-note-type-option i {
+  color: var(--tracking-primary);
+  font-size: 1rem;
+}
+
+.tracking-note-type-option span {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--tracking-text-primary);
+}
+
+.tracking-note-type-option > div:last-child {
+  font-size: 0.75rem;
+  color: var(--tracking-text-secondary);
+  line-height: 1.3;
+}
+
+/* ==========================================================================
+   Existing Notes Display
+   ========================================================================== */
+
+.tracking-existing-notes {
+  margin-bottom: 1rem;
+}
+
+.tracking-existing-notes h5 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--tracking-text-primary);
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tracking-existing-notes h5 i {
+  color: var(--tracking-secondary);
+  font-size: 0.875rem;
+}
+
+.tracking-existing-notes > div:nth-child(2) {
+  padding: 1rem;
+  background: var(--tracking-bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--tracking-border);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  color: var(--tracking-text-primary);
+}
+
+.tracking-existing-notes > div:last-child {
+  font-size: 0.75rem;
+  color: var(--tracking-text-muted);
+}
+
+/* ==========================================================================
+   Predefined Comments
+   ========================================================================== */
+
+.tracking-predefined-comments {
+  margin-bottom: 1rem;
+}
+
+.tracking-predefined-comments h5 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--tracking-text-primary);
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tracking-predefined-comments h5 i {
+  color: var(--tracking-accent);
+  font-size: 0.875rem;
+}
+
+.tracking-comments-grid {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.tracking-predefined-comment {
+  padding: 0.75rem;
+  border: 1px solid var(--tracking-border);
+  border-radius: 6px;
+  background: var(--tracking-bg-card);
+  text-align: left;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1.4;
+  color: var(--tracking-text-primary);
+}
+
+.tracking-predefined-comment:hover {
+  background: var(--tracking-bg-secondary);
+  border-color: var(--tracking-primary);
+}
+
+.tracking-predefined-comment i {
+  margin-right: 0.5rem;
+  color: var(--tracking-primary);
+  font-size: 0.8125rem;
+}
+
+/* ==========================================================================
+   Notes Input
+   ========================================================================== */
+
+.tracking-notes-input {
+  margin-bottom: 1rem;
+}
+
+.tracking-notes-input h5 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--tracking-text-primary);
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tracking-notes-input h5 i {
+  color: var(--tracking-success);
+  font-size: 0.875rem;
+}
+
+.tracking-notes-input .tracking-form-group {
+  margin: 0;
+}
+
+.tracking-notes-input textarea {
+  resize: vertical;
+  min-height: 150px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.tracking-notes-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.tracking-notes-meta span {
+  font-size: 0.75rem;
+  color: var(--tracking-text-muted);
+}
+
+.tracking-notes-meta span:first-child {
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   Note Guidelines
+   ========================================================================== */
+
+.tracking-note-guidelines h5 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--tracking-text-primary);
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tracking-note-guidelines h5 i {
+  color: var(--tracking-secondary);
+  font-size: 0.875rem;
+}
+
+.tracking-note-guidelines > div {
+  padding: 1rem;
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--tracking-text-primary);
+}
+
+.tracking-note-guidelines ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.tracking-note-guidelines li {
+  margin-bottom: 0.5rem;
+}
+
+.tracking-note-guidelines li:last-child {
+  margin-bottom: 0;
+}
+
+/* ==========================================================================
+   Note History
+   ========================================================================== */
+
+.tracking-note-history {
+  margin-top: 1rem;
+}
+
+.tracking-note-history h5 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--tracking-text-primary);
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tracking-note-history h5 i {
+  color: var(--tracking-text-muted);
+  font-size: 0.875rem;
+}
+
+.tracking-history-list {
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid var(--tracking-border);
+  border-radius: 8px;
+}
+
+.tracking-history-item {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--tracking-border-light);
+  background: var(--tracking-bg-secondary);
+}
+
+.tracking-history-item:last-child {
+  border-bottom: none;
+}
+
+.tracking-history-item .tracking-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.tracking-history-item span:first-child {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--tracking-text-primary);
+}
+
+.tracking-history-item span:last-child {
+  font-size: 0.75rem;
+  color: var(--tracking-text-muted);
+}
+
+.tracking-history-item > div:last-child {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--tracking-text-secondary);
+}
+
+/*Utility Classes*/
+
+.tracking-mb-4 {
+  margin-bottom: 1rem;
+}
+
+.tracking-mb-3 {
+  margin-bottom: 0.75rem;
+}
+
+.tracking-mb-2 {
+  margin-bottom: 0.5rem;
+}
+
+.tracking-mt-4 {
+  margin-top: 1rem;
+}
+
+.tracking-flex {
+  display: flex;
+}
+
+.tracking-items-center {
+  align-items: center;
+}
+
+.tracking-justify-between {
+  justify-content: space-between;
+}
+
+.tracking-gap-3 {
+  gap: 0.75rem;
+}
+
+.tracking-gap-2 {
+  gap: 0.5rem;
+}
+
+.tracking-grid {
+  display: grid;
+}
+
+/*Responsive Design*/
+
+@media (max-width: 768px) {
+  .tracking-note-type-selection .tracking-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tracking-note-type-option {
+    padding: 0.75rem;
+  }
+
+  .tracking-predefined-comment {
+    font-size: 0.8125rem;
+    padding: 0.625rem;
+  }
+
+  .tracking-notes-input textarea {
+    min-height: 120px;
+  }
+
+  .tracking-notes-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .tracking-notes-info .tracking-flex {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .tracking-note-type-option {
+    padding: 0.625rem;
+  }
+
+  .tracking-note-type-option span {
+    font-size: 0.8125rem;
+  }
+
+  .tracking-note-type-option > div:last-child {
+    font-size: 0.6875rem;
+  }
+
+  .tracking-predefined-comment {
+    font-size: 0.75rem;
+    padding: 0.5rem;
+  }
+
+  .tracking-existing-notes > div:nth-child(2) {
+    padding: 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .tracking-note-guidelines > div {
+    padding: 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .tracking-history-item {
+    padding: 0.625rem;
+  }
+
+  .tracking-history-item .tracking-flex {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+}
+
+/* Accessibility*/
+
+.tracking-note-type-option:focus {
+  outline: 2px solid var(--tracking-primary);
+  outline-offset: 2px;
+}
+
+.tracking-predefined-comment:focus {
+  outline: 2px solid var(--tracking-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tracking-note-type-option,
+  .tracking-predefined-comment {
+    transition: none;
+  }
+}
+
+
+@media (prefers-contrast: high) {
+  .tracking-note-type-option {
+    border-width: 2px;
+  }
+
+  .tracking-note-type-option.selected {
+    border-width: 3px;
+  }
+
+  .tracking-predefined-comment {
+    border-width: 2px;
+  }
+}
+
+/*Print Styles*/
+
+@media print {
+  .tracking-predefined-comments,
+  .tracking-note-guidelines {
+    display: none;
+  }
+
+  .tracking-notes-input textarea {
+    border: 1px solid #000;
+    background: none;
+  }
+
+  .tracking-note-history {
+    break-inside: avoid;
+  }
+}

@@ -1,4 +1,5 @@
 import React from 'react';
+import './TrackingHeader.css';
 
 const TrackingHeader = ({ viewMode, onViewModeChange, onRefresh }) => {
   return (

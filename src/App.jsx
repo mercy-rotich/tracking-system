@@ -22,6 +22,7 @@ import Analytics from './Pages/users/Analytics/Analytics';
 import UserSettings from './Pages/users/UserSettings/UserSettings';
 import LandingPage from './Pages/LandingPage/LandingPage';
 import NotificationsPage from './Pages/Admin/NotificationsPage/NotificationsPage';
+import CurriculumTrackingPage from './Pages/Admin/CurriculumTrackingPage/CurriculumTrackingPage';
 
 function App() {
   return (
@@ -54,6 +55,8 @@ function App() {
                   <Route path="admin-user-management" element={<UserManagementPage />} />
                   <Route path="admin-reports" element={<Reports />} />
                   <Route path="admin-notifications" element={<NotificationsPage />} />
+                  <Route path="admin-curriculum-tracking" element={<CurriculumTrackingPage />} />
+
                 </Route>
                 
                 <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
