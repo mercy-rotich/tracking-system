@@ -52,7 +52,7 @@
   .tracking-form-control:focus {
     outline: none;
     border-color: var(--tracking-primary);
-    box-shadow: 0 0 0 3px rgba(0, 214, 102, 0.1);
+    box-shadow: 0 0 0 2px rgba(0, 214, 102, 0.1);
   }
   
   .tracking-form-control:disabled {
@@ -90,7 +90,6 @@
   
   .tracking-select {
     appearance: none;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
     background-position: right 0.5rem center;
     background-repeat: no-repeat;
     background-size: 1.5em 1.5em;
@@ -98,9 +97,7 @@
     cursor: pointer;
   }
   
-  .tracking-select:focus {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2300D666' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
-  }
+
   
   
   .tracking-active-filters {
