@@ -1,7 +1,7 @@
 import React from 'react';
 import './TrackingHeader.css';
 
-const TrackingHeader = ({ viewMode, onViewModeChange, onRefresh }) => {
+const TrackingHeader = ({ onRefresh }) => {
   return (
     <div className="tracking-header">
       <div className="tracking-header-content">
@@ -16,24 +16,6 @@ const TrackingHeader = ({ viewMode, onViewModeChange, onRefresh }) => {
         </div>
         
         <div className="tracking-header-actions">
-          {/* View Mode Toggle */}
-          <div className="tracking-view-toggle">
-            <button
-              className={`tracking-btn tracking-btn-sm ${viewMode === 'workflow' ? 'tracking-btn-primary' : 'tracking-btn-outline'}`}
-              onClick={() => onViewModeChange('workflow')}
-            >
-              <i className="fas fa-sitemap"></i>
-              Workflow View
-            </button>
-            <button
-              className={`tracking-btn tracking-btn-sm ${viewMode === 'table' ? 'tracking-btn-primary' : 'tracking-btn-outline'}`}
-              onClick={() => onViewModeChange('table')}
-            >
-              <i className="fas fa-table"></i>
-              Table View
-            </button>
-          </div>
-          
           {/* Action Buttons */}
           <button 
             className="tracking-btn tracking-btn-outline tracking-btn-sm"

@@ -2,10 +2,7 @@
   .tracking-header {
     margin-bottom: 2rem;
     padding: 1.5rem;
-    background: var(--tracking-gradient-card);
-    border-radius: 12px;
-    box-shadow: var(--tracking-shadow-sm);
-    border: 1px solid var(--tracking-border);
+   
   }
   
   .tracking-header-content {

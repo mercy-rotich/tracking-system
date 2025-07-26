@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import WorkflowStage from '../WorkflowStage/WorkflowStage';
+import TrackingTable from '../TrackingTable/TrackingTable';
 import './CurriculumWorkflow.css';
 
 const CurriculumWorkflow = ({ 
@@ -11,8 +12,7 @@ const CurriculumWorkflow = ({
   isLoading 
 }) => {
   const [selectedCurriculum, setSelectedCurriculum] = useState(null);
-  const [viewMode, setViewMode] = useState('all'); // 'all' or 'focused'
-
+  const [viewMode, setViewMode] = useState('workflow'); 
   const stages = [
     {
       key: 'initiation',
@@ -108,18 +108,18 @@ const CurriculumWorkflow = ({
       <div className="tracking-workflow-controls">
         <div className="tracking-view-mode-toggle">
           <button
-            className={`tracking-btn tracking-btn-sm ${viewMode === 'all' ? 'tracking-btn-primary' : 'tracking-btn-outline'}`}
-            onClick={() => setViewMode('all')}
+            className={`tracking-btn tracking-btn-sm ${viewMode === 'workflow' ? 'tracking-btn-primary' : 'tracking-btn-outline'}`}
+            onClick={() => setViewMode('workflow')}
           >
-            <i className="fas fa-th-large"></i>
-            All Curricula
+            <i className="fas fa-sitemap"></i>
+            Workflow View
           </button>
           <button
-            className={`tracking-btn tracking-btn-sm ${viewMode === 'focused' ? 'tracking-btn-primary' : 'tracking-btn-outline'}`}
-            onClick={() => setViewMode('focused')}
+            className={`tracking-btn tracking-btn-sm ${viewMode === 'table' ? 'tracking-btn-primary' : 'tracking-btn-outline'}`}
+            onClick={() => setViewMode('table')}
           >
-            <i className="fas fa-crosshairs"></i>
-            Focused View
+            <i className="fas fa-table"></i>
+            Table View
           </button>
         </div>
         
@@ -128,125 +128,18 @@ const CurriculumWorkflow = ({
         </div>
       </div>
 
-      {/* All Curricula View */}
-      {viewMode === 'all' && (
-        <div className="tracking-all-curricula-workflows">
-          <div className="tracking-workflows-header">
-            <h3>
-              <i className="fas fa-route"></i>
-              All Curriculum Workflows
-            </h3>
-            <div className="tracking-workflow-legend">
-              <div className="tracking-legend-item">
-                <div className="tracking-legend-dot tracking-legend-completed"></div>
-                <span>Completed</span>
-              </div>
-              <div className="tracking-legend-item">
-                <div className="tracking-legend-dot tracking-legend-current"></div>
-                <span>Current</span>
-              </div>
-              <div className="tracking-legend-item">
-                <div className="tracking-legend-dot tracking-legend-pending"></div>
-                <span>Pending</span>
-              </div>
-              <div className="tracking-legend-item">
-                <div className="tracking-legend-dot tracking-legend-hold"></div>
-                <span>On Hold</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="tracking-all-workflows-container">
-            {curricula.map(curriculum => (
-              <div key={curriculum.id} className="tracking-single-curriculum-workflow">
-                {/* Curriculum Header */}
-                <div className="tracking-curriculum-workflow-header">
-                  <div className="tracking-curriculum-workflow-info">
-                    <h4 className="tracking-curriculum-workflow-title">
-                      {curriculum.title}
-                    </h4>
-                    <div className="tracking-curriculum-workflow-meta">
-                      <span className="tracking-badge tracking-badge-neutral">
-                        <i className="fas fa-hashtag"></i>
-                        {curriculum.trackingId}
-                      </span>
-                      <span>
-                        <i className="fas fa-university"></i>
-                        {curriculum.school}
-                      </span>
-                      <span className={`tracking-priority tracking-priority-${curriculum.priority}`}>
-                        <i className="fas fa-flag"></i>
-                        {curriculum.priority.charAt(0).toUpperCase() + curriculum.priority.slice(1)} Priority
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="tracking-curriculum-workflow-actions">
-                    <button
-                      className="tracking-btn tracking-btn-outline tracking-btn-sm"
-                      onClick={() => {
-                        setSelectedCurriculum(curriculum);
-                        setViewMode('focused');
-                      }}
-                    >
-                      <i className="fas fa-crosshairs"></i>
-                      Focus
-                    </button>
-                    <button
-                      className="tracking-btn tracking-btn-outline tracking-btn-sm"
-                      onClick={() => onViewDetails(curriculum)}
-                    >
-                      <i className="fas fa-eye"></i>
-                      Details
-                    </button>
-                  </div>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="tracking-curriculum-workflow-progress">
-                  <div className="tracking-progress-info">
-                    <span>
-                      Progress: {stages.find(s => s.key === curriculum.currentStage)?.title}
-                    </span>
-                    <span>
-                      {curriculum.totalDays} days total
-                    </span>
-                  </div>
-                  <div className="tracking-progress-bar">
-                    <div 
-                      className="tracking-progress-fill" 
-                      style={{ 
-                        width: `${(stages.findIndex(s => s.key === curriculum.currentStage) + 1) / stages.length * 100}%` 
-                      }}
-                    ></div>
-                  </div>
-                </div>
-
-                {/* Workflow Stages for this curriculum */}
-                <div className="tracking-curriculum-stages">
-                  {stages.map((stage, index) => (
-                    <WorkflowStage
-                      key={stage.key}
-                      stage={stage}
-                      curriculum={curriculum}
-                      stageData={curriculum.stages[stage.key]}
-                      isActive={curriculum.currentStage === stage.key}
-                      stageNumber={index + 1}
-                      onStageAction={onStageAction}
-                      onViewDetails={onViewDetails}
-                      onUploadDocument={onUploadDocument}
-                      onAddNotes={onAddNotes}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Table View */}
+      {viewMode === 'table' && (
+        <TrackingTable
+          curricula={curricula}
+          onStageAction={onStageAction}
+          onViewDetails={onViewDetails}
+          isLoading={isLoading}
+        />
       )}
 
-      {/* Focused View */}
-      {viewMode === 'focused' && (
+      {/* Workflow View */}
+      {viewMode === 'workflow' && (
         <>
           {/* Curriculum Selection */}
           <div className="tracking-curriculum-selector">
