@@ -478,6 +478,13 @@
   .user-management-table-container {
     overflow-x: auto;
   }
+  .no-users-message{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    gap: 10px;
+  }
   
   .user-management-users-table {
     width: 100%;
