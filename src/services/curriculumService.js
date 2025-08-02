@@ -43,7 +43,7 @@ class CurriculumService{
       console.log('🔄 [Curriculum Service] Fetching curriculum statistics...');
       
       const headers = await this.getHeaders();
-      const url = this.buildApiUrl('api/v1/admin/curriculums/stats');
+      const url = this.buildApiUrl('/admin/curriculums/stats');
       
       const response = await fetch(url, {
         method: 'GET',
@@ -91,7 +91,7 @@ class CurriculumService{
       console.log('🔄 [Curriculum Service] Fetching expiring curriculums...');
       
       const headers = await this.getHeaders();
-      const url = this.buildApiUrl('api/v1/admin/curriculums/expiring-soon');
+      const url = this.buildApiUrl('/admin/curriculums/expiring-soon');
       
       const response = await fetch(url, {
         method: 'GET',
@@ -145,7 +145,7 @@ class CurriculumService{
       }
 
       const headers = await this.getHeaders();
-      const url = this.buildApiUrl(`api/v1/admin/curriculums/toggle-status/${curriculumId}`);
+      const url = this.buildApiUrl(`/admin/curriculums/toggle-status/${curriculumId}`);
       
       const payload = {
         name: String(curriculumData.name).trim(),
@@ -216,7 +216,7 @@ class CurriculumService{
       }
 
       const headers = await this.getHeaders();
-      const url = this.buildApiUrl(`api/v1/admin/curriculums/review/${curriculumId}`);
+      const url = this.buildApiUrl(`/admin/curriculums/review/${curriculumId}`);
       
     
       const payload = {
