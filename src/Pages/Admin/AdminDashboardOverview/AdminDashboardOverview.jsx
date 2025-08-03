@@ -6,20 +6,26 @@ import RecentActivity from '../../../components/Admin/AdminDashboard/RecentActiv
 import SystemAlerts from '../../../components/Admin/AdminDashboard/SystemAlerts/SystemAlerts';
 import authService from '../../../services/authService';
 import curriculumService from '../../../services/curriculumService';
+import statisticsService from '../../../services/statisticsService'; 
 import './AdminDashboardOverview.css';
 
 const API_BASE_URL = import.meta.env.VITE_BASE_URL;
 
 const AdminDashboardOverview = () => {
-  // State management
+
   const [showCreateUserModal, setShowCreateUserModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [curriculumStats, setCurriculumStats] = useState({
     total: 0,
     approved: 0,
-    pending: 0,
-    draft: 0,
-    rejected: 0
+    inProgress: 0,
+    overdue: 0,
+    approvalRate: 0,
+    breakdown: {
+      pending: 0,
+      underReview: 0,
+      draft: 0
+    }
   });
   const [statsLoading, setStatsLoading] = useState(true);
   const [formData, setFormData] = useState({
@@ -75,58 +81,96 @@ const AdminDashboardOverview = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [checkScreenSize]);
 
-  // Load curriculum statistics
+  
   const loadCurriculumStats = useCallback(async () => {
     try {
       setStatsLoading(true);
-      console.log('🔄 Loading curriculum statistics for dashboard...');
+      console.log('🔄 Loading enhanced curriculum statistics for dashboard...');
       
-      const result = await curriculumService.getAllCurriculums(0, 200);
-      const totalFromApi = result.pagination?.totalElements || result.curriculums.length;
+     
+      const enhancedStats = await statisticsService.getMetricsForDashboard();
       
-      const statusCounts = result.curriculums.reduce((acc, curr) => {
-        acc[curr.status] = (acc[curr.status] || 0) + 1;
-        return acc;
-      }, {});
-      
-      const sampleSize = result.curriculums.length;
-      let finalStats = {
-        total: totalFromApi,
-        approved: statusCounts.approved || 0,
-        pending: statusCounts.pending || 0,
-        draft: statusCounts.draft || 0,
-        rejected: statusCounts.rejected || 0
-      };
-      
-      // Extrapolate if we have a sample
-      if (sampleSize < totalFromApi && sampleSize > 50) {
-        const ratio = totalFromApi / sampleSize;
-        finalStats = {
-          total: totalFromApi,
-          approved: Math.round((statusCounts.approved || 0) * ratio),
-          pending: Math.round((statusCounts.pending || 0) * ratio),
-          draft: Math.round((statusCounts.draft || 0) * ratio),
-          rejected: Math.round((statusCounts.rejected || 0) * ratio)
-        };
-      }
-      
-      setCurriculumStats(finalStats);
-      console.log('✅ Curriculum statistics loaded:', finalStats);
+      setCurriculumStats(enhancedStats);
+      console.log('✅ Enhanced dashboard curriculum statistics loaded:', enhancedStats);
       
     } catch (error) {
-      console.error('❌ Error loading curriculum statistics:', error);
-      showNotification('Failed to load curriculum statistics', 'error');
+      console.error('❌ Error loading enhanced curriculum statistics:', error);
+      
+     
+      try {
+        console.warn('⚠️ Enhanced stats failed, using fallback method...');
+        
+        const result = await curriculumService.getAllCurriculums(0, 200);
+        const totalFromApi = result.pagination?.totalElements || result.curriculums.length;
+        
+        const statusCounts = result.curriculums.reduce((acc, curr) => {
+          acc[curr.status] = (acc[curr.status] || 0) + 1;
+          return acc;
+        }, {});
+        
+        const sampleSize = result.curriculums.length;
+        let finalStats = {
+          total: totalFromApi,
+          approved: statusCounts.approved || 0,
+          inProgress: (statusCounts.pending || 0) + (statusCounts.draft || 0) + (statusCounts.underReview || statusCounts.under_review || 0),
+          overdue: 0,
+          approvalRate: totalFromApi > 0 ? Math.round((statusCounts.approved || 0) / totalFromApi * 100) : 0,
+          breakdown: {
+            pending: statusCounts.pending || 0,
+            underReview: statusCounts.underReview || statusCounts.under_review || 0,
+            draft: statusCounts.draft || 0
+          }
+        };
+        
+        // Extrapolate if we have a sample
+        if (sampleSize < totalFromApi && sampleSize > 50) {
+          const ratio = totalFromApi / sampleSize;
+          finalStats = {
+            total: totalFromApi,
+            approved: Math.round((statusCounts.approved || 0) * ratio),
+            inProgress: Math.round(((statusCounts.pending || 0) + (statusCounts.draft || 0) + (statusCounts.underReview || statusCounts.under_review || 0)) * ratio),
+            overdue: 0,
+            approvalRate: totalFromApi > 0 ? Math.round((statusCounts.approved || 0) / totalFromApi * 100) : 0,
+            breakdown: {
+              pending: Math.round((statusCounts.pending || 0) * ratio),
+              underReview: Math.round((statusCounts.underReview || statusCounts.under_review || 0) * ratio),
+              draft: Math.round((statusCounts.draft || 0) * ratio)
+            }
+          };
+        }
+        
+        setCurriculumStats(finalStats);
+        console.log('✅ Fallback curriculum statistics loaded:', finalStats);
+        
+      } catch (fallbackError) {
+        console.error('❌ Fallback stats loading also failed:', fallbackError);
+        showNotification('Failed to load curriculum statistics', 'error');
+        
+        // Set default stats
+        setCurriculumStats({
+          total: 0,
+          approved: 0,
+          inProgress: 0,
+          overdue: 0,
+          approvalRate: 0,
+          breakdown: {
+            pending: 0,
+            underReview: 0,
+            draft: 0
+          }
+        });
+      }
     } finally {
       setStatsLoading(false);
     }
   }, []);
 
-  // Load stats on component mount
+ 
   useEffect(() => {
     loadCurriculumStats();
   }, [loadCurriculumStats]);
 
-  // Memoized handlers for better performance
+  
   const handleCreateUser = useCallback(() => {
     setShowCreateUserModal(true);
   }, []);
@@ -215,11 +259,20 @@ const AdminDashboardOverview = () => {
     resetForm();
   }, [resetForm]);
 
+  // Enhanced refresh stats function
   const refreshStats = useCallback(async () => {
-    await loadCurriculumStats();
+    try {
+     
+      await statisticsService.refreshStatistics();
+      await loadCurriculumStats();
+      showNotification('Statistics refreshed successfully', 'success');
+    } catch (error) {
+      console.error('Error refreshing statistics:', error);
+      showNotification('Failed to refresh statistics', 'error');
+    }
   }, [loadCurriculumStats]);
 
-  // Memoized responsive button layout
+ 
   const buttonLayout = useMemo(() => {
     const buttons = [
       {
@@ -325,6 +378,8 @@ const AdminDashboardOverview = () => {
                   <span>{button.text}</span>
                 </button>
               ))}
+              
+              
             </div>
           </div>
         </div>

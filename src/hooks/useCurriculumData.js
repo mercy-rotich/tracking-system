@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import curriculumService from '../services/curriculumService';
 import departmentService from '../services/departmentService';
+import statisticsService from '../services/statisticsService'; 
 
 export const useCurriculumData = () => {
   const [curricula, setCurricula] = useState([]);
@@ -15,9 +16,10 @@ export const useCurriculumData = () => {
     total: 0,
     approved: 0,
     pending: 0,
+    underReview: 0,
     draft: 0,
     rejected: 0,
-    underReview: 0
+    inProgress: 0
   });
   const [isLoading, setIsLoading] = useState(false);
   const [expiringCurriculums, setExpiringCurriculums] = useState([]);
@@ -31,14 +33,14 @@ export const useCurriculumData = () => {
       console.log('✅ Schools loaded:', schoolsData);
       setSchools(schoolsData);
 
-      // Load all departments using department service
+      
       try {
         const departmentsData = await departmentService.getAllDepartmentsSimple();
         console.log('✅ Departments loaded from service:', departmentsData);
         setDepartments(departmentsData);
       } catch (departmentError) {
         console.warn('⚠️ Department service failed, falling back to curriculum service:', departmentError.message);
-        // Fallback to curriculum service for departments
+        
         const fallbackDepartments = await curriculumService.getDepartmentsFromCurriculums();
         console.log('✅ Departments loaded from fallback:', fallbackDepartments);
         setDepartments(fallbackDepartments);
@@ -55,61 +57,104 @@ export const useCurriculumData = () => {
     }
   };
 
+  
   const loadStatsOverview = async () => {
     try {
-      console.log('🔄 Loading stats overview using new endpoint...');
+      console.log('🔄 Loading enhanced stats overview for curricula page...');
       
-      // Try the new stats endpoint first
+     
+      const newStats = await statisticsService.getMetricsForCurriculaPage();
+      
+      setStats(newStats);
+      console.log('✅ Enhanced curricula page stats loaded:', newStats);
+      
+      return newStats;
+    } catch (error) {
+      console.error('❌ Error loading enhanced stats overview:', error);
+      
+      // Fallback 
       try {
-        const statsResult = await curriculumService.getCurriculumStats();
-        console.log('✅ Stats loaded from new endpoint:', statsResult.data);
-        setStats(statsResult.data);
-        return statsResult.data;
-      } catch (statsError) {
-        console.warn('⚠️ New stats endpoint failed, falling back to old method:', statsError.message);
+        console.warn('⚠️ Enhanced stats failed, using fallback method...');
         
-        // Fallback to the old method
-        const result = await curriculumService.getAllCurriculums(0, 200);
-        const totalFromApi = result.pagination?.totalElements || result.curriculums.length;
+       
+        try {
+          const statsResult = await curriculumService.getCurriculumStats();
+          console.log('✅ Stats loaded from curriculum service endpoint:', statsResult.data);
+          
+          // Transform to expected format
+          const transformedStats = {
+            total: statsResult.data.total || 0,
+            approved: statsResult.data.approved || 0,
+            pending: statsResult.data.pending || 0,
+            underReview: statsResult.data.underReview || 0,
+            draft: statsResult.data.draft || 0,
+            rejected: statsResult.data.rejected || 0,
+            inProgress: (statsResult.data.pending || 0) + (statsResult.data.underReview || 0) + (statsResult.data.draft || 0)
+          };
+          
+          setStats(transformedStats);
+          return transformedStats;
+        } catch (statsError) {
+          console.warn('⚠️ Stats endpoint failed, falling back to curriculum list:', statsError.message);
+          
+          // Fallback to the old method
+          const result = await curriculumService.getAllCurriculums(0, 200);
+          const totalFromApi = result.pagination?.totalElements || result.curriculums.length;
+          
+          const statusCounts = result.curriculums.reduce((acc, curr) => {
+            acc[curr.status] = (acc[curr.status] || 0) + 1;
+            return acc;
+          }, {});
+          
+          const sampleSize = result.curriculums.length;
+          let finalStats = {
+            total: totalFromApi,
+            approved: statusCounts.approved || 0,
+            pending: statusCounts.pending || 0,
+            underReview: statusCounts.underReview || statusCounts.under_review || 0,
+            draft: statusCounts.draft || 0,
+            rejected: statusCounts.rejected || 0
+          };
+          
+          // Calculate inProgress
+          finalStats.inProgress = finalStats.pending + finalStats.underReview + finalStats.draft;
+          
+          
+          if (sampleSize < totalFromApi && sampleSize > 50) {
+            const ratio = totalFromApi / sampleSize;
+            finalStats = {
+              total: totalFromApi,
+              approved: Math.round((statusCounts.approved || 0) * ratio),
+              pending: Math.round((statusCounts.pending || 0) * ratio),
+              underReview: Math.round((statusCounts.underReview || statusCounts.under_review || 0) * ratio),
+              draft: Math.round((statusCounts.draft || 0) * ratio),
+              rejected: Math.round((statusCounts.rejected || 0) * ratio)
+            };
+            
+            // Recalculate inProgress after scaling
+            finalStats.inProgress = finalStats.pending + finalStats.underReview + finalStats.draft;
+          }
+          
+          setStats(finalStats);
+          console.log('✅ Stats loaded from fallback method:', finalStats);
+          return finalStats;
+        }
+      } catch (fallbackError) {
+        console.error('❌ All stats loading methods failed:', fallbackError);
         
-        const statusCounts = result.curriculums.reduce((acc, curr) => {
-          acc[curr.status] = (acc[curr.status] || 0) + 1;
-          return acc;
-        }, {});
-        
-        const sampleSize = result.curriculums.length;
-        let finalStats = {
-          total: totalFromApi,
-          approved: statusCounts.approved || 0,
-          pending: statusCounts.pending || 0,
-          draft: statusCounts.draft || 0,
-          rejected: statusCounts.rejected || 0,
-          underReview: 0 
+        const defaultStats = { 
+          total: 0, 
+          approved: 0, 
+          pending: 0, 
+          underReview: 0,
+          draft: 0, 
+          rejected: 0, 
+          inProgress: 0 
         };
         
-        
-        if (sampleSize < totalFromApi && sampleSize > 50) {
-          const ratio = totalFromApi / sampleSize;
-          finalStats = {
-            total: totalFromApi,
-            approved: Math.round((statusCounts.approved || 0) * ratio),
-            pending: Math.round((statusCounts.pending || 0) * ratio),
-            draft: Math.round((statusCounts.draft || 0) * ratio),
-            rejected: Math.round((statusCounts.rejected || 0) * ratio),
-            underReview: 0
-          };
-        }
-        
-        setStats(finalStats);
-        console.log('✅ Stats loaded from fallback method:', finalStats);
-        return finalStats;
+        setStats(defaultStats);
+        return defaultStats;
       }
-    } catch (error) {
-      console.error('❌ Error loading stats:', error);
-      
-      const defaultStats = { total: 0, approved: 0, pending: 0, draft: 0, rejected: 0, underReview: 0 };
-      setStats(defaultStats);
-      return defaultStats;
     }
   };
 
@@ -163,7 +208,7 @@ export const useCurriculumData = () => {
       
       let filteredCurricula = result.curriculums;
       
-      // Apply additional filters
+     
       if (selectedDepartment !== 'all') {
         filteredCurricula = filteredCurricula.filter(curriculum => 
           curriculum.department === selectedDepartment
@@ -213,6 +258,10 @@ export const useCurriculumData = () => {
   const refreshData = async () => {
     try {
       console.log('🔄 Refreshing all data...');
+      
+     
+      statisticsService.clearCache();
+      
       await Promise.all([
         loadStatsOverview(),
         loadSchoolsAndDepartments(),
@@ -225,12 +274,19 @@ export const useCurriculumData = () => {
     }
   };
 
-  
+ 
+  const refreshStatistics = async () => {
+    try {
+      await statisticsService.refreshStatistics();
+      await loadStatsOverview();
+    } catch (error) {
+      console.error('Error refreshing statistics:', error);
+    }
+  };
 
   const toggleCurriculumStatus = async (curriculum) => {
     try {
       console.log('🔄 Toggling curriculum status:', curriculum.id);
-      
       
       const curriculumData = {
         name: curriculum.title,
@@ -263,7 +319,7 @@ export const useCurriculumData = () => {
     try {
       console.log('🔄 Putting curriculum under review:', curriculum.id);
       
-      // Prepare curriculum data for the API
+     
       const curriculumData = {
         name: curriculum.title,
         code: curriculum.code,
@@ -291,22 +347,14 @@ export const useCurriculumData = () => {
     }
   };
 
-
-
   const findSchool = (identifier) => {
     if (!identifier || !schools.length) return null;
     
-    
     const strategies = [
-     
       (id) => schools.find(s => s.id?.toString() === id?.toString()),
-      
       (id) => schools.find(s => s.code?.toString() === id?.toString()),
-     
       (id) => schools.find(s => s.actualId?.toString() === id?.toString()),
-     
       (id) => schools.find(s => s.curriculumId?.toString() === id?.toString()),
-     
       (id) => schools.find(s => s.name?.toLowerCase() === id?.toString().toLowerCase())
     ];
     
@@ -318,7 +366,6 @@ export const useCurriculumData = () => {
     return null;
   };
 
-  
   const getSchoolName = (schoolIdentifier) => {
     const school = findSchool(schoolIdentifier);
     return school ? school.name : 'Unknown School';
@@ -340,7 +387,7 @@ export const useCurriculumData = () => {
     return departments.filter(dept => dept.schoolId?.toString() === schoolId?.toString());
   };
 
-  // Get curriculum statistics by status
+ 
   const getCurriculumStatsByStatus = () => {
     return {
       total: stats.total,
@@ -349,10 +396,20 @@ export const useCurriculumData = () => {
       underReview: stats.underReview,
       draft: stats.draft,
       rejected: stats.rejected,
+      inProgress: stats.inProgress,
+      
       // Calculate percentages
       approvedPercentage: stats.total > 0 ? Math.round((stats.approved / stats.total) * 100) : 0,
       pendingPercentage: stats.total > 0 ? Math.round((stats.pending / stats.total) * 100) : 0,
-      underReviewPercentage: stats.total > 0 ? Math.round((stats.underReview / stats.total) * 100) : 0
+      underReviewPercentage: stats.total > 0 ? Math.round((stats.underReview / stats.total) * 100) : 0,
+      inProgressPercentage: stats.total > 0 ? Math.round((stats.inProgress / stats.total) * 100) : 0,
+      
+      
+      breakdown: {
+        pending: stats.pending,
+        underReview: stats.underReview,
+        draft: stats.draft
+      }
     };
   };
 
@@ -372,6 +429,7 @@ export const useCurriculumData = () => {
     loadStatsOverview,
     loadExpiringCurriculums,
     refreshData,
+    refreshStatistics,
     
     // New curriculum actions
     toggleCurriculumStatus,
