@@ -23,6 +23,7 @@ import UserSettings from './Pages/users/UserSettings/UserSettings';
 import LandingPage from './Pages/LandingPage/LandingPage';
 import NotificationsPage from './Pages/Admin/NotificationsPage/NotificationsPage';
 import CurriculumTrackingPage from './Pages/Admin/CurriculumTrackingPage/CurriculumTrackingPage';
+import AboutPage from './Pages/LandingPage/AboutPage/AboutPage';
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
               <Routes>
                 {/* Landing Page */}
                 <Route path="/" element={<LandingPage />} />
+                <Route path ="/about" element ={<AboutPage/>}/>
                 
                 {/* Password Reset Routes */}
                 <Route path="/forgot-password" element={<PasswordResetSystem />} />

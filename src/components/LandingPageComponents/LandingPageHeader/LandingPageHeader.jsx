@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import logo_image from '../../../assets/logo.jpg'
 import './LandingPageHeader.css'
 
@@ -7,6 +7,7 @@ const LandingPageHeader = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOnWhiteSection, setIsOnWhiteSection] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -36,16 +37,65 @@ const LandingPageHeader = () => {
     setTimeout(() => {
       navigate('/app/dashboard');
       
-      
       button.innerHTML = originalHTML;
       button.style.pointerEvents = 'auto';
     }, 1500);
   };
 
+  const handleAboutClick = (e) => {
+    e.preventDefault();
+    const button = e.currentTarget;
+    const originalHTML = button.innerHTML;
+    
+
+    if (location.pathname === '/about') {
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    
+   
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+    button.style.pointerEvents = 'none';
+    
+    setTimeout(() => {
+      navigate('/about');
+      
+     
+      button.innerHTML = originalHTML;
+      button.style.pointerEvents = 'auto';
+    }, 800);
+  };
+
+  const handleLogoClick = (e) => {
+    e.preventDefault();
+    
+    
+    if (location.pathname !== '/') {
+      navigate('/');
+    } else {
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   const scrollToSection = (sectionId) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+   
+    if (location.pathname !== '/') {
+      navigate('/');
+     
+      setTimeout(() => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    } else {
+     
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
   };
 
@@ -57,7 +107,7 @@ const LandingPageHeader = () => {
       }}
     >
       <div className="landing-header-container">
-        <div className="landing-logo-container">
+        <div className="landing-logo-container" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
           <div className="landing-logo-img">
             <img src={logo_image} alt="school logo" />
           </div>
@@ -70,7 +120,7 @@ const LandingPageHeader = () => {
         <nav className="landing-nav-menu">
           <button 
             className="landing-nav-link" 
-            onClick={() => scrollToSection('about')}
+            onClick={handleAboutClick}
           >
             About
           </button>
