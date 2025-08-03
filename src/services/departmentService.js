@@ -15,6 +15,11 @@ class DepartmentService {
     this.schoolMappingExpiry = null;
     this.SCHOOL_MAPPING_DURATION = 10 * 60 * 1000; 
   }
+  buildApiUrl(endpoint) {
+    const url = `${this.baseURL}/${endpoint}`;
+    console.log('📍 Building API URL:', url);
+    return url;
+  }
 
   async getHeaders() {
     try {
