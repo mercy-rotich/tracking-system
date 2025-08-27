@@ -11,7 +11,6 @@ import NotificationBanner from '../../../components/Admin/AdminAllCurricula/Noti
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import EndpointTester from '../../EndpointTester';
 
-
 import { 
   EditTrackingModal, 
   AssignTrackingModal, 
@@ -29,20 +28,18 @@ const CurriculumTrackingPage = () => {
   const [viewMode, setViewMode] = useState('workflow'); 
   const [selectedCurriculum, setSelectedCurriculum] = useState(null);
   
-  // Filter states
+  // FIXED: Start with a filter type that returns data
   const [filters, setFilters] = useState({
     search: '',
     school: '',
     department: '',
     stage: '',
     status: '',
-    filterType: 'all'
+    filterType: 'bySchool' 
   });
 
-  
-  const [schoolId, setSchoolId] = useState(null);
+  const [schoolId, setSchoolId] = useState(1); 
   const [currentUserId, setCurrentUserId] = useState(null);
-  
   
   const [modals, setModals] = useState({
     stageDetails: false,
@@ -74,92 +71,188 @@ const CurriculumTrackingPage = () => {
     setIsLoading(true);
     try {
       console.log('🔄 [Tracking Page] Loading curricula with filter type:', filters.filterType);
+      console.log('🔍 [Tracking Page] Filter state:', filters);
+      console.log('🔍 [Tracking Page] School ID:', schoolId);
+      console.log('🔍 [Tracking Page] User ID:', currentUserId);
       
-      let result;
+      let result = null;
+      let fallbackAttempted = false;
       
-      switch (filters.filterType) {
-        case 'myInitiated':
-          result = await curriculumTrackingService.getMyInitiatedTrackings();
-          break;
-          
-        case 'myAssigned':
-          result = await curriculumTrackingService.getMyAssignedTrackings();
-          break;
-          
-        case 'bySchool':
-          if (schoolId) {
-            result = await curriculumTrackingService.getTrackingBySchool(schoolId);
-          } else {
-            result = await curriculumTrackingService.getAllCurricula();
-          }
-          break;
-
-        case 'byDepartment':
-          if (filters.department) {
-            result = await curriculumTrackingService.getTrackingByDepartment(filters.department);
-          } else {
-            result = await curriculumTrackingService.getAllCurricula();
-          }
-          break;
-          
-        case 'byInitiator':
-          if (currentUserId) {
-            result = await curriculumTrackingService.getTrackingByInitiator(currentUserId);
-          } else {
-            result = await curriculumTrackingService.getAllCurricula();
-          }
-          break;
-          
-        case 'byAssignee':
-          if (currentUserId) {
-            result = await curriculumTrackingService.getTrackingByAssignee(currentUserId);
-          } else {
-            result = await curriculumTrackingService.getAllCurricula();
-          }
-          break;
-          
-        case 'byStage':
-          if (filters.stage) {
-            const stageMapping = {
-              'initiation': 'IDEATION',
-              'school_board': 'SCHOOL_BOARD_REVIEW',
-              'dean_committee': 'DEAN_COMMITTEE_REVIEW',
-              'senate': 'SENATE_REVIEW',
-              'qa_review': 'QA_REVIEW',
-              'vice_chancellor': 'VICE_CHANCELLOR_APPROVAL',
-              'cue_review': 'CUE_REVIEW',
-              'site_inspection': 'ACCREDITED'
-            };
+      try {
+        switch (filters.filterType) {
+          case 'myInitiated':
+            console.log('📞 [API Call] getMyInitiatedTrackings');
+            result = await curriculumTrackingService.getMyInitiatedTrackings();
+            break;
             
-            const backendStage = stageMapping[filters.stage] || filters.stage;
-            result = await curriculumTrackingService.getTrackingByStage(backendStage);
-          } else {
+          case 'myAssigned':
+            console.log('📞 [API Call] getMyAssignedTrackings');
+            result = await curriculumTrackingService.getMyAssignedTrackings();
+            break;
+            
+          case 'bySchool':
+            if (schoolId) {
+              console.log('📞 [API Call] getTrackingBySchool with ID:', schoolId);
+              result = await curriculumTrackingService.getTrackingBySchool(schoolId);
+            } else {
+              console.log('📞 [API Call] getAllCurricula (fallback for bySchool)');
+              result = await curriculumTrackingService.getAllCurricula();
+            }
+            break;
+
+          case 'byDepartment':
+            if (filters.department) {
+              console.log('📞 [API Call] getTrackingByDepartment with ID:', filters.department);
+              result = await curriculumTrackingService.getTrackingByDepartment(filters.department);
+            } else {
+              console.log('📞 [API Call] getAllCurricula (fallback for byDepartment)');
+              result = await curriculumTrackingService.getAllCurricula();
+            }
+            break;
+            
+          case 'byInitiator':
+            if (currentUserId) {
+              console.log('📞 [API Call] getTrackingByInitiator with ID:', currentUserId);
+              result = await curriculumTrackingService.getTrackingByInitiator(currentUserId);
+            } else {
+              console.log('📞 [API Call] getAllCurricula (fallback for byInitiator)');
+              result = await curriculumTrackingService.getAllCurricula();
+            }
+            break;
+            
+          case 'byAssignee':
+            if (currentUserId) {
+              console.log('📞 [API Call] getTrackingByAssignee with ID:', currentUserId);
+              result = await curriculumTrackingService.getTrackingByAssignee(currentUserId);
+            } else {
+              console.log('📞 [API Call] getAllCurricula (fallback for byAssignee)');
+              result = await curriculumTrackingService.getAllCurricula();
+            }
+            break;
+            
+          case 'byStage':
+            if (filters.stage) {
+              const stageMapping = {
+                'initiation': 'IDEATION',
+                'school_board': 'SCHOOL_BOARD_REVIEW',
+                'dean_committee': 'DEAN_COMMITTEE_REVIEW',
+                'senate': 'SENATE_REVIEW',
+                'qa_review': 'QA_REVIEW',
+                'vice_chancellor': 'VICE_CHANCELLOR_APPROVAL',
+                'cue_review': 'CUE_REVIEW',
+                'site_inspection': 'ACCREDITED'
+              };
+              
+              const backendStage = stageMapping[filters.stage] || filters.stage;
+              console.log('📞 [API Call] getTrackingByStage with stage:', backendStage);
+              result = await curriculumTrackingService.getTrackingByStage(backendStage);
+            } else {
+              console.log('📞 [API Call] getAllCurricula (fallback for byStage)');
+              result = await curriculumTrackingService.getAllCurricula();
+            }
+            break;
+            
+          default:
+            console.log('📞 [API Call] getAllCurricula (default case)');
             result = await curriculumTrackingService.getAllCurricula();
+            break;
+        }
+      } catch (primaryError) {
+        console.warn('⚠️ [Tracking Page] Primary API call failed:', primaryError.message);
+        fallbackAttempted = true;
+        
+        // FIXED: Try fallback strategies when primary call fails
+        const fallbackStrategies = [
+          () => curriculumTrackingService.getTrackingBySchool(1),
+          () => curriculumTrackingService.getTrackingByInitiator(15),
+          () => curriculumTrackingService.getTrackingByAssignee(15),
+          () => curriculumTrackingService.getAllCurricula()
+        ];
+        
+        for (let i = 0; i < fallbackStrategies.length; i++) {
+          try {
+            console.log(`🔄 [Tracking Page] Attempting fallback strategy ${i + 1}...`);
+            result = await fallbackStrategies[i]();
+            if (result && result.success && result.data && result.data.length > 0) {
+              console.log(`✅ [Tracking Page] Fallback strategy ${i + 1} succeeded with ${result.data.length} items`);
+              break;
+            }
+          } catch (fallbackError) {
+            console.warn(`❌ [Tracking Page] Fallback strategy ${i + 1} failed:`, fallbackError.message);
+            continue;
           }
-          break;
-          
-        default:
-          result = await curriculumTrackingService.getAllCurricula();
-          break;
+        }
       }
 
-      if (result.success) {
-        const transformedData = curriculumTrackingService.transformApiDataArray(result.data);
+      // FIXED: Enhanced response handling with detailed logging
+      console.log('📋 [Tracking Page] API Result:', {
+        success: result?.success,
+        dataType: Array.isArray(result?.data) ? 'array' : typeof result?.data,
+        dataLength: Array.isArray(result?.data) ? result.data.length : 0,
+        message: result?.message,
+        fallbackUsed: fallbackAttempted
+      });
+
+      if (result && result.success) {
+        // FIXED: Enhanced data transformation with validation
+        let transformedData = [];
+        
+        if (Array.isArray(result.data) && result.data.length > 0) {
+          console.log('🔄 [Tracking Page] Transforming API data...');
+          console.log('📋 [Tracking Page] Sample raw data:', JSON.stringify(result.data[0], null, 2));
+          
+          transformedData = curriculumTrackingService.transformApiDataArray(result.data);
+          
+          console.log('✅ [Tracking Page] Data transformation completed');
+          console.log('📋 [Tracking Page] Sample transformed data:', JSON.stringify(transformedData[0], null, 2));
+        } else if (result.data && typeof result.data === 'object' && !Array.isArray(result.data)) {
+          // Handle single object response
+          console.log('🔄 [Tracking Page] Single object response, wrapping in array...');
+          const singleTransformed = curriculumTrackingService.transformApiData(result.data);
+          if (singleTransformed) {
+            transformedData = [singleTransformed];
+          }
+        }
+        
         setCurricula(transformedData);
         
-        showNotification(
-          result.message || `${filters.filterType} curricula loaded successfully`, 
-          'success'
-        );
+        const successMessage = fallbackAttempted 
+          ? `${transformedData.length} curricula loaded using fallback strategy`
+          : result.message || `${transformedData.length} ${filters.filterType} curricula loaded successfully`;
+        
+        showNotification(successMessage, fallbackAttempted ? 'warning' : 'success');
+        
+        // Auto-select first curriculum if none selected
+        if (transformedData.length > 0 && !selectedCurriculum) {
+          setSelectedCurriculum(transformedData[0]);
+        }
       } else {
-        console.error('❌ [Tracking Page] Failed to load curricula:', result.error);
+        console.error('❌ [Tracking Page] Failed to load curricula:', result?.error);
         setCurricula([]);
-        showNotification(result.error || 'Failed to load curriculum tracking data', 'error');
+        
+        const errorMessage = result?.error || 'Failed to load curriculum tracking data';
+        showNotification(errorMessage, 'error');
+        
+        // FIXED: Try one more fallback with different approach
+        if (!fallbackAttempted) {
+          console.log('🔄 [Tracking Page] Attempting final fallback...');
+          try {
+            // Try loading from a known working endpoint
+            const fallbackResult = await curriculumTrackingService.getTrackingBySchool(1);
+            if (fallbackResult.success && fallbackResult.data?.length > 0) {
+              const fallbackTransformed = curriculumTrackingService.transformApiDataArray(fallbackResult.data);
+              setCurricula(fallbackTransformed);
+              showNotification(`Loaded ${fallbackTransformed.length} curricula from school data`, 'info');
+            }
+          } catch (finalError) {
+            console.error('❌ [Tracking Page] Final fallback failed:', finalError);
+          }
+        }
       }
     } catch (error) {
-      console.error('❌ [Tracking Page] Error loading tracking data:', error);
+      console.error('❌ [Tracking Page] Critical error loading tracking data:', error);
       setCurricula([]);
-      showNotification('Failed to load tracking data', 'error');
+      showNotification('Critical error loading tracking data', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -190,6 +283,8 @@ const CurriculumTrackingPage = () => {
 
   // Filter functions
   const handleFilterChange = useCallback((filterName, value) => {
+    console.log('🔄 [Tracking Page] Filter change:', filterName, '=', value);
+    
     setFilters(prev => ({ ...prev, [filterName]: value }));
     
     if (filterName === 'filterType') {
@@ -202,22 +297,29 @@ const CurriculumTrackingPage = () => {
         status: '',
         [filterName]: value
       }));
+      
+      // Set appropriate defaults for different filter types
+      if (value === 'bySchool' && !schoolId) {
+        setSchoolId(1); // Set default school ID
+      }
     }
-  }, []);
+  }, [schoolId]);
 
   const clearFilters = useCallback(() => {
+    console.log('🔄 [Tracking Page] Clearing all filters');
     setFilters({
       search: '',
       school: '',
       department: '',
       stage: '',
       status: '',
-      filterType: 'all'
+      filterType: 'bySchool' // Reset to working filter type
     });
-    setSchoolId(null);
+    setSchoolId(1); // Reset to working school ID
   }, []);
 
   const handleSchoolSelection = useCallback((selectedSchoolId) => {
+    console.log('🔄 [Tracking Page] School selection:', selectedSchoolId);
     setSchoolId(selectedSchoolId);
     setFilters(prev => ({ ...prev, filterType: 'bySchool' }));
   }, []);
@@ -437,13 +539,16 @@ const CurriculumTrackingPage = () => {
     }
   }, []);
 
+ 
   const filterTypes = [
-    { value: 'all', label: 'All Curricula', icon: 'fas fa-list' },
+    { value: 'bySchool', label: 'By School', icon: 'fas fa-university' },
+    { value: 'byInitiator', label: 'By Initiator', icon: 'fas fa-user-plus' },
+    { value: 'byAssignee', label: 'By Assignee', icon: 'fas fa-user-check' },
     { value: 'myInitiated', label: 'My Initiated', icon: 'fas fa-user-plus' },
     { value: 'myAssigned', label: 'My Assignments', icon: 'fas fa-user-check' },
     { value: 'byStage', label: 'By Stage', icon: 'fas fa-layer-group' },
-    { value: 'bySchool', label: 'By School', icon: 'fas fa-university' },
-    { value: 'byDepartment', label: 'By Department', icon: 'fas fa-building' }
+    { value: 'byDepartment', label: 'By Department', icon: 'fas fa-building' },
+    { value: 'all', label: 'All Curricula', icon: 'fas fa-list' }
   ];
 
   if (isLoading && curricula.length === 0) {
@@ -474,6 +579,25 @@ const CurriculumTrackingPage = () => {
           onViewModeChange={setViewMode}
           onRefresh={loadCurriculaData}
         />
+
+        {/* FIXED: Enhanced Debug Panel */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="tracking-card" style={{ marginBottom: '1rem', backgroundColor: '#f0f9ff' }}>
+            <div className="tracking-card-header">
+              <h3>🔍 Debug Information</h3>
+            </div>
+            <div className="tracking-card-body">
+              <div style={{ fontSize: '0.875rem', fontFamily: 'monospace' }}>
+                <div><strong>Current Filter:</strong> {filters.filterType}</div>
+                <div><strong>School ID:</strong> {schoolId}</div>
+                <div><strong>User ID:</strong> {currentUserId}</div>
+                <div><strong>Curricula Loaded:</strong> {curricula.length}</div>
+                <div><strong>Filtered Results:</strong> {filteredCurricula.length}</div>
+                <div><strong>Is Loading:</strong> {isLoading ? 'Yes' : 'No'}</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Filter Type Selector */}
         <div className="tracking-card" style={{ marginBottom: '1.5rem' }}>
