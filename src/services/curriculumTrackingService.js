@@ -102,19 +102,18 @@ class DataTransformer {
       const transformed = {
         id: apiData.id || apiData.trackingId,
         trackingId: apiData.trackingId || `TRACK-${apiData.id}`,
-        title: apiData.name || apiData.displayCurriculumName || apiData.proposedCurriculumName || apiData.curriculumName ||
         
-        'Untitled Curriculum',
-        school:apiData.schoolName || 
-        apiData.school_name || 
-        apiData.school || 
-        'Unknown School',
-        department: apiData.departmentName || 
-        apiData.department_name || 
-        apiData.department || 
-        'Unknown Department',
-        currentStage: STAGE_MAPPING[apiData.currentStage] || 'initiation',
-        status: STATUS_MAPPING[apiData.status] || 'under_review',
+        
+        title: this.extractTitle(apiData),
+        
+       
+        school: this.extractSchool(apiData),
+        department: this.extractDepartment(apiData),
+        
+        
+        currentStage: this.extractCurrentStage(apiData),
+        status: this.extractStatus(apiData),
+        
         priority: this.calculatePriority(apiData.currentStage, daysInCurrentStage, apiData.isIdeationStage),
         submittedDate: apiData.createdAt ? apiData.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
         lastUpdated: apiData.updatedAt ? apiData.updatedAt.split('T')[0] : new Date().toISOString().split('T')[0],
@@ -124,15 +123,15 @@ class DataTransformer {
         stages: this.buildStagesObject(apiData),
         
         
-        code: apiData.proposedCurriculumCode || apiData.curriculumCode || 'N/A',
+        code: apiData.proposedCurriculumCode || apiData.displayCurriculumCode || apiData.curriculumCode || 'N/A',
         description: apiData.curriculumDescription || '',
         schoolId: apiData.schoolId,
         departmentId: apiData.departmentId,
         initiatedBy: apiData.initiatedByName || apiData.initiatorName || 'System',
         assignedTo: apiData.currentAssigneeName || apiData.assigneeName || null,
-        isActive: apiData.isActive !== false, 
+        isActive: apiData.isActive !== false,
         
-        // Raw data for debugging
+        //data for debugging
         _raw: apiData
       };
 
@@ -143,33 +142,118 @@ class DataTransformer {
       console.error('❌ [DataTransformer] Transformation failed:', error);
       console.error('📋 [DataTransformer] Failed data:', apiData);
       
-     
-      return {
-        id: apiData.id || Math.random().toString(),
-        trackingId: apiData.trackingId || `ERROR-${Date.now()}`,
-        title: apiData.name || apiData.proposedCurriculumName || 'Error Loading Curriculum',
-        school: apiData.schoolName || 'Unknown',
-        department: apiData.departmentName || 'Unknown',
-        currentStage: 'initiation',
-        status: 'under_review',
-        priority: 'low',
-        submittedDate: new Date().toISOString().split('T')[0],
-        lastUpdated: new Date().toISOString().split('T')[0],
-        daysInCurrentStage: 0,
-        totalDays: 0,
-        estimatedCompletion: null,
-        stages: {},
-        _error: error.message,
-        _raw: apiData
-      };
+      
+      return this.createFallbackObject(apiData, error);
     }
+  }
+
+  static extractTitle(apiData) {
+    const possibleTitles = [
+      apiData.displayCurriculumName,
+      apiData.proposedCurriculumName,
+      apiData.curriculumName,
+      apiData.name,
+      apiData.title
+    ];
+    
+    for (const title of possibleTitles) {
+      if (title && title.trim() && title.trim() !== '') {
+        return title.trim();
+      }
+    }
+    
+   
+    if (apiData.trackingId) {
+      return `Curriculum ${apiData.trackingId}`;
+    }
+    
+    return 'Untitled Curriculum';
+  }
+
+  static extractSchool(apiData) {
+    const possibleSchools = [
+      apiData.schoolName,
+      apiData.school_name,
+      apiData.school
+    ];
+    
+    for (const school of possibleSchools) {
+      if (school && school.trim() && school.trim() !== '') {
+        return school.trim();
+      }
+    }
+    
+    return 'Unknown School';
+  }
+
+  static extractDepartment(apiData) {
+    const possibleDepartments = [
+      apiData.departmentName,
+      apiData.department_name,
+      apiData.department
+    ];
+    
+    for (const dept of possibleDepartments) {
+      if (dept && dept.trim() && dept.trim() !== '') {
+        return dept.trim();
+      }
+    }
+    
+    return 'Unknown Department';
+  }
+
+  static extractCurrentStage(apiData) {
+    const stage = apiData.currentStage;
+    if (stage && STAGE_MAPPING[stage]) {
+      return STAGE_MAPPING[stage];
+    }
+    
+    const validStages = Object.values(STAGE_MAPPING);
+    if (validStages.includes(stage)) {
+      return stage;
+    }
+    
+    return 'initiation';
+  }
+
+  static extractStatus(apiData) {
+    const status = apiData.status;
+    if (status && STATUS_MAPPING[status]) {
+      return STATUS_MAPPING[status];
+    }
+    
+    const validStatuses = Object.values(STATUS_MAPPING);
+    if (validStatuses.includes(status)) {
+      return status;
+    }
+    
+    return 'under_review';
+  }
+  static createFallbackObject(apiData, error) {
+    return {
+      id: apiData?.id || Math.random().toString(),
+      trackingId: apiData?.trackingId || `ERROR-${Date.now()}`,
+      title: this.extractTitle(apiData) || 'Error Loading Curriculum',
+      school: this.extractSchool(apiData) || 'Unknown',
+      department: this.extractDepartment(apiData) || 'Unknown',
+      currentStage: 'initiation',
+      status: 'under_review',
+      priority: 'low',
+      submittedDate: new Date().toISOString().split('T')[0],
+      lastUpdated: new Date().toISOString().split('T')[0],
+      daysInCurrentStage: 0,
+      totalDays: 0,
+      estimatedCompletion: null,
+      stages: {},
+      _error: error.message,
+      _raw: apiData
+    };
   }
 
   static transformArray(apiDataArray) {
     if (!Array.isArray(apiDataArray)) {
       console.warn('⚠️ [DataTransformer] Expected array, got:', typeof apiDataArray);
       if (apiDataArray && typeof apiDataArray === 'object') {
-        // Try to transform single object
         const singleTransform = this.transform(apiDataArray);
         return singleTransform ? [singleTransform] : [];
       }
@@ -184,10 +268,10 @@ class DataTransformer {
           return this.transform(item);
         } catch (error) {
           console.error(`❌ [DataTransformer] Failed to transform item at index ${index}:`, error);
-          return null;
+          return this.createFallbackObject(item, error);
         }
       })
-      .filter(Boolean); 
+      .filter(Boolean);
 
     console.log(`✅ [DataTransformer] Successfully transformed ${transformed.length}/${apiDataArray.length} items`);
     return transformed;
@@ -213,7 +297,7 @@ class DataTransformer {
   }
 
   static buildStagesObject(apiData) {
-    const currentStage = STAGE_MAPPING[apiData.currentStage] || 'initiation';
+    const currentStage = this.extractCurrentStage(apiData);
     const stageOrder = this.getStageOrder(currentStage);
 
     const stages = {};
@@ -262,7 +346,51 @@ class QueryBuilder {
 }
 
 class CurriculumTrackingService {
-  // Initiate curriculum method
+ 
+  extractTrackingData(response) {
+    console.log('🔄 [TrackingService] Extracting tracking data from response:', response.data);
+    
+    let rawData = [];
+    
+   
+    if (response.data) {
+      // Structure 1: response.data.data.trackings (nested)
+      if (response.data.data && response.data.data.trackings && Array.isArray(response.data.data.trackings)) {
+        rawData = response.data.data.trackings;
+        console.log('📋 [TrackingService] Found data in: response.data.data.trackings');
+      }
+      // Structure 2: response.data.trackings (direct)
+      else if (response.data.trackings && Array.isArray(response.data.trackings)) {
+        rawData = response.data.trackings;
+        console.log('📋 [TrackingService] Found data in: response.data.trackings');
+      }
+      // Structure 3: response.data.data (direct array or single object)
+      else if (response.data.data) {
+        if (Array.isArray(response.data.data)) {
+          rawData = response.data.data;
+          console.log('📋 [TrackingService] Found data in: response.data.data (array)');
+        } else if (typeof response.data.data === 'object') {
+          rawData = [response.data.data];
+          console.log('📋 [TrackingService] Found data in: response.data.data (single object)');
+        }
+      }
+      // Structure 4: response.data (direct array)
+      else if (Array.isArray(response.data)) {
+        rawData = response.data;
+        console.log('📋 [TrackingService] Found data in: response.data (array)');
+      }
+      // Structure 5: response.data (single object)
+      else if (typeof response.data === 'object') {
+        rawData = [response.data];
+        console.log('📋 [TrackingService] Found data in: response.data (single object)');
+      }
+    }
+    
+    console.log(`📋 [TrackingService] Extracted ${rawData.length} raw items for transformation`);
+    return rawData;
+  }
+
+  
   async initiateCurriculum(curriculumData) {
     try {
       console.log('🔄 [TrackingService] Initiating curriculum:', curriculumData);
@@ -283,7 +411,7 @@ class CurriculumTrackingService {
       const response = await apiClient.post(ENDPOINTS.CREATE, formData);
       
       return ResponseFormatter.success(
-        DataTransformer.transform(response.data.data),
+        DataTransformer.transform(response.data.data || response.data),
         response.data.message
       );
     } catch (error) {
@@ -292,7 +420,7 @@ class CurriculumTrackingService {
     }
   }
 
-  // Get all curricula method
+ 
   async getAllCurricula(filters = {}) {
     try {
       console.log('🔄 [TrackingService] Getting all curricula with filters:', filters);
@@ -303,29 +431,8 @@ class CurriculumTrackingService {
       const response = await apiClient.get(url);
       console.log('📋 [TrackingService] Raw API response:', response.data);
       
-      // Handle different response structures
-      let rawData = [];
       
-      if (response.data && response.data.data) {
-        if (Array.isArray(response.data.data)) {
-          rawData = response.data.data;
-        } else if (response.data.data.trackings && Array.isArray(response.data.data.trackings)) {
-          rawData = response.data.data.trackings;
-        } else if (response.data.data.curricula && Array.isArray(response.data.data.curricula)) {
-          rawData = response.data.data.curricula;
-        } else {
-          console.warn('⚠️ [TrackingService] Unexpected data structure, using data object as single item');
-          rawData = [response.data.data];
-        }
-      } else if (Array.isArray(response.data)) {
-        rawData = response.data;
-      } else {
-        console.warn('⚠️ [TrackingService] No recognizable data structure found');
-        rawData = [];
-      }
-      
-      console.log(`📋 [TrackingService] Extracted ${rawData.length} raw items for transformation`);
-      
+      const rawData = this.extractTrackingData(response);
       const transformedData = DataTransformer.transformArray(rawData);
       
       return ResponseFormatter.success(
@@ -347,7 +454,7 @@ class CurriculumTrackingService {
       console.log('📋 [TrackingService] GetById response:', response.data);
       
       return ResponseFormatter.success(
-        DataTransformer.transform(response.data.data),
+        DataTransformer.transform(response.data.data || response.data),
         response.data.message
       );
     } catch (error) {
@@ -382,7 +489,7 @@ class CurriculumTrackingService {
       const response = await apiClient.put(`${ENDPOINTS.BASE}/${trackingId}`, formData);
       
       return ResponseFormatter.success(
-        DataTransformer.transform(response.data.data),
+        DataTransformer.transform(response.data.data || response.data),
         response.data.message
       );
     } catch (error) {
@@ -402,7 +509,7 @@ class CurriculumTrackingService {
       const response = await apiClient.post(`${ENDPOINTS.BASE}/${trackingId}/assign/${userId}`);
       
       return ResponseFormatter.success(
-        DataTransformer.transform(response.data.data),
+        DataTransformer.transform(response.data.data || response.data),
         response.data.message
       );
     } catch (error) {
@@ -422,7 +529,7 @@ class CurriculumTrackingService {
       const response = await apiClient.post(`${ENDPOINTS.BASE}/${trackingId}/reactivate`);
       
       return ResponseFormatter.success(
-        DataTransformer.transform(response.data.data),
+        DataTransformer.transform(response.data.data || response.data),
         response.data.message
       );
     } catch (error) {
@@ -442,7 +549,7 @@ class CurriculumTrackingService {
       const response = await apiClient.post(`${ENDPOINTS.BASE}/${trackingId}/deactivate`);
       
       return ResponseFormatter.success(
-        response.data.data,
+        response.data.data || response.data,
         response.data.message
       );
     } catch (error) {
@@ -451,7 +558,7 @@ class CurriculumTrackingService {
     }
   }
 
-  // Query methods
+  // FIXED: Query methods with better response handling
   async getTrackingByDepartment(departmentId, params = {}) {
     try {
       console.log('🔄 [TrackingService] Getting tracking by department:', departmentId);
@@ -464,10 +571,7 @@ class CurriculumTrackingService {
       const response = await apiClient.get(url);
       console.log('📋 [TrackingService] Department response:', response.data);
       
-      let rawData = [];
-      if (response.data && response.data.data) {
-        rawData = response.data.data.trackings || response.data.data || [];
-      }
+      const rawData = this.extractTrackingData(response);
       
       return ResponseFormatter.success(
         DataTransformer.transformArray(rawData),
@@ -486,10 +590,7 @@ class CurriculumTrackingService {
       const response = await apiClient.get(`${ENDPOINTS.BASE}/school/${schoolId}`);
       console.log('📋 [TrackingService] School response:', response.data);
       
-      let rawData = [];
-      if (response.data && response.data.data) {
-        rawData = response.data.data.trackings || response.data.data || [];
-      }
+      const rawData = this.extractTrackingData(response);
       
       return ResponseFormatter.success(
         DataTransformer.transformArray(rawData),
@@ -508,10 +609,7 @@ class CurriculumTrackingService {
       const response = await apiClient.get(`${ENDPOINTS.BASE}/initiator/${initiatorId}`);
       console.log('📋 [TrackingService] Initiator response:', response.data);
       
-      let rawData = [];
-      if (response.data && response.data.data) {
-        rawData = response.data.data.trackings || response.data.data || [];
-      }
+      const rawData = this.extractTrackingData(response);
       
       return ResponseFormatter.success(
         DataTransformer.transformArray(rawData),
@@ -530,10 +628,7 @@ class CurriculumTrackingService {
       const response = await apiClient.get(`${ENDPOINTS.BASE}/assignee/${assigneeId}`);
       console.log('📋 [TrackingService] Assignee response:', response.data);
       
-      let rawData = [];
-      if (response.data && response.data.data) {
-        rawData = response.data.data.trackings || response.data.data || [];
-      }
+      const rawData = this.extractTrackingData(response);
       
       return ResponseFormatter.success(
         DataTransformer.transformArray(rawData),
@@ -552,10 +647,7 @@ class CurriculumTrackingService {
       const response = await apiClient.get(`${ENDPOINTS.BASE}/my-trackings`);
       console.log('📋 [TrackingService] My trackings response:', response.data);
       
-      let rawData = [];
-      if (response.data && response.data.data) {
-        rawData = response.data.data.trackings || response.data.data || [];
-      }
+      const rawData = this.extractTrackingData(response);
       
       return ResponseFormatter.success(
         DataTransformer.transformArray(rawData),
@@ -574,10 +666,7 @@ class CurriculumTrackingService {
       const response = await apiClient.get(`${ENDPOINTS.BASE}/my-assignments`);
       console.log('📋 [TrackingService] My assignments response:', response.data);
       
-      let rawData = [];
-      if (response.data && response.data.data) {
-        rawData = response.data.data.trackings || response.data.data || [];
-      }
+      const rawData = this.extractTrackingData(response);
       
       return ResponseFormatter.success(
         DataTransformer.transformArray(rawData),
@@ -596,10 +685,7 @@ class CurriculumTrackingService {
       const response = await apiClient.get(`${ENDPOINTS.BASE}/stage/${stage}`);
       console.log('📋 [TrackingService] Stage response:', response.data);
       
-      let rawData = [];
-      if (response.data && response.data.data) {
-        rawData = response.data.data.trackings || response.data.data || [];
-      }
+      const rawData = this.extractTrackingData(response);
       
       return ResponseFormatter.success(
         DataTransformer.transformArray(rawData),
@@ -611,7 +697,7 @@ class CurriculumTrackingService {
     }
   }
 
-  // Action and document methods
+  
   async performTrackingAction(actionData) {
     try {
       console.log('🔄 [TrackingService] Performing tracking action:', actionData);
@@ -627,7 +713,7 @@ class CurriculumTrackingService {
       const response = await apiClient.post(`${ENDPOINTS.BASE}/action`, formData);
       
       return ResponseFormatter.success(
-        DataTransformer.transform(response.data.data),
+        DataTransformer.transform(response.data.data || response.data),
         response.data.message
       );
     } catch (error) {
@@ -651,7 +737,7 @@ class CurriculumTrackingService {
     }
   }
 
-  // Helper methods for external use
+  // Helper methods 
   transformApiData(apiData) {
     return DataTransformer.transform(apiData);
   }
@@ -660,7 +746,7 @@ class CurriculumTrackingService {
     return DataTransformer.transformArray(apiDataArray);
   }
 
-  // Diagnostic methods
+  
   async diagnoseService() {
     console.log('🔍 CURRICULUM TRACKING SERVICE DIAGNOSIS');
     console.log('=========================================');
@@ -674,7 +760,14 @@ class CurriculumTrackingService {
       results.getAllCurricula = {
         success: allResult.success,
         dataCount: allResult.data?.length || 0,
-        message: allResult.message
+        message: allResult.message,
+        hasValidData: allResult.success && allResult.data?.length > 0,
+        sampleData: allResult.data?.[0] ? {
+          id: allResult.data[0].id,
+          title: allResult.data[0].title,
+          school: allResult.data[0].school,
+          department: allResult.data[0].department
+        } : null
       };
       console.log('   ✅ getAllCurricula:', results.getAllCurricula);
     } catch (error) {
@@ -689,7 +782,8 @@ class CurriculumTrackingService {
       results.getTrackingBySchool = {
         success: schoolResult.success,
         dataCount: schoolResult.data?.length || 0,
-        message: schoolResult.message
+        message: schoolResult.message,
+        hasValidData: schoolResult.success && schoolResult.data?.length > 0
       };
       console.log('   ✅ getTrackingBySchool:', results.getTrackingBySchool);
     } catch (error) {
@@ -697,19 +791,20 @@ class CurriculumTrackingService {
       console.log('   ❌ getTrackingBySchool failed:', error.message);
     }
 
-    // Test getTrackingByInitiator
+    // Test getMyInitiatedTrackings
     try {
-      console.log('3. Testing getTrackingByInitiator(15)...');
-      const initiatorResult = await this.getTrackingByInitiator(15);
-      results.getTrackingByInitiator = {
-        success: initiatorResult.success,
-        dataCount: initiatorResult.data?.length || 0,
-        message: initiatorResult.message
+      console.log('3. Testing getMyInitiatedTrackings...');
+      const initiatedResult = await this.getMyInitiatedTrackings();
+      results.getMyInitiatedTrackings = {
+        success: initiatedResult.success,
+        dataCount: initiatedResult.data?.length || 0,
+        message: initiatedResult.message,
+        hasValidData: initiatedResult.success && initiatedResult.data?.length > 0
       };
-      console.log('   ✅ getTrackingByInitiator:', results.getTrackingByInitiator);
+      console.log('   ✅ getMyInitiatedTrackings:', results.getMyInitiatedTrackings);
     } catch (error) {
-      results.getTrackingByInitiator = { success: false, error: error.message };
-      console.log('   ❌ getTrackingByInitiator failed:', error.message);
+      results.getMyInitiatedTrackings = { success: false, error: error.message };
+      console.log('   ❌ getMyInitiatedTrackings failed:', error.message);
     }
 
     // Test data transformation
@@ -722,7 +817,7 @@ class CurriculumTrackingService {
         schoolName: 'Test School',
         departmentName: 'Test Department',
         currentStage: 'IDEATION',
-        status: 'IN_PROGRESS',
+        status: 'INITIATED',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
@@ -730,7 +825,10 @@ class CurriculumTrackingService {
       const transformed = this.transformApiData(sampleData);
       results.dataTransformation = {
         success: !!transformed,
-        hasRequiredFields: !!(transformed?.id && transformed?.title && transformed?.currentStage)
+        hasRequiredFields: !!(transformed?.id && transformed?.title && transformed?.currentStage),
+        transformedTitle: transformed?.title,
+        transformedSchool: transformed?.school,
+        transformedStage: transformed?.currentStage
       };
       console.log('   ✅ Data transformation:', results.dataTransformation);
     } catch (error) {
@@ -745,6 +843,9 @@ class CurriculumTrackingService {
       console.log(`${status} ${test}: ${result.success ? 'PASSED' : 'FAILED'}`);
       if (result.dataCount !== undefined) {
         console.log(`   Data count: ${result.dataCount}`);
+      }
+      if (result.hasValidData !== undefined) {
+        console.log(`   Has valid data: ${result.hasValidData}`);
       }
       if (result.error) {
         console.log(`   Error: ${result.error}`);
@@ -776,10 +877,13 @@ class CurriculumTrackingService {
           success: result.success,
           dataCount: result.data?.length || 0,
           message: result.message,
-          hasData: result.success && result.data?.length > 0
+          hasData: result.success && result.data?.length > 0,
+          hasValidTitles: result.success && result.data?.length > 0 && 
+            result.data.every(item => item.title && item.title !== 'Untitled Curriculum')
         });
         
-        console.log(`   ${result.success && result.data?.length > 0 ? '✅' : '⚠️'} ${endpoint.name}: ${result.data?.length || 0} items`);
+        const statusIcon = result.success && result.data?.length > 0 ? '✅' : '⚠️';
+        console.log(`   ${statusIcon} ${endpoint.name}: ${result.data?.length || 0} items`);
       } catch (error) {
         results.push({
           name: endpoint.name,
@@ -791,8 +895,8 @@ class CurriculumTrackingService {
       }
     }
 
-    const workingEndpoints = results.filter(r => r.hasData);
-    console.log(`\n🎯 Working endpoints with data: ${workingEndpoints.length}/${results.length}`);
+    const workingEndpoints = results.filter(r => r.hasData && r.hasValidTitles);
+    console.log(`\n🎯 Working endpoints with valid data: ${workingEndpoints.length}/${results.length}`);
     
     return {
       all: results,

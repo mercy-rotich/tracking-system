@@ -28,7 +28,7 @@ const CurriculumTrackingPage = () => {
   const [viewMode, setViewMode] = useState('workflow'); 
   const [selectedCurriculum, setSelectedCurriculum] = useState(null);
   
-  // FIXED: Start with a filter type that returns data
+  // Start with a filter type that returns data
   const [filters, setFilters] = useState({
     search: '',
     school: '',
@@ -161,7 +161,7 @@ const CurriculumTrackingPage = () => {
         console.warn('⚠️ [Tracking Page] Primary API call failed:', primaryError.message);
         fallbackAttempted = true;
         
-        // FIXED: Try fallback strategies when primary call fails
+        //  Try fallback strategies when primary call fails
         const fallbackStrategies = [
           () => curriculumTrackingService.getTrackingBySchool(1),
           () => curriculumTrackingService.getTrackingByInitiator(15),
@@ -184,7 +184,7 @@ const CurriculumTrackingPage = () => {
         }
       }
 
-      // FIXED: Enhanced response handling with detailed logging
+     
       console.log('📋 [Tracking Page] API Result:', {
         success: result?.success,
         dataType: Array.isArray(result?.data) ? 'array' : typeof result?.data,
@@ -194,7 +194,7 @@ const CurriculumTrackingPage = () => {
       });
 
       if (result && result.success) {
-        // FIXED: Enhanced data transformation with validation
+        
         let transformedData = [];
         
         if (Array.isArray(result.data) && result.data.length > 0) {
@@ -233,7 +233,6 @@ const CurriculumTrackingPage = () => {
         const errorMessage = result?.error || 'Failed to load curriculum tracking data';
         showNotification(errorMessage, 'error');
         
-        // FIXED: Try one more fallback with different approach
         if (!fallbackAttempted) {
           console.log('🔄 [Tracking Page] Attempting final fallback...');
           try {
@@ -298,9 +297,9 @@ const CurriculumTrackingPage = () => {
         [filterName]: value
       }));
       
-      // Set appropriate defaults for different filter types
+      
       if (value === 'bySchool' && !schoolId) {
-        setSchoolId(1); // Set default school ID
+        setSchoolId(1); 
       }
     }
   }, [schoolId]);
@@ -313,9 +312,9 @@ const CurriculumTrackingPage = () => {
       department: '',
       stage: '',
       status: '',
-      filterType: 'bySchool' // Reset to working filter type
+      filterType: 'bySchool' 
     });
-    setSchoolId(1); // Reset to working school ID
+    setSchoolId(1); 
   }, []);
 
   const handleSchoolSelection = useCallback((selectedSchoolId) => {
@@ -580,7 +579,7 @@ const CurriculumTrackingPage = () => {
           onRefresh={loadCurriculaData}
         />
 
-        {/* FIXED: Enhanced Debug Panel */}
+        {/* Debug Panel */}
         {process.env.NODE_ENV === 'development' && (
           <div className="tracking-card" style={{ marginBottom: '1rem', backgroundColor: '#f0f9ff' }}>
             <div className="tracking-card-header">
@@ -810,7 +809,7 @@ const CurriculumTrackingPage = () => {
           />
         )}
 
-        {/* New Enhanced Modals */}
+        {/* Enhanced Modals */}
         {modals.editTracking && selectedCurriculum && (
           <EditTrackingModal
             curriculum={selectedCurriculum}
