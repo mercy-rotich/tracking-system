@@ -28,7 +28,7 @@ const CurriculumTrackingPage = () => {
   const [viewMode, setViewMode] = useState('workflow'); 
   const [selectedCurriculum, setSelectedCurriculum] = useState(null);
   
-  // Start with a filter type that returns data
+ 
   const [filters, setFilters] = useState({
     search: '',
     school: '',
@@ -55,6 +55,13 @@ const CurriculumTrackingPage = () => {
     show: false,
     message: '',
     type: 'success'
+  });
+
+  // Document state
+  const [documentOperations, setDocumentOperations] = useState({
+    uploading: false,
+    downloading: false,
+    error: null
   });
 
   // Initialize user data
@@ -161,7 +168,7 @@ const CurriculumTrackingPage = () => {
         console.warn('⚠️ [Tracking Page] Primary API call failed:', primaryError.message);
         fallbackAttempted = true;
         
-        //  Try fallback strategies when primary call fails
+        
         const fallbackStrategies = [
           () => curriculumTrackingService.getTrackingBySchool(1),
           () => curriculumTrackingService.getTrackingByInitiator(15),
@@ -184,7 +191,7 @@ const CurriculumTrackingPage = () => {
         }
       }
 
-     
+      
       console.log('📋 [Tracking Page] API Result:', {
         success: result?.success,
         dataType: Array.isArray(result?.data) ? 'array' : typeof result?.data,
@@ -194,7 +201,7 @@ const CurriculumTrackingPage = () => {
       });
 
       if (result && result.success) {
-        
+       
         let transformedData = [];
         
         if (Array.isArray(result.data) && result.data.length > 0) {
@@ -232,6 +239,7 @@ const CurriculumTrackingPage = () => {
         
         const errorMessage = result?.error || 'Failed to load curriculum tracking data';
         showNotification(errorMessage, 'error');
+        
         
         if (!fallbackAttempted) {
           console.log('🔄 [Tracking Page] Attempting final fallback...');
@@ -277,7 +285,15 @@ const CurriculumTrackingPage = () => {
 
   const closeModal = useCallback((modalName) => {
     setModals(prev => ({ ...prev, [modalName]: false }));
-    setSelectedCurriculum(null);
+    if (modalName === 'documentUpload') {
+      // Reset document operations state when closing upload modal
+      setDocumentOperations({
+        uploading: false,
+        downloading: false,
+        error: null
+      });
+    }
+    
   }, []);
 
   // Filter functions
@@ -297,7 +313,7 @@ const CurriculumTrackingPage = () => {
         [filterName]: value
       }));
       
-      
+      // Set appropriate defaults for different filter types
       if (value === 'bySchool' && !schoolId) {
         setSchoolId(1); 
       }
@@ -399,6 +415,9 @@ const CurriculumTrackingPage = () => {
           result.message || `Stage ${action} completed successfully`, 
           'success'
         );
+
+        // Refresh data to get latest state
+        await loadCurriculaData();
       } else {
         throw new Error(result.error || `Failed to ${action} stage`);
       }
@@ -408,7 +427,7 @@ const CurriculumTrackingPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [curricula]);
+  }, [curricula, loadCurriculaData]);
 
   
   const handleUpdateTracking = useCallback(async (trackingId, updateData) => {
@@ -510,31 +529,41 @@ const CurriculumTrackingPage = () => {
     }
   }, [loadCurriculaData]);
 
-  // Handle document download
+  //  document upload handler
+  const handleDocumentUpload = useCallback(async (uploadedDocuments) => {
+    try {
+      console.log('📤 [Tracking Page] Documents uploaded successfully:', uploadedDocuments);
+      
+      showNotification(
+        `Successfully uploaded ${uploadedDocuments.length} document${uploadedDocuments.length !== 1 ? 's' : ''}`,
+        'success'
+      );
+      
+      // Refresh the curricula data to reflect any changes
+      await loadCurriculaData();
+      
+    } catch (error) {
+      console.error('❌ [Tracking Page] Error handling document upload:', error);
+      showNotification('Document upload completed but there was an error refreshing data', 'warning');
+    }
+  }, [loadCurriculaData]);
+
+  //  document download handler
   const handleDocumentDownload = useCallback(async (documentId, documentName) => {
     try {
+      setDocumentOperations(prev => ({ ...prev, downloading: true, error: null }));
       console.log('🔄 [Tracking Page] Downloading document:', documentId);
       
-      const result = await curriculumTrackingService.downloadTrackingDocument(documentId);
+      await curriculumTrackingService.downloadDocumentToFile(documentId, documentName);
       
-      if (result.success) {
-        const url = window.URL.createObjectURL(result.data);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = documentName || result.filename || `document-${documentId}`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        
-        showNotification('Document downloaded successfully', 'success');
-      } else {
-        throw new Error(result.error || 'Failed to download document');
-      }
+      showNotification(`Document "${documentName}" downloaded successfully`, 'success');
+      
     } catch (error) {
       console.error('❌ [Tracking Page] Error downloading document:', error);
+      setDocumentOperations(prev => ({ ...prev, error: error.message }));
       showNotification(error.message || 'Failed to download document', 'error');
+    } finally {
+      setDocumentOperations(prev => ({ ...prev, downloading: false }));
     }
   }, []);
 
@@ -572,6 +601,65 @@ const CurriculumTrackingPage = () => {
           onClose={() => setNotification({ show: false, message: '', type: '' })}
         />
 
+        {/* Document Operations Status */}
+        {documentOperations.uploading && (
+          <div className="tracking-card" style={{ 
+            marginBottom: '1rem', 
+            backgroundColor: '#f0f9ff',
+            borderLeft: '4px solid #0ea5e9' 
+          }}>
+            <div className="tracking-card-body" style={{ padding: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <i className="fas fa-spinner fa-spin" style={{ color: '#0ea5e9' }}></i>
+                <span>Uploading documents...</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {documentOperations.downloading && (
+          <div className="tracking-card" style={{ 
+            marginBottom: '1rem', 
+            backgroundColor: '#f0fdf4',
+            borderLeft: '4px solid #22c55e' 
+          }}>
+            <div className="tracking-card-body" style={{ padding: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <i className="fas fa-spinner fa-spin" style={{ color: '#22c55e' }}></i>
+                <span>Downloading document...</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {documentOperations.error && (
+          <div className="tracking-card" style={{ 
+            marginBottom: '1rem', 
+            backgroundColor: '#fef2f2',
+            borderLeft: '4px solid #ef4444' 
+          }}>
+            <div className="tracking-card-body" style={{ padding: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <i className="fas fa-exclamation-triangle" style={{ color: '#ef4444' }}></i>
+                <span>Document operation error: {documentOperations.error}</span>
+                <button 
+                  onClick={() => setDocumentOperations(prev => ({ ...prev, error: null }))}
+                  style={{ 
+                    marginLeft: 'auto', 
+                    background: 'none', 
+                    border: 'none', 
+                    color: '#ef4444',
+                    cursor: 'pointer',
+                    padding: '0.25rem'
+                  }}
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Page Header */}
         <TrackingHeader 
           viewMode={viewMode}
@@ -579,7 +667,7 @@ const CurriculumTrackingPage = () => {
           onRefresh={loadCurriculaData}
         />
 
-        {/* Debug Panel */}
+        {/*  Debug Panel */}
         {process.env.NODE_ENV === 'development' && (
           <div className="tracking-card" style={{ marginBottom: '1rem', backgroundColor: '#f0f9ff' }}>
             <div className="tracking-card-header">
@@ -593,6 +681,11 @@ const CurriculumTrackingPage = () => {
                 <div><strong>Curricula Loaded:</strong> {curricula.length}</div>
                 <div><strong>Filtered Results:</strong> {filteredCurricula.length}</div>
                 <div><strong>Is Loading:</strong> {isLoading ? 'Yes' : 'No'}</div>
+                <div><strong>Document Operations:</strong> 
+                  {documentOperations.uploading ? ' Uploading' : ''}
+                  {documentOperations.downloading ? ' Downloading' : ''}
+                  {documentOperations.error ? ` Error: ${documentOperations.error}` : ' None'}
+                </div>
               </div>
             </div>
           </div>
@@ -759,7 +852,7 @@ const CurriculumTrackingPage = () => {
           />
         )}
 
-        {/* Existing Modals */}
+        {/*  Modals with Document Support */}
         {modals.stageDetails && selectedCurriculum && (
           <StageDetailsModal
             curriculum={selectedCurriculum}
@@ -781,15 +874,7 @@ const CurriculumTrackingPage = () => {
           <DocumentUploadModal
             curriculum={selectedCurriculum}
             onClose={() => closeModal('documentUpload')}
-            onUpload={(documents) => {
-              handleStageAction(
-                selectedCurriculum.id, 
-                selectedCurriculum.selectedStage || selectedCurriculum.currentStage,
-                'upload_documents',
-                { documents }
-              );
-              closeModal('documentUpload');
-            }}
+            onUpload={handleDocumentUpload}
           />
         )}
 
@@ -809,7 +894,7 @@ const CurriculumTrackingPage = () => {
           />
         )}
 
-        {/* Enhanced Modals */}
+        {/*  Modals */}
         {modals.editTracking && selectedCurriculum && (
           <EditTrackingModal
             curriculum={selectedCurriculum}
