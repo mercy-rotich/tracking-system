@@ -45,7 +45,7 @@ const StageDetailsModal = ({
       console.log('🔄 Loading documents for curriculum:', curriculum.id || curriculum.trackingId);
       
       
-      const { default: curriculumTrackingService } = await import('../../../services/curriculumTrackingService');
+      const { default: curriculumTrackingService } = await import('../../../../services/curriculumTrackingService');
       
       const result = await curriculumTrackingService.getDocumentsByTrackingId(
         curriculum.id || curriculum.trackingId
@@ -73,7 +73,7 @@ const StageDetailsModal = ({
       console.log('🔄 Downloading document:', document.name);
       
       
-      const { default: curriculumTrackingService } = await import('../../../services/curriculumTrackingService');
+      const { default: curriculumTrackingService } = await import('../../../../services/curriculumTrackingService');
       
       await curriculumTrackingService.downloadDocumentToFile(
         document.id, 
@@ -98,7 +98,7 @@ const StageDetailsModal = ({
       console.log('🔄 Getting view URL for document:', document.name);
       
       
-      const { default: curriculumTrackingService } = await import('../../../services/curriculumTrackingService');
+      const { default: curriculumTrackingService } = await import('../../../../services/curriculumTrackingService');
       
       const result = await curriculumTrackingService.getDocumentDownloadUrl(document.id);
       

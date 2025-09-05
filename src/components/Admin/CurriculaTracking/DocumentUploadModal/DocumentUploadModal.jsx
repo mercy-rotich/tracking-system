@@ -144,72 +144,56 @@ const DocumentUploadModal = ({ curriculum, onClose, onUpload }) => {
   };
 
   const handleUpload = async () => {
-    if (files.length === 0) {
-      setError('Please select at least one file to upload');
-      return;
-    }
-
-    setUploading(true);
-    setUploadProgress(0);
-    setError('');
-    setUploadedDocuments([]);
-
+    // ... validation code ...
+  
     try {
-      console.log('🔄 Starting document upload...');
+      const { default: curriculumTrackingService } = await import('../../../../services/curriculumTrackingService');
       
+      let result;
       
-      const { default: curriculumTrackingService } = await import('../../../services/curriculumTrackingService');
-      
-      const uploadData = {
-        files: files,
-        trackingId: curriculum.id || curriculum.trackingId,
-        stepId: getCurrentStageNumber(),
-        documentType: selectedDocumentType,
-        descriptions: files.map(file => `${file.name} - ${selectedDocumentType.toLowerCase().replace('_', ' ')}`)
-      };
-
-      console.log('📤 Upload data:', {
-        ...uploadData,
-        files: uploadData.files.map(f => ({ name: f.name, size: f.size, type: f.type }))
-      });
-
-      // Simulate upload progress
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) return prev;
-          return prev + Math.random() * 20;
-        });
-      }, 200);
-
-      const result = await curriculumTrackingService.uploadBatchDocuments(uploadData);
-      
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-
-      if (result.success) {
-        console.log('✅ Upload successful:', result.data);
-        setUploadedDocuments(result.data);
+      if (files.length === 1) {
+        // Use SINGLE upload for 1 file
+        console.log('📤 Using single upload endpoint');
         
-        // Call the parent callback with the uploaded documents
-        if (onUpload) {
-          onUpload(result.data);
+        const singleUploadData = {
+          file: files[0],
+          trackingId: curriculum.id || curriculum.trackingId,
+          stepId: getCurrentStageNumber(),
+          documentType: selectedDocumentType,
+          description: `${files[0].name} - document`
+        };
+        
+        result = await curriculumTrackingService.uploadSingleDocument(singleUploadData);
+        
+        // Convert to array format for consistency
+        if (result.success) {
+          result.data = [result.data];
         }
         
-        // Small delay to show 100% progress, then close
-        setTimeout(() => {
-          onClose();
-        }, 1000);
-        
       } else {
-        throw new Error(result.error || 'Upload failed');
+        // Use BATCH upload for multiple files
+        console.log('📤 Using batch upload endpoint');
+        
+        const batchUploadData = {
+          files: files,
+          trackingId: curriculum.id || curriculum.trackingId,
+          stepId: getCurrentStageNumber(),
+          documentType: selectedDocumentType,
+          descriptions: files.map(file => `${file.name} - document`)
+        };
+        
+        result = await curriculumTrackingService.uploadBatchDocuments(batchUploadData);
+      }
+  
+      // Handle success...
+      if (result.success) {
+        setUploadedDocuments(result.data);
+        if (onUpload) onUpload(result.data);
+        setTimeout(() => onClose(), 1000);
       }
       
     } catch (error) {
-      console.error('❌ Upload error:', error);
-      setError(error.message || 'Failed to upload files. Please try again.');
-      setUploadProgress(0);
-    } finally {
-      setUploading(false);
+      setError(error.message);
     }
   };
 

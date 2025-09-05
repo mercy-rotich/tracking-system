@@ -124,24 +124,7 @@ const LandingPageHeader = () => {
           >
             About
           </button>
-          <button 
-            className="landing-nav-link" 
-            onClick={() => scrollToSection('academics')}
-          >
-            Academics
-          </button>
-          <button 
-            className="landing-nav-link" 
-            onClick={() => scrollToSection('research')}
-          >
-            Research
-          </button>
-          <button 
-            className="landing-nav-link" 
-            onClick={() => scrollToSection('services')}
-          >
-            Services
-          </button>
+          
           <button 
             className="landing-dashboard-btn"
             onClick={handleDashboardClick}

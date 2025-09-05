@@ -752,9 +752,7 @@ class CurriculumTrackingService {
     }
   }
 
-  // ==============================================
-  // NEW DOCUMENT METHODS
-  // ==============================================
+  
 
   /**
    * Get all documents for a specific tracking ID
@@ -916,13 +914,13 @@ class CurriculumTrackingService {
 
   /**
    * Upload multiple documents in batch
-   * @param {Object} uploadData - Upload data
-   * @param {File[]} uploadData.files - Files to upload
-   * @param {string|number} uploadData.trackingId - Tracking ID
-   * @param {string|number} uploadData.stepId - Step ID
-   * @param {string} uploadData.documentType - Document type
-   * @param {string[]} uploadData.descriptions - Document descriptions (optional)
-   * @returns {Promise<Object>} Response with uploaded documents data
+   * @param {Object} uploadData 
+   * @param {File[]} uploadData.files 
+   * @param {string|number} uploadData.trackingId 
+   * @param {string|number} uploadData.stepId 
+   * @param {string} uploadData.documentType 
+   * @param {string[]} uploadData.descriptions 
+   * @returns {Promise<Object>} 
    */
   async uploadBatchDocuments(uploadData) {
     try {
@@ -1034,9 +1032,7 @@ class CurriculumTrackingService {
     return this.downloadDocumentToFile(documentId, documentName);
   }
 
-  // ==============================================
-  // HELPER METHODS FOR EXTERNAL USE
-  // ==============================================
+
 
   transformApiData(apiData) {
     return DataTransformer.transform(apiData);
@@ -1054,9 +1050,7 @@ class CurriculumTrackingService {
     return DocumentTransformer.transformArray(apiDocuments);
   }
 
-  // ==============================================
-  // DIAGNOSTIC METHODS
-  // ==============================================
+  
 
   async diagnoseDocumentService() {
     console.log('🔍 DOCUMENT SERVICE DIAGNOSIS');
