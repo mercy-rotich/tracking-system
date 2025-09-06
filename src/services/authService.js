@@ -13,34 +13,32 @@ class AuthService {
   initializePageExitHandlers() {
     // Logs out user when closing tab/browser
     window.addEventListener('beforeunload', () => {
-      console.log('🚪 Page unloading, logging out...');
+      console.log('Page unloading, logging out...');
       this.logoutSync();
     });
 
     // Refreshes token when returning to the tab
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) {
-        console.log('👁️ Page visible, checking token...');
         this.checkAndRefreshToken();
       }
     });
 
     // Check token when window gains focus
     window.addEventListener('focus', () => {
-      console.log('🎯 Window focused, checking token...');
+      console.log('Window focused, checking token...');
       this.checkAndRefreshToken();
     });
   }
 
   logoutSync() {
     try {
-      console.log('🔄 Performing sync logout (client-side only)');
+      console.log('Performing sync logout (client-side only)');
       this.clearStorage();
       this.stopBackgroundServices();
-      console.log('✅ Sync logout completed');
+      console.log('Sync logout completed');
     } catch (error) {
-      console.error('❌ Sync logout error:', error);
-      // Force clear even if error
+      console.error('Sync logout error:', error);
       this.clearStorage();
       this.stopBackgroundServices();
     }
@@ -57,7 +55,7 @@ class AuthService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = await response.json();
         throw new Error(errorData.message || 'Invalid credentials');
       }
 
@@ -72,7 +70,7 @@ class AuthService {
         throw new Error('Login response missing required token');
       }
 
-      // Store authentication data
+      // Store authentication token
       this.storeAuthData(tokenInfo, userInfo);
       this.startBackgroundServices();
 
@@ -112,10 +110,11 @@ class AuthService {
     };
   }
 
-  // Store authentication data
+  // Store authentication data with consistent key names
   storeAuthData(tokenInfo, userInfo) {
     const storage = {
       sessionToken: tokenInfo.accessToken,
+      authToken: tokenInfo.accessToken, 
       refreshToken: tokenInfo.refreshToken || '',
       tokenExpiry: this.calculateExpiry(tokenInfo.expiresIn),
       user: JSON.stringify(userInfo),
@@ -123,10 +122,11 @@ class AuthService {
     };
 
     Object.entries(storage).forEach(([key, value]) => {
-      localStorage.setItem(key, value);
+      if (value) localStorage.setItem(key, value);
     });
-    console.log('✅ Authentication data stored');
+    console.log('Authentication data stored');
   }
+
   validateTokenFormat(token) {
     if (!token) return false;
 
@@ -154,7 +154,7 @@ class AuthService {
     if (!expiresIn) return '';
 
     const expiryTime = typeof expiresIn === 'number'
-      ? Date.now() + expiresIn * 1000 
+      ? Date.now() + (expiresIn * 1000) 
       : new Date(expiresIn).getTime();
 
     return new Date(expiryTime).toISOString();
@@ -163,7 +163,7 @@ class AuthService {
   startBackgroundServices() {
     this.startTokenRefresh();
     this.startSessionCheck();
-    console.log('✅ Background services started');
+    console.log('Background services started');
   }
 
   stopBackgroundServices() {
@@ -172,8 +172,9 @@ class AuthService {
     });
     this.refreshTokenInterval = null;
     this.sessionCheckInterval = null;
-    console.log('⏹️ Background services stopped');
+    console.log('Background services stopped');
   }
+
   async refreshToken() {
     if (this.isRefreshing) {
       return new Promise((resolve, reject) => {
@@ -186,9 +187,7 @@ class AuthService {
 
     try {
       const refreshToken = localStorage.getItem('refreshToken');
-      if (!refreshToken) {
-        throw new Error('No refresh token available');
-      }
+      if (!refreshToken) throw new Error('No refresh token available');
 
       const response = await fetch(`${this.baseURL}/auth/refresh`, {
         method: 'POST',
@@ -202,21 +201,17 @@ class AuthService {
       }
 
       const data = await response.json();
-      const newToken = data.accessToken || data.token;
+      const newToken = data.data?.accessToken || data.accessToken || data.token;
 
-      if (!newToken) {
-        throw new Error('Refresh response missing new token');
-      }
+      if (!newToken) throw new Error('Refresh response missing new token');
 
-      // Store new token data
+      
       localStorage.setItem('sessionToken', newToken);
+      localStorage.setItem('authToken', newToken);
+      localStorage.setItem('refreshToken', data.data?.refreshToken || data.refreshToken || refreshToken);
       
-      if (data.refreshToken) {
-        localStorage.setItem('refreshToken', data.refreshToken);
-      }
-      
-      if (data.expiresIn) {
-        localStorage.setItem('tokenExpiry', this.calculateExpiry(data.expiresIn));
+      if (data.data?.expiresIn || data.expiresIn) {
+        localStorage.setItem('tokenExpiry', this.calculateExpiry(data.data?.expiresIn || data.expiresIn));
       }
 
       // Resolve queued requests
@@ -228,16 +223,15 @@ class AuthService {
     } catch (error) {
       console.error('❌ Token refresh failed:', error);
 
-      // Reject queued requests
       this.failedQueue.forEach(({ reject }) => reject(error));
       this.failedQueue = [];
 
-      // Logout on certain errors
       if (error.message.includes('refresh token') || error.message.includes('unauthorized')) {
         this.logout();
       }
 
       throw error;
+
     } finally {
       this.isRefreshing = false;
     }
@@ -255,13 +249,12 @@ class AuthService {
   // Check and refresh token if needed
   async checkAndRefreshToken() {
     if (!this.isAuthenticated()) return false;
-    
     if (this.shouldRefreshToken()) {
       try {
         await this.refreshToken();
         return true;
       } catch (error) {
-        console.error('❌ Background token refresh failed:', error);
+        console.error('Background token refresh failed:', error);
         return false;
       }
     }
@@ -271,7 +264,6 @@ class AuthService {
   // Start token refresh monitoring
   startTokenRefresh() {
     if (this.refreshTokenInterval) clearInterval(this.refreshTokenInterval);
-    
     this.refreshTokenInterval = setInterval(async () => {
       if (this.isAuthenticated()) {
         await this.checkAndRefreshToken();
@@ -285,28 +277,20 @@ class AuthService {
     const token = this.getToken();
     if (!token) throw new Error('No token available');
 
-    try {
-      const response = await fetch(`${this.baseURL}/auth/validate`, {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      
-      if (!response.ok) {
-        if (response.status === 401 && localStorage.getItem('refreshToken')) {
-          await this.refreshToken();
-          return { valid: true, refreshed: true };
-        }
-        throw new Error('Session invalid');
-      }
+    const response = await fetch(`${this.baseURL}/auth/validate`, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
 
-      return response.json();
-    } catch (error) {
-      
-      if (error.message.includes('404') || error.message.includes('not found')) {
-        return { valid: true, note: 'Validation endpoint not available' };
+    if (!response.ok) {
+      if (response.status === 401 && localStorage.getItem('refreshToken')) {
+        await this.refreshToken();
+        return { valid: true, refreshed: true };
       }
-      throw error;
+      throw new Error('Session invalid');
     }
+
+    return response.json();
   }
 
   // Start session validation monitoring
@@ -335,6 +319,7 @@ class AuthService {
     console.log('🔍 Session validation started');
   }
 
+  // Authentication check
   isAuthenticated() {
     try {
       const token = this.getToken();
@@ -365,11 +350,11 @@ class AuthService {
   }
 
   async logout() {
-    console.log('🔄 Performing client-side logout...');
+    console.log('Performing client-side logout...');
     this.clearStorage();
     this.stopBackgroundServices();
 
-    console.log('✅ Logged out successfully');
+    console.log('Logged out successfully');
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('authLogout', {
         detail: { timestamp: new Date().toISOString() }
@@ -378,23 +363,19 @@ class AuthService {
   }
 
   clearStorage() {
-    ['sessionToken', 'refreshToken', 'tokenExpiry', 'user', 'loginTime', 'userPermissions', 'userRoles']
+    ['sessionToken', 'authToken', 'refreshToken', 'tokenExpiry', 'user', 'loginTime', 'userPermissions', 'userRoles']
       .forEach(key => localStorage.removeItem(key));
     console.log('🧹 Local storage cleared');
   }
 
+  // Get valid token with automatic refresh
   async getValidToken() {
     if (!this.isAuthenticated()) {
       throw new Error('Not authenticated');
     }
 
     if (this.shouldRefreshToken()) {
-      try {
-        await this.refreshToken();
-      } catch (refreshError) {
-        console.error('❌ Failed to refresh token in getValidToken:', refreshError);
-        throw new Error('Failed to refresh authentication token');
-      }
+      await this.refreshToken();
     }
 
     return this.getToken();
@@ -403,7 +384,7 @@ class AuthService {
   // Get token with validation
   getToken() {
     try {
-      const token = localStorage.getItem('sessionToken');
+      const token = localStorage.getItem('sessionToken') || localStorage.getItem('authToken');
       if (!token || !this.validateTokenFormat(token)) {
         return null;
       }
@@ -438,15 +419,11 @@ class AuthService {
           'Content-Type': 'application/json',
         },
       });
-      
+
       if (!response.ok) {
-        if (response.status === 401) {
-          await this.refreshToken();
-          return this.getUserRolesAndPermissions();
-        }
         throw new Error(`Failed to fetch roles: ${response.status}`);
       }
-      
+
       const result = await response.json();
 
       // Store permissions and roles
@@ -466,7 +443,7 @@ class AuthService {
       const permissions = JSON.parse(localStorage.getItem('userPermissions') || '{}');
       return permissions[permission] === true;
     } catch (error) {
-      console.error('❌ Error checking permission:', error);
+      console.error('Error checking permission:', error);
       return false;
     }
   }
@@ -476,7 +453,7 @@ class AuthService {
       const roles = JSON.parse(localStorage.getItem('userRoles') || '[]');
       return roles.includes(role);
     } catch (error) {
-      console.error('❌ Error checking role:', error);
+      console.error('Error checking role:', error);
       return false;
     }
   }
@@ -486,7 +463,7 @@ class AuthService {
       const userRoles = JSON.parse(localStorage.getItem('userRoles') || '[]');
       return rolesList.some(role => userRoles.includes(role));
     } catch (error) {
-      console.error('❌ Error checking roles:', error);
+      console.error('Error checking roles:', error);
       return false;
     }
   }
@@ -503,58 +480,28 @@ class AuthService {
     return this.hasPermission('isDean') || this.hasRole('DEAN');
   }
 
-  //  debug methods
+  // Debug methods
   getAuthStatus() {
     return {
       isAuthenticated: this.isAuthenticated(),
       shouldRefresh: this.shouldRefreshToken(),
       isRefreshing: this.isRefreshing,
-      queueSize: this.failedQueue.length,
       servicesRunning: {
         tokenRefresh: !!this.refreshTokenInterval,
         sessionCheck: !!this.sessionCheckInterval
-      },
-      tokenInfo: {
-        hasToken: !!localStorage.getItem('sessionToken'),
-        hasRefreshToken: !!localStorage.getItem('refreshToken'),
-        tokenExpiry: localStorage.getItem('tokenExpiry'),
-        timeUntilExpiry: localStorage.getItem('tokenExpiry') 
-          ? new Date(localStorage.getItem('tokenExpiry')).getTime() - Date.now()
-          : null
       }
     };
   }
-
-  // Force token refresh for testing
-  async forceRefreshToken() {
-    console.log('🔄 Forcing token refresh...');
-    try {
-      const newToken = await this.refreshToken();
-      console.log('✅ Force refresh successful');
-      return newToken;
-    } catch (error) {
-      console.error('❌ Force refresh failed:', error);
-      throw error;
-    }
-  }
 }
+
 
 const authService = new AuthService();
 
-//  debugging helpers
+
 if (typeof window !== 'undefined') {
-  window.debugAuth = () => {
-    const status = authService.getAuthStatus();
-    console.log('🔍 AUTH STATUS:', status);
-    return status;
-  };
-  window.forceRefresh = () => authService.forceRefreshToken();
+  window.debugAuth = () => console.log(authService.getAuthStatus());
+  window.forceRefresh = () => authService.refreshToken();
   window.manualLogout = () => authService.logout();
-  window.testTokenValidation = () => {
-    const token = authService.getToken();
-    console.log('Token valid:', authService.validateTokenFormat(token));
-    return authService.validateTokenFormat(token);
-  };
 }
 
 export default authService;
