@@ -373,7 +373,7 @@ const SchoolsView = ({
         }
       });
       
-      // Apply pagination to the filtered results
+      
       const startIndex = page * programPageSize;
       const endIndex = startIndex + programPageSize;
       const paginatedCurricula = filteredCurricula.slice(startIndex, endIndex);
@@ -382,7 +382,7 @@ const SchoolsView = ({
       
       setProgramViewData(paginatedCurricula);
       
-      // Update pagination info based on filtered results
+     
       setProgramTotalElements(filteredCurricula.length);
       setProgramTotalPages(Math.ceil(filteredCurricula.length / programPageSize));
       setProgramHasNext(endIndex < filteredCurricula.length);

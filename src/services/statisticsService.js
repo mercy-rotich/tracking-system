@@ -1,5 +1,5 @@
 import curriculumService from "./curriculumService";
-import curriculumTrackingService from "./curriculumTrackingService";
+import curriculumTrackingService from "./CurriculumTrackingService";
 
 class StatisticsService {
     constructor() {
@@ -7,7 +7,7 @@ class StatisticsService {
         this.cacheTimestamp = null;
         this.CACHE_DURATION = 5 * 60 * 1000;
         
-        //  cache for tracking data
+        
         this.cachedTrackingStats = null;
         this.trackingCacheTimestamp = null;
         this.TRACKING_CACHE_DURATION = 2 * 60 * 1000; 
@@ -15,7 +15,7 @@ class StatisticsService {
 
     async getCurriculumStatistics() {
         try {
-            // Check cache first
+            
             if (this.cachedStats && this.cacheTimestamp && (Date.now() - this.cacheTimestamp) < this.CACHE_DURATION) {
                 console.log('📦 Using cached curriculum statistics');
                 return this.cachedStats;
@@ -30,7 +30,7 @@ class StatisticsService {
         }
     }
 
-    // Get tracking statistics
+    
     async getTrackingStatistics() {
         try {
             // Check cache first
@@ -122,7 +122,7 @@ class StatisticsService {
                 lastUpdated: new Date().toISOString()
             };
 
-            // Cache the results
+            
             this.cachedTrackingStats = trackingStats;
             this.trackingCacheTimestamp = Date.now();
 

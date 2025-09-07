@@ -244,13 +244,13 @@ const AdminCurriculaPage = () => {
     setShowDeleteModal(true);
   };
 
-  // ==================== NEW ACTION HANDLERS ====================
+
 
   const handleApprove = async (curriculum) => {
     try {
       console.log('🔄 Handling curriculum approval:', curriculum.id);
       
-      // Use the new toggle status endpoint to activate/approve curriculum
+      
       const result = await toggleCurriculumStatus(curriculum);
       
       await refreshData();
