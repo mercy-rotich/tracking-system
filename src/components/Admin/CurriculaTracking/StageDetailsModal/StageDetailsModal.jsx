@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import './StageDetailsModal.css';
 
@@ -52,6 +51,15 @@ const StageDetailsModal = ({
     return new Date(dateString).toLocaleString();
   };
 
+  const formatDisplayDate = (dateString) => {
+    if (!dateString) return 'Not set';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   const handleStageAction = async (action) => {
     setActionLoading(true);
     try {
@@ -87,11 +95,16 @@ const StageDetailsModal = ({
 
         {/* Modal Body */}
         <div className="tracking-modal-body">
-          {/* Curriculum Info */}
+          {/*  Curriculum Info */}
           <div className="tracking-curriculum-summary tracking-card tracking-curriculum-info-card">
             <div className="tracking-card-body">
               <h4 className="tracking-curriculum-title">{curriculum.title}</h4>
-              <div className="tracking-curriculum-meta-grid">
+              <div className="tracking-curriculum-meta-grid" style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+                gap: '0.75rem', 
+                marginTop: '1rem' 
+              }}>
                 <div className="tracking-curriculum-meta-item">
                   <span className="tracking-badge tracking-badge-neutral">
                     <i className="fas fa-hashtag"></i>
@@ -104,6 +117,30 @@ const StageDetailsModal = ({
                     {curriculum.school}
                   </span>
                 </div>
+                <div className="tracking-curriculum-meta-item">
+                  <span className="tracking-badge tracking-badge-primary">
+                    <i className="fas fa-graduation-cap"></i>
+                    {curriculum.academicLevel}
+                  </span>
+                </div>
+                <div className="tracking-curriculum-meta-item">
+                  <span className="tracking-badge tracking-badge-warning">
+                    <i className="fas fa-clock"></i>
+                    {curriculum.proposedDurationSemesters} Semesters
+                  </span>
+                </div>
+              </div>
+              
+              {/* People Information */}
+              <div style={{ marginTop: '1rem', fontSize: '0.875rem', color: 'var(--tracking-text-secondary)' }}>
+                <div style={{ marginBottom: '0.5rem' }}>
+                  <strong>Initiated by:</strong> {curriculum.initiatedByName} ({curriculum.initiatedByEmail})
+                </div>
+                {curriculum.currentAssigneeName && (
+                  <div>
+                    <strong>Currently assigned to:</strong> {curriculum.currentAssigneeName} ({curriculum.currentAssigneeEmail})
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -137,6 +174,7 @@ const StageDetailsModal = ({
             <div className="tracking-tab-buttons">
               {[
                 { key: 'overview', label: 'Overview', icon: 'fas fa-info-circle' },
+                { key: 'details', label: 'Curriculum Details', icon: 'fas fa-book' },
                 { key: 'timeline', label: 'Timeline', icon: 'fas fa-clock' },
                 { key: 'documents', label: 'Documents', icon: 'fas fa-file-alt' },
                 { key: 'notes', label: 'Notes & Feedback', icon: 'fas fa-comments' }
@@ -160,8 +198,27 @@ const StageDetailsModal = ({
               <div className="tracking-overview-tab">
                 <div className="tracking-overview-grid">
                   <div className="tracking-info-group">
-                    <h5 className="tracking-info-label">Assigned To</h5>
-                    <p className="tracking-info-value">{currentStageData?.assignedTo || 'Not assigned'}</p>
+                    <h5 className="tracking-info-label">Initiated By</h5>
+                    <p className="tracking-info-value">
+                      {curriculum.initiatedByName || 'Not specified'}
+                      {curriculum.initiatedByEmail && (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--tracking-text-muted)', marginTop: '0.25rem' }}>
+                          📧 {curriculum.initiatedByEmail}
+                        </div>
+                      )}
+                    </p>
+                  </div>
+                  
+                  <div className="tracking-info-group">
+                    <h5 className="tracking-info-label">Current Assignee</h5>
+                    <p className="tracking-info-value">
+                      {curriculum.currentAssigneeName || 'Not assigned'}
+                      {curriculum.currentAssigneeEmail && (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--tracking-text-muted)', marginTop: '0.25rem' }}>
+                          📧 {curriculum.currentAssigneeEmail}
+                        </div>
+                      )}
+                    </p>
                   </div>
                   
                   <div className="tracking-info-group">
@@ -178,22 +235,145 @@ const StageDetailsModal = ({
                   </div>
                   
                   <div className="tracking-info-group">
-                    <h5 className="tracking-info-label">Started Date</h5>
-                    <p className="tracking-info-value">{formatDate(currentStageData?.startedDate)}</p>
+                    <h5 className="tracking-info-label">Created Date</h5>
+                    <p className="tracking-info-value">{formatDate(curriculum.createdAt)}</p>
                   </div>
                   
                   <div className="tracking-info-group">
-                    <h5 className="tracking-info-label">Due Date</h5>
-                    <p className="tracking-info-value">{formatDate(currentStageData?.dueDate)}</p>
+                    <h5 className="tracking-info-label">Last Updated</h5>
+                    <p className="tracking-info-value">{formatDate(curriculum.updatedAt)}</p>
                   </div>
                   
-                  {currentStageData?.completedDate && (
+                  <div className="tracking-info-group">
+                    <h5 className="tracking-info-label">Days in Current Stage</h5>
+                    <p className="tracking-info-value">{curriculum.daysInCurrentStage} days</p>
+                  </div>
+                  
+                  <div className="tracking-info-group">
+                    <h5 className="tracking-info-label">Total Days</h5>
+                    <p className="tracking-info-value">{curriculum.totalDays} days</p>
+                  </div>
+                  
+                  {curriculum.expectedCompletionDate && (
                     <div className="tracking-info-group">
-                      <h5 className="tracking-info-label">Completed Date</h5>
-                      <p className="tracking-info-value">{formatDate(currentStageData.completedDate)}</p>
+                      <h5 className="tracking-info-label">Expected Completion</h5>
+                      <p className="tracking-info-value">{formatDisplayDate(curriculum.expectedCompletionDate)}</p>
+                    </div>
+                  )}
+                  
+                  {curriculum.actualCompletionDate && (
+                    <div className="tracking-info-group">
+                      <h5 className="tracking-info-label">Actual Completion</h5>
+                      <p className="tracking-info-value">{formatDisplayDate(curriculum.actualCompletionDate)}</p>
+                    </div>
+                  )}
+                  
+                  <div className="tracking-info-group">
+                    <h5 className="tracking-info-label">Priority</h5>
+                    <span className={`tracking-badge ${
+                      curriculum.priority === 'high' ? 'tracking-badge-danger' :
+                      curriculum.priority === 'medium' ? 'tracking-badge-warning' :
+                      'tracking-badge-neutral'
+                    }`}>
+                      <i className="fas fa-flag"></i>
+                      {curriculum.priority?.charAt(0).toUpperCase() + curriculum.priority?.slice(1)}
+                    </span>
+                  </div>
+                  
+                  <div className="tracking-info-group">
+                    <h5 className="tracking-info-label">Status Flags</h5>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      {curriculum.isActive && (
+                        <span className="tracking-badge tracking-badge-success">
+                          <i className="fas fa-check"></i>
+                          Active
+                        </span>
+                      )}
+                      {curriculum.isCompleted && (
+                        <span className="tracking-badge tracking-badge-success">
+                          <i className="fas fa-check-circle"></i>
+                          Completed
+                        </span>
+                      )}
+                      {curriculum.isIdeationStage && (
+                        <span className="tracking-badge tracking-badge-primary">
+                          <i className="fas fa-lightbulb"></i>
+                          Ideation
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Curriculum Details Tab */}
+            {activeTab === 'details' && (
+              <div className="tracking-details-tab">
+                <div className="tracking-overview-grid">
+                  <div className="tracking-info-group">
+                    <h5 className="tracking-info-label">Proposed Name</h5>
+                    <p className="tracking-info-value">{curriculum.proposedCurriculumName}</p>
+                  </div>
+                  
+                  <div className="tracking-info-group">
+                    <h5 className="tracking-info-label">Proposed Code</h5>
+                    <p className="tracking-info-value">{curriculum.proposedCurriculumCode}</p>
+                  </div>
+                  
+                  <div className="tracking-info-group">
+                    <h5 className="tracking-info-label">Duration</h5>
+                    <p className="tracking-info-value">{curriculum.proposedDurationSemesters} semesters</p>
+                  </div>
+                  
+                  <div className="tracking-info-group">
+                    <h5 className="tracking-info-label">Academic Level</h5>
+                    <p className="tracking-info-value">{curriculum.academicLevel}</p>
+                  </div>
+                  
+                  {curriculum.proposedEffectiveDate && (
+                    <div className="tracking-info-group">
+                      <h5 className="tracking-info-label">Proposed Effective Date</h5>
+                      <p className="tracking-info-value">{formatDisplayDate(curriculum.proposedEffectiveDate)}</p>
+                    </div>
+                  )}
+                  
+                  {curriculum.proposedExpiryDate && (
+                    <div className="tracking-info-group">
+                      <h5 className="tracking-info-label">Proposed Expiry Date</h5>
+                      <p className="tracking-info-value">{formatDisplayDate(curriculum.proposedExpiryDate)}</p>
                     </div>
                   )}
                 </div>
+                
+                {curriculum.curriculumDescription && (
+                  <div className="tracking-info-group" style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
+                    <h5 className="tracking-info-label">Description</h5>
+                    <div style={{ 
+                      padding: '1rem', 
+                      backgroundColor: 'var(--tracking-bg-secondary)', 
+                      borderRadius: '8px',
+                      lineHeight: '1.6'
+                    }}>
+                      {curriculum.curriculumDescription}
+                    </div>
+                  </div>
+                )}
+                
+                {curriculum.initialNotes && (
+                  <div className="tracking-info-group" style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
+                    <h5 className="tracking-info-label">Initial Notes</h5>
+                    <div style={{ 
+                      padding: '1rem', 
+                      backgroundColor: 'rgba(0, 214, 102, 0.05)', 
+                      border: '1px solid rgba(0, 214, 102, 0.2)',
+                      borderRadius: '8px',
+                      lineHeight: '1.6'
+                    }}>
+                      {curriculum.initialNotes}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -312,6 +492,19 @@ const StageDetailsModal = ({
                     </div>
                   )}
 
+                  {/* Initial Notes */}
+                  {curriculum.initialNotes && (
+                    <div className="tracking-notes-section tracking-notes-initial">
+                      <h5 className="tracking-notes-section-title">
+                        <i className="fas fa-file-text"></i>
+                        Initial Notes
+                      </h5>
+                      <div className="tracking-notes-content">
+                        {curriculum.initialNotes}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Feedback */}
                   {currentStageData?.feedback && (
                     <div className="tracking-feedback-section tracking-notes-feedback">
@@ -321,6 +514,19 @@ const StageDetailsModal = ({
                       </h5>
                       <div className="tracking-feedback-content">
                         {currentStageData.feedback}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Recent Steps */}
+                  {curriculum.recentSteps && (
+                    <div className="tracking-notes-section tracking-recent-steps">
+                      <h5 className="tracking-notes-section-title">
+                        <i className="fas fa-history"></i>
+                        Recent Steps
+                      </h5>
+                      <div className="tracking-notes-content">
+                        {curriculum.recentSteps}
                       </div>
                     </div>
                   )}

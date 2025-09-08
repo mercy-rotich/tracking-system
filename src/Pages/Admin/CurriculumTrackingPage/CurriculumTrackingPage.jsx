@@ -13,6 +13,7 @@ import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import curriculumTrackingService from '../../../services/CurriculumTrackingService';
 import curriculumService from '../../../services/curriculumService';
 import statisticsService from '../../../services/statisticsService';
+import CurriculumDebugger from '../../../components/Admin/CurriculaTracking/CurriculumDebugger';
 import './CurriculumTrackingPage.css';
 
 const CurriculumTrackingPage = () => {
@@ -41,14 +42,14 @@ const CurriculumTrackingPage = () => {
     initiateCurriculum: false
   });
 
-  // Notification state
+
   const [notification, setNotification] = useState({
     show: false,
     message: '',
     type: 'success'
   });
 
-  // Additional data
+  
   const [schools, setSchools] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [pagination, setPagination] = useState({
@@ -87,7 +88,7 @@ const CurriculumTrackingPage = () => {
   }, []);
 
 
-  // Load curricula data
+  
   const loadCurriculaData = useCallback(async (page = 0, size = 20, showLoading = true) => {
     try {
       if (showLoading) setIsLoading(true);
@@ -169,7 +170,7 @@ const CurriculumTrackingPage = () => {
       setError(error.message);
       showNotification(`Failed to load curricula: ${error.message}`, 'error');
       
-      // Set empty data on error
+      
       setCurricula([]);
       setPagination({
         currentPage: 0,
@@ -498,6 +499,9 @@ const CurriculumTrackingPage = () => {
 
         {/* Statistics Cards */}
         <TrackingStats stats={statsData} />
+        {curricula.length > 0 && (
+  <CurriculumDebugger curriculum={curricula[0]} />
+)}
 
         {/* Filters Section */}
         <TrackingFilters
