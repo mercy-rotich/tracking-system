@@ -1,16 +1,67 @@
 import authService from "./authService";
 
-class CurriculumTrackingService {
-  constructor() {
-    this.baseURL = import.meta.env.VITE_BASE_URL;
-    console.log('🔄 Curriculum Tracking Service initialized with base URL:', this.baseURL);
-    
-    // Cache for tracking data
-    this.trackingCache = new Map();
-    this.cacheExpiry = new Map();
-    this.CACHE_DURATION = 2 * 60 * 1000; 
 
+class TrackingEndpointsRegistry {
+  constructor() {
+   
+    this.endpoints = {
+      
+      GET_BY_ID: { path: '/tracking/{id}', method: 'GET' },
+      GET_MY_INITIATED: { path: '/tracking/my-trackings', method: 'GET' },
+      GET_MY_ASSIGNED: { path: '/tracking/my-assignments', method: 'GET' },
+      GET_BY_SCHOOL: { path: '/tracking/school/{schoolId}', method: 'GET' },
+      GET_BY_STAGE: { path: '/tracking/stage/{stage}', method: 'GET' },
+      
+      
+      GET_BY_ASSIGNEE: { path: '/tracking/assignee/{assigneeId}', method: 'GET' },
+      GET_BY_INITIATOR: { path: '/tracking/initiator/{initiatorId}', method: 'GET' },
+      GET_BY_DEPARTMENT: { path: '/tracking/department/{departmentId}', method: 'GET' },
+      
+      // Action endpoints
+      INITIATE: { path: '/tracking/initiate', method: 'POST' },
+      PERFORM_ACTION: { path: '/tracking/action', method: 'POST' },
+      DOWNLOAD_DOCUMENT: { path: '/tracking/documents/download/{documentId}', method: 'GET' },
+      
+      
+      GET_STATISTICS: { path: '/tracking/statistics', method: 'GET' },
+      SEARCH: { path: '/tracking/search', method: 'GET' },
+      EXPORT: { path: '/tracking/export', method: 'GET' }
+    };
+  }
+
+  getEndpoint(name) {
+    const endpoint = this.endpoints[name];
+    if (!endpoint) {
+      throw new Error(`Endpoint ${name} not found in registry`);
+    }
+    return endpoint;
+  }
+
+  buildUrl(baseURL, endpointName, pathParams = {}, queryParams = {}) {
+    const endpoint = this.getEndpoint(endpointName);
+    let path = endpoint.path;
     
+    
+    Object.entries(pathParams).forEach(([key, value]) => {
+      path = path.replace(`{${key}}`, value);
+    });
+    
+    const url = new URL(`${baseURL}${path}`);
+    
+    
+    Object.entries(queryParams).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        url.searchParams.append(key, String(value));
+      }
+    });
+    
+    return url.toString();
+  }
+}
+
+
+class TrackingDataTransformer {
+  constructor() {
     this.STAGE_ORDER = [
       'initiation', 'school_board', 'dean_committee', 'senate', 
       'qa_review', 'vice_chancellor', 'cue_review', 'site_inspection'
@@ -47,13 +98,6 @@ class CurriculumTrackingService {
         'REJECTED': 'rejected',
         'COMPLETED': 'completed',
         'ACCREDITED': 'completed'
-      },
-      ACTION_TO_BACKEND: {
-        'approve': 'APPROVE',
-        'reject': 'REJECT', 
-        'hold': 'HOLD',
-        'resume': 'RESUME',
-        'request_changes': 'REQUEST_CHANGES'
       }
     };
 
@@ -71,32 +115,12 @@ class CurriculumTrackingService {
     };
   }
 
-  // Utility Methods
-  buildApiUrl(endpoint) {
-    const url = `${this.baseURL}${endpoint}`;
-    console.log('📍 [Tracking Service] Building API URL:', url);
-    return url;
+  mapApiStageToFrontend(apiStage) {
+    return this.STAGE_MAPPINGS.API_TO_FRONTEND[apiStage] || 'initiation';
   }
 
-  async getHeaders(isFormData = false) {
-    try {
-      const token = await authService.getValidToken();
-      const headers = { 'Authorization': `Bearer ${token}` };
-      if (!isFormData) headers['Content-Type'] = 'application/json';
-      return headers;
-    } catch (error) {
-      console.error('❌ [Tracking Service] Failed to get valid token:', error);
-      throw new Error('Authentication required. Please log in again.');
-    }
-  }
-
-  formatDate(dateString) {
-    if (!dateString) return null;
-    try {
-      return new Date(dateString).toISOString().split('T')[0];
-    } catch {
-      return null;
-    }
+  mapApiStatusToFrontend(apiStatus) {
+    return this.STAGE_MAPPINGS.STATUS_TO_FRONTEND[apiStatus] || 'under_review';
   }
 
   calculateDaysFromDate(dateString) {
@@ -111,53 +135,15 @@ class CurriculumTrackingService {
     }
   }
 
-  
-  extractNumericId(curriculum) {
-   
-    if (curriculum.id && typeof curriculum.id === 'number') {
-      return curriculum.id;
+  formatDate(dateString) {
+    if (!dateString) return null;
+    try {
+      return new Date(dateString).toISOString().split('T')[0];
+    } catch {
+      return null;
     }
-    
-    if (curriculum.id && typeof curriculum.id === 'string' && /^\d+$/.test(curriculum.id)) {
-      return parseInt(curriculum.id);
-    }
-
-   
-    if (curriculum.trackingId && typeof curriculum.trackingId === 'string') {
-      
-      if (curriculum._rawApiData && curriculum._rawApiData.id) {
-        return curriculum._rawApiData.id;
-      }
-      
-      
-      const numMatch = curriculum.trackingId.match(/\d+/);
-      if (numMatch) {
-        console.warn(`⚠️ [Tracking Service] Using extracted number ${numMatch[0]} from trackingId ${curriculum.trackingId}`);
-        return parseInt(numMatch[0]);
-      }
-    }
-
-    throw new Error(`Cannot extract numeric ID from curriculum object. Available: ${JSON.stringify({
-      id: curriculum.id,
-      trackingId: curriculum.trackingId,
-      hasRawData: !!curriculum._rawApiData
-    })}`);
   }
 
-  // Mapping Methods
-  mapApiStageToFrontend(apiStage) {
-    return this.STAGE_MAPPINGS.API_TO_FRONTEND[apiStage] || 'initiation';
-  }
-
-  mapApiStatusToFrontend(apiStatus) {
-    return this.STAGE_MAPPINGS.STATUS_TO_FRONTEND[apiStatus] || 'under_review';
-  }
-
-  mapFrontendActionToBackend(frontendAction) {
-    return this.STAGE_MAPPINGS.ACTION_TO_BACKEND[frontendAction] || frontendAction.toUpperCase();
-  }
-
-  // Business Logic Methods
   determinePriority(apiData) {
     const stage = apiData.currentStage;
     const isOverdue = this.isOverdue(apiData);
@@ -175,43 +161,25 @@ class CurriculumTrackingService {
     return new Date(apiData.expectedCompletionDate) < new Date();
   }
 
-  calculateEstimatedCompletion(apiData) {
-    if (apiData.expectedCompletionDate) {
-      return this.formatDate(apiData.expectedCompletionDate);
-    }
-    
-    const estimatedDays = this.STAGE_ESTIMATES[apiData.currentStage] || 30;
-    const estimatedDate = new Date();
-    estimatedDate.setDate(estimatedDate.getDate() + estimatedDays);
-    
-    return this.formatDate(estimatedDate.toISOString());
-  }
-
-  
-  createDefaultStageObject() {
-    return {
-      status: 'pending',
-      documents: [],
-      notes: '',
-      assignedTo: null,
-      startedDate: null,
-      completedDate: null,
-      estimatedStart: null,
-      feedback: null
-    };
-  }
-
- 
   createStagesObject(apiData) {
     const stages = this.STAGE_ORDER.reduce((acc, stage) => {
-      acc[stage] = this.createDefaultStageObject();
+      acc[stage] = {
+        status: 'pending',
+        documents: [],
+        notes: '',
+        assignedTo: null,
+        startedDate: null,
+        completedDate: null,
+        estimatedStart: null,
+        feedback: null
+      };
       return acc;
     }, {});
 
     const currentFrontendStage = this.mapApiStageToFrontend(apiData.currentStage);
     const currentIndex = this.STAGE_ORDER.indexOf(currentFrontendStage);
 
-   
+    
     for (let i = 0; i < currentIndex; i++) {
       stages[this.STAGE_ORDER[i]] = {
         ...stages[this.STAGE_ORDER[i]],
@@ -220,7 +188,7 @@ class CurriculumTrackingService {
       };
     }
 
-    // Set current stage data
+    
     if (currentIndex >= 0) {
       const mappedStatus = this.mapApiStatusToFrontend(apiData.status);
       stages[currentFrontendStage] = {
@@ -236,151 +204,427 @@ class CurriculumTrackingService {
     return stages;
   }
 
-  
   transformTrackingData(apiData) {
     if (!apiData) return null;
 
-    console.log('🔄 [Tracking Service] Transforming API data:', apiData);
-
-   
-    const coreData = {
-      id: apiData.id, 
+    return {
+      
+      id: apiData.id,
       trackingId: apiData.trackingId,
+      
+      // Curriculum information 
+      curriculumId: apiData.curriculumId,
+      curriculumName: apiData.curriculumName,
+      curriculumCode: apiData.curriculumCode,
       title: apiData.displayCurriculumName || apiData.proposedCurriculumName || apiData.curriculumName,
       displayTitle: apiData.displayCurriculumName,
       displayCode: apiData.displayCurriculumCode,
-      curriculumId: apiData.curriculumId,
-      curriculumName: apiData.curriculumName,
-      curriculumCode: apiData.curriculumCode
-    };
-
-    // Academic structure 
-    const academicData = {
-      school: apiData.schoolName,
-      schoolId: apiData.schoolId,
-      department: apiData.departmentName,
-      departmentId: apiData.departmentId,
-      academicLevel: apiData.academicLevelName,
-      academicLevelId: apiData.academicLevelId
-    };
-
-    // Workflow status 
-    const workflowData = {
-      currentStage: this.mapApiStageToFrontend(apiData.currentStage),
-      currentStageDisplayName: apiData.currentStageDisplayName,
-      status: this.mapApiStatusToFrontend(apiData.status),
-      statusDisplayName: apiData.statusDisplayName,
-      originalCurrentStage: apiData.currentStage,
-      originalStatus: apiData.status 
-    };
-
-    // People information 
-    const peopleData = {
-      initiatedByName: apiData.initiatedByName,
-      initiatedByEmail: apiData.initiatedByEmail,
-      currentAssigneeName: apiData.currentAssigneeName,
-      currentAssigneeEmail: apiData.currentAssigneeEmail
-    };
-
-    // Curriculum details 
-    const curriculumDetails = {
       proposedCurriculumName: apiData.proposedCurriculumName,
       proposedCurriculumCode: apiData.proposedCurriculumCode,
       proposedDurationSemesters: apiData.proposedDurationSemesters,
       curriculumDescription: apiData.curriculumDescription,
-      proposedEffectiveDate: apiData.proposedEffectiveDate,
-      proposedExpiryDate: apiData.proposedExpiryDate
-    };
-
-    // Timeline data
-    const timelineData = {
+      
+      // Academic structure
+      schoolId: apiData.schoolId,
+      schoolName: apiData.schoolName,
+      school: apiData.schoolName,
+      departmentId: apiData.departmentId,
+      departmentName: apiData.departmentName,
+      department: apiData.departmentName,
+      academicLevelId: apiData.academicLevelId,
+      academicLevelName: apiData.academicLevelName,
+      academicLevel: apiData.academicLevelName,
+      
+      // Workflow status
+      currentStage: this.mapApiStageToFrontend(apiData.currentStage),
+      currentStageDisplayName: apiData.currentStageDisplayName,
+      originalCurrentStage: apiData.currentStage,
+      status: this.mapApiStatusToFrontend(apiData.status),
+      statusDisplayName: apiData.statusDisplayName,
+      originalStatus: apiData.status,
+      
+      // People information
+      initiatedByName: apiData.initiatedByName,
+      initiatedByEmail: apiData.initiatedByEmail,
+      currentAssigneeName: apiData.currentAssigneeName,
+      currentAssigneeEmail: apiData.currentAssigneeEmail,
+      
+      // Timeline data
       createdAt: apiData.createdAt,
       updatedAt: apiData.updatedAt,
       expectedCompletionDate: apiData.expectedCompletionDate,
       actualCompletionDate: apiData.actualCompletionDate,
       submittedDate: this.formatDate(apiData.createdAt),
       lastUpdated: this.formatDate(apiData.updatedAt),
+      
+      // Calculated fields
       daysInCurrentStage: this.calculateDaysFromDate(apiData.updatedAt),
       totalDays: this.calculateDaysFromDate(apiData.createdAt),
-      estimatedCompletion: this.calculateEstimatedCompletion(apiData)
-    };
-
-    // Status flags and metadata 
-    const metadata = {
       priority: this.determinePriority(apiData),
+      
+      // Status flags
       isActive: apiData.isActive,
       isCompleted: apiData.isCompleted,
       isIdeationStage: apiData.isIdeationStage,
+      
+      // Workflow stages
+      stages: this.createStagesObject(apiData),
+      
+      // Additional fields from new endpoints
+      proposedEffectiveDate: apiData.proposedEffectiveDate,
+      proposedExpiryDate: apiData.proposedExpiryDate,
       initialNotes: apiData.initialNotes,
       recentSteps: apiData.recentSteps,
-      stages: this.createStagesObject(apiData),
-      _rawApiData: apiData // Keep for debugging and future use
-    };
-
-    return {
-      ...coreData,
-      ...academicData,
-      ...workflowData,
-      ...peopleData,
-      ...curriculumDetails,
-      ...timelineData,
-      ...metadata
+      
+      // Preserve raw API data for debugging and future use
+      _rawApiData: apiData,
+      
+      // Metadata
+      _transformedAt: new Date().toISOString(),
+      _dataSource: 'api'
     };
   }
 
-  // Cache Management 
-  getCacheKey(key) { return `tracking_${key}`; }
-  
-  isCacheValid(key) {
-    const cacheKey = this.getCacheKey(key);
-    const expiry = this.cacheExpiry.get(cacheKey);
-    return expiry && Date.now() < expiry;
-  }
-
-  getFromCache(key) {
-    if (this.isCacheValid(key)) {
-      console.log(`📦 [Tracking Service] Using cached data for: ${key}`);
-      return this.trackingCache.get(this.getCacheKey(key));
+  transformApiResponse(response, dataKey = 'data') {
+    const data = response[dataKey];
+    
+    if (Array.isArray(data)) {
+      return data.map(item => this.transformTrackingData(item));
     }
+    
+    if (data && data.trackings && Array.isArray(data.trackings)) {
+      return {
+        trackings: data.trackings.map(item => this.transformTrackingData(item)),
+        pagination: {
+          currentPage: data.currentPage || 0,
+          totalPages: data.totalPages || 1,
+          totalElements: data.totalElements || data.trackings.length,
+          pageSize: data.pageSize || 20,
+          hasNext: data.hasNext || false,
+          hasPrevious: data.hasPrevious || false,
+          first: data.first || true,
+          last: data.last || true
+        }
+      };
+    }
+    
+    return this.transformTrackingData(data);
+  }
+}
+
+
+class TrackingCacheManager {
+  constructor() {
+    this.cache = new Map();
+    this.expiry = new Map();
+    this.CACHE_DURATION = 2 * 60 * 1000; 
+  }
+
+  generateKey(endpoint, params = {}) {
+    const paramStr = Object.keys(params)
+      .sort()
+      .map(key => `${key}:${params[key]}`)
+      .join('|');
+    return `${endpoint}${paramStr ? `|${paramStr}` : ''}`;
+  }
+
+  set(key, data) {
+    this.cache.set(key, data);
+    this.expiry.set(key, Date.now() + this.CACHE_DURATION);
+  }
+
+  get(key) {
+    const expiry = this.expiry.get(key);
+    if (expiry && Date.now() < expiry) {
+      return this.cache.get(key);
+    }
+    this.delete(key);
     return null;
   }
 
-  setCache(key, data) {
-    const cacheKey = this.getCacheKey(key);
-    this.trackingCache.set(cacheKey, data);
-    this.cacheExpiry.set(cacheKey, Date.now() + this.CACHE_DURATION);
-    console.log(`💾 [Tracking Service] Cached data for: ${key}`);
+  delete(key) {
+    this.cache.delete(key);
+    this.expiry.delete(key);
   }
 
-  clearCache(key = null) {
-    if (key) {
-      const cacheKey = this.getCacheKey(key);
-      this.trackingCache.delete(cacheKey);
-      this.cacheExpiry.delete(cacheKey);
-      console.log(`🧹 [Tracking Service] Cleared cache for: ${key}`);
-    } else {
-      this.trackingCache.clear();
-      this.cacheExpiry.clear();
-      console.log('🧹 [Tracking Service] Cleared all cache');
-    }
+  clear() {
+    this.cache.clear();
+    this.expiry.clear();
+  }
+
+  isValid(key) {
+    const expiry = this.expiry.get(key);
+    return expiry && Date.now() < expiry;
+  }
+}
+
+class CurriculumTrackingService {
+  constructor() {
+    this.baseURL = import.meta.env.VITE_BASE_URL;
+    this.endpointsRegistry = new TrackingEndpointsRegistry();
+    this.dataTransformer = new TrackingDataTransformer();
+    this.cacheManager = new TrackingCacheManager();
+    
+    console.log('🔄 Enhanced Curriculum Tracking Service initialized');
   }
 
   
+  async getHeaders(isFormData = false) {
+    try {
+      const token = await authService.getValidToken();
+      const headers = { 'Authorization': `Bearer ${token}` };
+      if (!isFormData) headers['Content-Type'] = 'application/json';
+      return headers;
+    } catch (error) {
+      console.error('❌ [Tracking Service] Failed to get valid token:', error);
+      throw new Error('Authentication required. Please log in again.');
+    }
+  }
+
+  async makeRequest(endpointName, options = {}) {
+    const {
+      pathParams = {},
+      queryParams = {},
+      body = null,
+      useCache = true,
+      cacheKey = null
+    } = options;
+
+    try {
+     
+      const finalCacheKey = cacheKey || this.cacheManager.generateKey(endpointName, { ...pathParams, ...queryParams });
+      
+     
+      const endpoint = this.endpointsRegistry.getEndpoint(endpointName);
+      if (endpoint.method === 'GET' && useCache) {
+        const cached = this.cacheManager.get(finalCacheKey);
+        if (cached) {
+          console.log(`📦 [Tracking Service] Using cached data for: ${endpointName}`);
+          return cached;
+        }
+      }
+
+      // Build URL
+      const url = this.endpointsRegistry.buildUrl(this.baseURL, endpointName, pathParams, queryParams);
+      console.log(`🔄 [Tracking Service] ${endpoint.method} ${url}`);
+
+      
+      const requestOptions = {
+        method: endpoint.method,
+        headers: await this.getHeaders(body instanceof FormData)
+      };
+
+      if (body && endpoint.method !== 'GET') {
+        requestOptions.body = body instanceof FormData ? body : JSON.stringify(body);
+      }
+
+      // Make request
+      const response = await fetch(url, requestOptions);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`${endpoint.method} ${endpointName} failed: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log(`✅ [Tracking Service] ${endpointName} successful:`, result);
+
+      
+      const transformedData = this.dataTransformer.transformApiResponse(result);
+      
+      const finalResult = {
+        success: true,
+        message: result.message || 'Request successful',
+        data: transformedData,
+        raw: result,
+        _requestInfo: {
+          endpoint: endpointName,
+          method: endpoint.method,
+          url,
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      
+      if (endpoint.method === 'GET' && useCache) {
+        this.cacheManager.set(finalCacheKey, finalResult);
+      }
+
+      
+      if (endpoint.method !== 'GET') {
+        this.cacheManager.clear();
+      }
+
+      return finalResult;
+
+    } catch (error) {
+      console.error(`❌ [Tracking Service] ${endpointName} failed:`, error);
+      throw new Error(`Failed to ${endpointName}: ${error.message}`);
+    }
+  }
+
+
+  async getTrackingById(trackingId) {
+    return this.makeRequest('GET_BY_ID', {
+      pathParams: { id: trackingId }
+    });
+  }
+
+  async getMyInitiatedTrackings(page = 0, size = 20) {
+    return this.makeRequest('GET_MY_INITIATED', {
+      queryParams: { page, size }
+    });
+  }
+
+  async getMyAssignedTrackings(page = 0, size = 20) {
+    return this.makeRequest('GET_MY_ASSIGNED', {
+      queryParams: { page, size }
+    });
+  }
+
+  async getTrackingBySchool(schoolId, page = 0, size = 20) {
+    return this.makeRequest('GET_BY_SCHOOL', {
+      pathParams: { schoolId },
+      queryParams: { page, size }
+    });
+  }
+
+  async getTrackingsByStage(stage, page = 0, size = 20) {
+    return this.makeRequest('GET_BY_STAGE', {
+      pathParams: { stage: stage.toUpperCase() },
+      queryParams: { page, size }
+    });
+  }
+
+ 
+  async getTrackingsByAssignee(assigneeId, page = 0, size = 20) {
+    console.log('🔄 [Tracking Service] Getting trackings by assignee:', assigneeId);
+    return this.makeRequest('GET_BY_ASSIGNEE', {
+      pathParams: { assigneeId },
+      queryParams: { page, size }
+    });
+  }
+
+  async getTrackingsByInitiator(initiatorId, page = 0, size = 20) {
+    console.log('🔄 [Tracking Service] Getting trackings by initiator:', initiatorId);
+    return this.makeRequest('GET_BY_INITIATOR', {
+      pathParams: { initiatorId },
+      queryParams: { page, size }
+    });
+  }
+
+  async getTrackingsByDepartment(departmentId, page = 0, size = 20) {
+    console.log('🔄 [Tracking Service] Getting trackings by department:', departmentId);
+    return this.makeRequest('GET_BY_DEPARTMENT', {
+      pathParams: { departmentId },
+      queryParams: { page, size }
+    });
+  }
+
+  async getTrackingsForViewMode(viewMode, identifier = null, page = 0, size = 20) {
+    console.log('🔄 [Tracking Service] Getting trackings for view mode:', viewMode);
+
+    switch (viewMode) {
+      case 'my-initiated':
+        return this.getMyInitiatedTrackings(page, size);
+      
+      case 'my-assigned':
+        return this.getMyAssignedTrackings(page, size);
+      
+      case 'by-school':
+        if (!identifier) throw new Error('School ID required for by-school view');
+        return this.getTrackingBySchool(identifier, page, size);
+      
+      case 'by-department':
+        if (!identifier) throw new Error('Department ID required for by-department view');
+        return this.getTrackingsByDepartment(identifier, page, size);
+      
+      case 'by-assignee':
+        if (!identifier) throw new Error('Assignee ID required for by-assignee view');
+        return this.getTrackingsByAssignee(identifier, page, size);
+      
+      case 'by-initiator':
+        if (!identifier) throw new Error('Initiator ID required for by-initiator view');
+        return this.getTrackingsByInitiator(identifier, page, size);
+      
+      case 'by-stage':
+        if (!identifier) throw new Error('Stage required for by-stage view');
+        return this.getTrackingsByStage(identifier, page, size);
+      
+      case 'all':
+      default:
+        return this.getAllCurricula(page, size);
+    }
+  }
+
+  async getAllCurricula(page = 0, size = 20) {
+    try {
+      console.log('🔄 [Tracking Service] Getting all curriculum trackings...');
+      return await this.getTrackingsByStage('IDEATION', page, size);
+    } catch (error) {
+      console.warn('⚠️ [Tracking Service] Could not get from IDEATION stage, returning empty result');
+      return {
+        success: true,
+        message: 'No trackings found',
+        data: { trackings: [], pagination: { currentPage: page, totalPages: 0, totalElements: 0, pageSize: size } }
+      };
+    }
+  }
+
+  extractNumericId(curriculum) {
+    if (curriculum.id && typeof curriculum.id === 'number') {
+      return curriculum.id;
+    }
+    
+    if (curriculum.id && typeof curriculum.id === 'string' && /^\d+$/.test(curriculum.id)) {
+      return parseInt(curriculum.id);
+    }
+
+    if (curriculum.trackingId && typeof curriculum.trackingId === 'string') {
+      if (curriculum._rawApiData && curriculum._rawApiData.id) {
+        return curriculum._rawApiData.id;
+      }
+      
+      const numMatch = curriculum.trackingId.match(/\d+/);
+      if (numMatch) {
+        console.warn(`⚠️ [Tracking Service] Using extracted number ${numMatch[0]} from trackingId ${curriculum.trackingId}`);
+        return parseInt(numMatch[0]);
+      }
+    }
+
+    throw new Error(`Cannot extract numeric ID from curriculum object`);
+  }
+
+  async performStageAction(curriculumIdentifier, stage, action, data = {}) {
+    try {
+      console.log('🔄 [Tracking Service] Performing stage action:', { curriculumIdentifier, stage, action, data });
+      
+      const backendAction = this.mapFrontendActionToBackend(action);
+      const notes = data.feedback || data.notes || '';
+      const documents = data.documents || [];
+      
+      return await this.performTrackingAction(curriculumIdentifier, backendAction, notes, documents);
+    } catch (error) {
+      console.error('❌ [Tracking Service] Failed to perform stage action:', error);
+      throw error;
+    }
+  }
+
+  mapFrontendActionToBackend(frontendAction) {
+    const actionMappings = {
+      'approve': 'APPROVE',
+      'reject': 'REJECT', 
+      'hold': 'HOLD',
+      'resume': 'RESUME',
+      'request_changes': 'REQUEST_CHANGES'
+    };
+    return actionMappings[frontendAction] || frontendAction.toUpperCase();
+  }
+
   async performTrackingAction(trackingIdentifier, action, notes = '', documents = []) {
     try {
       console.log('🔄 [Tracking Service] Performing tracking action:', { trackingIdentifier, action, notes });
 
-      // Validation
-      if (!trackingIdentifier || !action) {
-        throw new Error('Tracking identifier and action are required');
-      }
-
-      const validActions = Object.values(this.STAGE_MAPPINGS.ACTION_TO_BACKEND);
-      if (!validActions.includes(action.toUpperCase())) {
-        throw new Error(`Invalid action: ${action}. Valid actions are: ${validActions.join(', ')}`);
-      }
-
-      // Extract numeric ID 
       let numericId;
       if (typeof trackingIdentifier === 'object') {
         numericId = this.extractNumericId(trackingIdentifier);
@@ -389,14 +633,11 @@ class CurriculumTrackingService {
       } else if (typeof trackingIdentifier === 'number') {
         numericId = trackingIdentifier;
       } else {
-        throw new Error(`Invalid tracking identifier: ${trackingIdentifier}. Expected numeric ID or curriculum object.`);
+        throw new Error(`Invalid tracking identifier: ${trackingIdentifier}`);
       }
 
-      console.log(`🔍 [Tracking Service] Using numeric ID: ${numericId} for tracking action`);
-
-      // Prepare form data
       const formData = new FormData();
-      formData.append('trackingId', String(numericId)); // Use numeric ID
+      formData.append('trackingId', String(numericId));
       formData.append('action', action.toUpperCase());
       
       if (notes) formData.append('notes', notes);
@@ -406,31 +647,10 @@ class CurriculumTrackingService {
         console.log(`📎 [Tracking Service] Added action document ${index + 1}: ${file.name}`);
       });
 
-      // Make API call
-      const response = await fetch(this.buildApiUrl('/tracking/action'), {
-        method: 'POST',
-        headers: await this.getHeaders(true),
+      return this.makeRequest('PERFORM_ACTION', {
         body: formData,
+        useCache: false
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to perform tracking action: ${response.status} - ${errorText}`);
-      }
-
-      const result = await response.json();
-      console.log('✅ [Tracking Service] Tracking action performed successfully:', result);
-
-      const transformedData = result.data ? this.transformTrackingData(result.data) : null;
-      this.clearCache();
-
-      return {
-        success: true,
-        message: result.message || 'Tracking action performed successfully',
-        data: transformedData,
-        action: action.toUpperCase(),
-        raw: result
-      };
 
     } catch (error) {
       console.error('❌ [Tracking Service] Failed to perform tracking action:', error);
@@ -438,227 +658,10 @@ class CurriculumTrackingService {
     }
   }
 
-  //  Get tracking by ID
-  async getTrackingById(trackingId) {
-    try {
-      console.log('🔄 [Tracking Service] Getting tracking by ID:', trackingId);
-
-      if (!trackingId) {
-        throw new Error('Tracking ID is required');
-      }
-
-      const cacheKey = `tracking_${trackingId}`;
-      const cached = this.getFromCache(cacheKey);
-      if (cached) return cached;
-
-      const response = await fetch(this.buildApiUrl(`/tracking/${trackingId}`), {
-        method: 'GET',
-        headers: await this.getHeaders(),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to get tracking by ID: ${response.status} - ${errorText}`);
-      }
-
-      const result = await response.json();
-      console.log('✅ [Tracking Service] Tracking by ID retrieved successfully:', result);
-
-      const transformedData = result.data ? this.transformTrackingData(result.data) : null;
-
-      const processedResult = {
-        success: true,
-        message: result.message || 'Tracking retrieved successfully',
-        data: transformedData,
-        raw: result
-      };
-
-      this.setCache(cacheKey, processedResult);
-      return processedResult;
-
-    } catch (error) {
-      console.error('❌ [Tracking Service] Failed to get tracking by ID:', error);
-      throw new Error(`Failed to get tracking by ID: ${error.message}`);
-    }
-  }
-
-  //  Get my initiated trackings
-  async getMyInitiatedTrackings(page = 0, size = 20) {
-    try {
-      console.log('🔄 [Tracking Service] Getting my initiated trackings:', { page, size });
-
-      const cacheKey = `my_initiated_${page}_${size}`;
-      const cached = this.getFromCache(cacheKey);
-      if (cached) return cached;
-
-      const url = new URL(this.buildApiUrl('/tracking/my-trackings'));
-      url.searchParams.append('page', String(page));
-      url.searchParams.append('size', String(size));
-
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        headers: await this.getHeaders(),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to get my initiated trackings: ${response.status} - ${errorText}`);
-      }
-
-      const result = await response.json();
-      console.log('✅ [Tracking Service] My initiated trackings retrieved successfully:', result);
-
-      const trackings = result.data?.trackings || [];
-      const transformedTrackings = trackings.map(tracking => this.transformTrackingData(tracking));
-
-      const processedResult = {
-        success: true,
-        message: result.message || 'Initiated trackings retrieved successfully',
-        data: transformedTrackings,
-        pagination: {
-          currentPage: result.data?.currentPage || page,
-          totalPages: result.data?.totalPages || 1,
-          totalElements: result.data?.totalElements || transformedTrackings.length,
-          pageSize: result.data?.pageSize || size,
-          hasNext: result.data?.hasNext || false,
-          hasPrevious: result.data?.hasPrevious || false,
-          first: result.data?.first || true,
-          last: result.data?.last || true
-        },
-        raw: result
-      };
-
-      this.setCache(cacheKey, processedResult);
-      return processedResult;
-
-    } catch (error) {
-      console.error('❌ [Tracking Service] Failed to get my initiated trackings:', error);
-      throw new Error(`Failed to get my initiated trackings: ${error.message}`);
-    }
-  }
-
-  //  Get my assigned trackings
-  async getMyAssignedTrackings(page = 0, size = 20) {
-    try {
-      console.log('🔄 [Tracking Service] Getting my assigned trackings:', { page, size });
-
-      const cacheKey = `my_assigned_${page}_${size}`;
-      const cached = this.getFromCache(cacheKey);
-      if (cached) return cached;
-
-      const url = new URL(this.buildApiUrl('/tracking/my-assignments'));
-      url.searchParams.append('page', String(page));
-      url.searchParams.append('size', String(size));
-
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        headers: await this.getHeaders(),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to get my assigned trackings: ${response.status} - ${errorText}`);
-      }
-
-      const result = await response.json();
-      console.log('✅ [Tracking Service] My assigned trackings retrieved successfully:', result);
-
-      const trackings = result.data?.trackings || [];
-      const transformedTrackings = trackings.map(tracking => this.transformTrackingData(tracking));
-
-      const processedResult = {
-        success: true,
-        message: result.message || 'Assigned trackings retrieved successfully',
-        data: transformedTrackings,
-        pagination: {
-          currentPage: result.data?.currentPage || page,
-          totalPages: result.data?.totalPages || 1,
-          totalElements: result.data?.totalElements || transformedTrackings.length,
-          pageSize: result.data?.pageSize || size,
-          hasNext: result.data?.hasNext || false,
-          hasPrevious: result.data?.hasPrevious || false,
-          first: result.data?.first || true,
-          last: result.data?.last || true
-        },
-        raw: result
-      };
-
-      this.setCache(cacheKey, processedResult);
-      return processedResult;
-
-    } catch (error) {
-      console.error('❌ [Tracking Service] Failed to get my assigned trackings:', error);
-      throw new Error(`Failed to get my assigned trackings: ${error.message}`);
-    }
-  }
-
-  //  Get tracking by school 
-  async getTrackingBySchool(schoolId, page = 0, size = 20) {
-    try {
-      console.log('🔄 [Tracking Service] Getting tracking by school:', { schoolId, page, size });
-
-      if (!schoolId) {
-        throw new Error('School ID is required');
-      }
-
-      const cacheKey = `school_${schoolId}_${page}_${size}`;
-      const cached = this.getFromCache(cacheKey);
-      if (cached) return cached;
-
-      const url = new URL(this.buildApiUrl(`/tracking/school/${schoolId}`));
-      url.searchParams.append('page', String(page));
-      url.searchParams.append('size', String(size));
-
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        headers: await this.getHeaders(),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to get tracking by school: ${response.status} - ${errorText}`);
-      }
-
-      const result = await response.json();
-      console.log('✅ [Tracking Service] Tracking by school retrieved successfully:', result);
-
-      const trackings = result.data?.trackings || [];
-      const transformedTrackings = trackings.map(tracking => this.transformTrackingData(tracking));
-
-      const processedResult = {
-        success: true,
-        message: result.message || 'School trackings retrieved successfully',
-        data: transformedTrackings,
-        pagination: {
-          currentPage: result.data?.currentPage || page,
-          totalPages: result.data?.totalPages || 1,
-          totalElements: result.data?.totalElements || transformedTrackings.length,
-          pageSize: result.data?.pageSize || size,
-          hasNext: result.data?.hasNext || false,
-          hasPrevious: result.data?.hasPrevious || false,
-          first: result.data?.first || true,
-          last: result.data?.last || true
-        },
-        schoolId: schoolId,
-        raw: result
-      };
-
-      this.setCache(cacheKey, processedResult);
-      return processedResult;
-
-    } catch (error) {
-      console.error('❌ [Tracking Service] Failed to get tracking by school:', error);
-      throw new Error(`Failed to get tracking by school: ${error.message}`);
-    }
-  }
-
- 
-
   async initiateCurriculumTracking(trackingData, documents = []) {
     try {
       console.log('🔄 [Tracking Service] Initiating curriculum tracking:', trackingData);
 
-      // Validation
       const requiredFields = [
         'schoolId', 'departmentId', 'academicLevelId', 
         'proposedCurriculumName', 'proposedCurriculumCode', 
@@ -672,48 +675,25 @@ class CurriculumTrackingService {
 
       const formData = new FormData();
       
-    
       requiredFields.forEach(field => {
         formData.append(field, String(trackingData[field]));
       });
 
-     
       ['proposedEffectiveDate', 'proposedExpiryDate', 'initialNotes'].forEach(field => {
         if (trackingData[field]) {
           formData.append(field, trackingData[field]);
         }
       });
 
-      // Add documents
       documents.forEach((file, index) => {
         formData.append('documents', file);
         console.log(`📎 [Tracking Service] Added document ${index + 1}: ${file.name}`);
       });
 
-      
-      const response = await fetch(this.buildApiUrl('/tracking/initiate'), {
-        method: 'POST',
-        headers: await this.getHeaders(true),
+      return this.makeRequest('INITIATE', {
         body: formData,
+        useCache: false
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to initiate tracking: ${response.status} - ${errorText}`);
-      }
-
-      const result = await response.json();
-      console.log('✅ [Tracking Service] Tracking initiated successfully:', result);
-
-      const transformedData = result.data ? this.transformTrackingData(result.data) : null;
-      this.clearCache();
-
-      return {
-        success: true,
-        message: result.message || 'Curriculum tracking initiated successfully',
-        data: transformedData,
-        raw: result
-      };
 
     } catch (error) {
       console.error('❌ [Tracking Service] Failed to initiate tracking:', error);
@@ -721,173 +701,86 @@ class CurriculumTrackingService {
     }
   }
 
-  async downloadTrackingDocument(documentId, filename = null) {
+
+  async getTrackingStatistics() {
     try {
-      console.log('🔄 [Tracking Service] Downloading document:', documentId);
+      console.log('🔄 [Tracking Service] Getting tracking statistics...');
 
-      if (!documentId) {
-        throw new Error('Document ID is required');
-      }
-
-      const response = await fetch(this.buildApiUrl(`/tracking/documents/download/${documentId}`), {
-        method: 'GET',
-        headers: await this.getHeaders(),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to download document: ${response.status} - ${errorText}`);
-      }
-
-      const blob = await response.blob();
-      
-      // Determine filename
-      let downloadFilename = filename;
-      if (!downloadFilename) {
-        const contentDisposition = response.headers.get('Content-Disposition');
-        if (contentDisposition) {
-          const filenameMatch = contentDisposition.match(/filename="(.+)"/);
-          downloadFilename = filenameMatch ? filenameMatch[1] : `document_${documentId}`;
-        } else {
-          downloadFilename = `tracking_document_${documentId}`;
-        }
-      }
-
-      // Trigger download
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = downloadFilename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(downloadUrl);
-
-      console.log('✅ [Tracking Service] Document downloaded successfully:', downloadFilename);
-
-      return {
-        success: true,
-        message: 'Document downloaded successfully',
-        filename: downloadFilename
-      };
-
-    } catch (error) {
-      console.error('❌ [Tracking Service] Failed to download document:', error);
-      throw new Error(`Failed to download document: ${error.message}`);
-    }
-  }
-
-  async getTrackingsByStage(stage, page = 0, size = 20) {
-    try {
-      console.log('🔄 [Tracking Service] Getting trackings by stage:', { stage, page, size });
-
-      if (!stage) {
-        throw new Error('Stage is required');
-      }
-
-      const cacheKey = `stage_${stage}_${page}_${size}`;
-      const cached = this.getFromCache(cacheKey);
+      const cacheKey = 'tracking_statistics';
+      const cached = this.cacheManager.get(cacheKey);
       if (cached) return cached;
 
-      const url = new URL(this.buildApiUrl(`/tracking/stage/${stage.toUpperCase()}`));
-      url.searchParams.append('page', String(page));
-      url.searchParams.append('size', String(size));
+      const [myInitiated, myAssigned, allTrackings] = await Promise.allSettled([
+        this.getMyInitiatedTrackings(0, 1000),
+        this.getMyAssignedTrackings(0, 1000),
+        this.getAllCurricula(0, 1000)
+      ]);
 
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        headers: await this.getHeaders(),
-      });
+      const stats = {
+        myInitiated: myInitiated.status === 'fulfilled' ? myInitiated.value.data.trackings?.length || 0 : 0,
+        myAssigned: myAssigned.status === 'fulfilled' ? myAssigned.value.data.trackings?.length || 0 : 0,
+        total: allTrackings.status === 'fulfilled' ? allTrackings.value.data.trackings?.length || 0 : 0,
+        byStatus: {},
+        byStage: {},
+        byPriority: {}
+      };
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to get trackings by stage: ${response.status} - ${errorText}`);
+      if (allTrackings.status === 'fulfilled' && allTrackings.value.data.trackings) {
+        const trackings = allTrackings.value.data.trackings;
+        
+        stats.byStatus = trackings.reduce((acc, tracking) => {
+          acc[tracking.status] = (acc[tracking.status] || 0) + 1;
+          return acc;
+        }, {});
+
+        stats.byStage = trackings.reduce((acc, tracking) => {
+          acc[tracking.currentStage] = (acc[tracking.currentStage] || 0) + 1;
+          return acc;
+        }, {});
+
+        stats.byPriority = trackings.reduce((acc, tracking) => {
+          acc[tracking.priority] = (acc[tracking.priority] || 0) + 1;
+          return acc;
+        }, {});
+
+        stats.completed = stats.byStatus.completed || 0;
+        stats.inProgress = (stats.byStatus.under_review || 0) + (stats.byStatus.pending_approval || 0);
+        stats.onHold = stats.byStatus.on_hold || 0;
+        stats.overdue = trackings.filter(t => this.dataTransformer.isOverdue(t._rawApiData)).length;
       }
 
-      const result = await response.json();
-      console.log('✅ [Tracking Service] Trackings by stage retrieved successfully:', result);
-
-      const trackings = result.data?.trackings || [];
-      const transformedTrackings = trackings.map(tracking => this.transformTrackingData(tracking));
-
-      const processedResult = {
+      const result = {
         success: true,
-        message: result.message || 'Trackings retrieved successfully',
-        data: transformedTrackings,
-        pagination: {
-          currentPage: result.data?.currentPage || page,
-          totalPages: result.data?.totalPages || 1,
-          totalElements: result.data?.totalElements || transformedTrackings.length,
-          pageSize: result.data?.pageSize || size,
-          hasNext: result.data?.hasNext || false,
-          hasPrevious: result.data?.hasPrevious || false,
-          first: result.data?.first || true,
-          last: result.data?.last || true
-        },
-        stage: stage.toUpperCase(),
-        raw: result
+        message: 'Tracking statistics retrieved successfully',
+        data: stats
       };
 
-      this.setCache(cacheKey, processedResult);
-      return processedResult;
+      this.cacheManager.set(cacheKey, result);
+      return result;
 
     } catch (error) {
-      console.error('❌ [Tracking Service] Failed to get trackings by stage:', error);
-      throw new Error(`Failed to get trackings by stage: ${error.message}`);
+      console.error('❌ [Tracking Service] Failed to get tracking statistics:', error);
+      throw new Error(`Failed to get tracking statistics: ${error.message}`);
     }
   }
 
-  async getAllCurricula(page = 0, size = 20) {
-    try {
-      console.log('🔄 [Tracking Service] Getting all curriculum trackings...');
-      return await this.getTrackingsByStage('IDEATION', page, size);
-    } catch (error) {
-      console.warn('⚠️ [Tracking Service] Could not get from IDEATION stage, returning empty result');
-      return {
-        success: true,
-        message: 'No trackings found',
-        data: [],
-        pagination: { currentPage: page, totalPages: 0, totalElements: 0, pageSize: size, hasNext: false, hasPrevious: false, first: true, last: true }
-      };
-    }
-  }
-
- 
-  async performStageAction(curriculumIdentifier, stage, action, data = {}) {
-    try {
-      console.log('🔄 [Tracking Service] Performing stage action:', { curriculumIdentifier, stage, action, data });
-      
-      const backendAction = this.mapFrontendActionToBackend(action);
-      const notes = data.feedback || data.notes || '';
-      const documents = data.documents || [];
-      
-      // Use the enhanced performTrackingAction which handles ID extraction
-      return await this.performTrackingAction(curriculumIdentifier, backendAction, notes, documents);
-    } catch (error) {
-      console.error('❌ [Tracking Service] Failed to perform stage action:', error);
-      throw error;
-    }
-  }
-
-  
   async searchTrackings(searchParams = {}, page = 0, size = 20) {
     try {
       console.log('🔄 [Tracking Service] Searching trackings:', { searchParams, page, size });
 
-     
       let allTrackings = [];
       
       if (searchParams.schoolId) {
         const schoolResult = await this.getTrackingBySchool(searchParams.schoolId, 0, 1000);
-        allTrackings = schoolResult.data;
+        allTrackings = schoolResult.data.trackings || schoolResult.data || [];
       } else if (searchParams.stage) {
         const stageResult = await this.getTrackingsByStage(searchParams.stage, 0, 1000);
-        allTrackings = stageResult.data;
+        allTrackings = stageResult.data.trackings || stageResult.data || [];
       } else {
         const allResult = await this.getAllCurricula(0, 1000);
-        allTrackings = allResult.data;
+        allTrackings = allResult.data.trackings || allResult.data || [];
       }
 
-      // Apply filters
       let filteredTrackings = allTrackings;
 
       if (searchParams.search) {
@@ -912,7 +805,6 @@ class CurriculumTrackingService {
         );
       }
 
-      // Apply pagination
       const startIndex = page * size;
       const endIndex = startIndex + size;
       const paginatedTrackings = filteredTrackings.slice(startIndex, endIndex);
@@ -920,16 +812,18 @@ class CurriculumTrackingService {
       return {
         success: true,
         message: `Found ${filteredTrackings.length} matching trackings`,
-        data: paginatedTrackings,
-        pagination: {
-          currentPage: page,
-          totalPages: Math.ceil(filteredTrackings.length / size),
-          totalElements: filteredTrackings.length,
-          pageSize: size,
-          hasNext: endIndex < filteredTrackings.length,
-          hasPrevious: page > 0,
-          first: page === 0,
-          last: endIndex >= filteredTrackings.length
+        data: {
+          trackings: paginatedTrackings,
+          pagination: {
+            currentPage: page,
+            totalPages: Math.ceil(filteredTrackings.length / size),
+            totalElements: filteredTrackings.length,
+            pageSize: size,
+            hasNext: endIndex < filteredTrackings.length,
+            hasPrevious: page > 0,
+            first: page === 0,
+            last: endIndex >= filteredTrackings.length
+          }
         },
         searchParams
       };
@@ -940,102 +834,57 @@ class CurriculumTrackingService {
     }
   }
 
-  // Get tracking statistics
-  async getTrackingStatistics() {
+  async downloadTrackingDocument(documentId, filename = null) {
     try {
-      console.log('🔄 [Tracking Service] Getting tracking statistics...');
+      console.log('🔄 [Tracking Service] Downloading document:', documentId);
 
-      const cacheKey = 'tracking_statistics';
-      const cached = this.getFromCache(cacheKey);
-      if (cached) return cached;
-
-      // Get data from multiple sources
-      const [myInitiated, myAssigned, allTrackings] = await Promise.allSettled([
-        this.getMyInitiatedTrackings(0, 1000),
-        this.getMyAssignedTrackings(0, 1000),
-        this.getAllCurricula(0, 1000)
-      ]);
-
-      const stats = {
-        myInitiated: myInitiated.status === 'fulfilled' ? myInitiated.value.data.length : 0,
-        myAssigned: myAssigned.status === 'fulfilled' ? myAssigned.value.data.length : 0,
-        total: allTrackings.status === 'fulfilled' ? allTrackings.value.data.length : 0,
-        byStatus: {},
-        byStage: {},
-        byPriority: {}
-      };
-
-      if (allTrackings.status === 'fulfilled') {
-        const trackings = allTrackings.value.data;
-        
-        // Calculate status distribution
-        stats.byStatus = trackings.reduce((acc, tracking) => {
-          acc[tracking.status] = (acc[tracking.status] || 0) + 1;
-          return acc;
-        }, {});
-
-        // Calculate stage distribution
-        stats.byStage = trackings.reduce((acc, tracking) => {
-          acc[tracking.currentStage] = (acc[tracking.currentStage] || 0) + 1;
-          return acc;
-        }, {});
-
-        // Calculate priority distribution
-        stats.byPriority = trackings.reduce((acc, tracking) => {
-          acc[tracking.priority] = (acc[tracking.priority] || 0) + 1;
-          return acc;
-        }, {});
-
-        // Calculate completion metrics
-        stats.completed = stats.byStatus.completed || 0;
-        stats.inProgress = (stats.byStatus.under_review || 0) + (stats.byStatus.pending_approval || 0);
-        stats.onHold = stats.byStatus.on_hold || 0;
-        stats.overdue = trackings.filter(t => this.isOverdue(t._rawApiData)).length;
+      if (!documentId) {
+        throw new Error('Document ID is required');
       }
 
-      const result = {
-        success: true,
-        message: 'Tracking statistics retrieved successfully',
-        data: stats
-      };
+      const response = await fetch(this.endpointsRegistry.buildUrl(this.baseURL, 'DOWNLOAD_DOCUMENT', { documentId }), {
+        method: 'GET',
+        headers: await this.getHeaders(),
+      });
 
-      this.setCache(cacheKey, result);
-      return result;
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to download document: ${response.status} - ${errorText}`);
+      }
 
-    } catch (error) {
-      console.error('❌ [Tracking Service] Failed to get tracking statistics:', error);
-      throw new Error(`Failed to get tracking statistics: ${error.message}`);
-    }
-  }
-
-  // Batch operations
-  async batchUpdateTrackings(trackingIds, action, notes = '') {
-    try {
-      console.log('🔄 [Tracking Service] Performing batch update:', { trackingIds, action, notes });
-
-      const results = [];
-      const errors = [];
-
-      for (const trackingId of trackingIds) {
-        try {
-          const result = await this.performTrackingAction(trackingId, action, notes);
-          results.push({ trackingId, success: true, data: result.data });
-        } catch (error) {
-          errors.push({ trackingId, error: error.message });
+      const blob = await response.blob();
+      
+      let downloadFilename = filename;
+      if (!downloadFilename) {
+        const contentDisposition = response.headers.get('Content-Disposition');
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+          downloadFilename = filenameMatch ? filenameMatch[1] : `document_${documentId}`;
+        } else {
+          downloadFilename = `tracking_document_${documentId}`;
         }
       }
 
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = downloadFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+
+      console.log('✅ [Tracking Service] Document downloaded successfully:', downloadFilename);
+
       return {
-        success: errors.length === 0,
-        message: `Batch operation completed. ${results.length} successful, ${errors.length} failed.`,
-        results,
-        errors,
-        totalProcessed: trackingIds.length
+        success: true,
+        message: 'Document downloaded successfully',
+        filename: downloadFilename
       };
 
     } catch (error) {
-      console.error('❌ [Tracking Service] Failed to perform batch update:', error);
-      throw new Error(`Failed to perform batch update: ${error.message}`);
+      console.error('❌ [Tracking Service] Failed to download document:', error);
+      throw new Error(`Failed to download document: ${error.message}`);
     }
   }
 
@@ -1043,9 +892,8 @@ class CurriculumTrackingService {
     try {
       console.log('🔄 [Tracking Service] Exporting trackings:', { format, filters });
 
-      
       const searchResult = await this.searchTrackings(filters, 0, 10000);
-      const trackings = searchResult.data;
+      const trackings = searchResult.data.trackings || [];
 
       if (format === 'json') {
         const jsonData = JSON.stringify(trackings, null, 2);
@@ -1068,7 +916,6 @@ class CurriculumTrackingService {
     }
   }
 
-  // Helper method to download file
   downloadFile(content, filename, mimeType) {
     const blob = new Blob([content], { type: mimeType });
     const url = window.URL.createObjectURL(blob);
@@ -1081,29 +928,43 @@ class CurriculumTrackingService {
     window.URL.revokeObjectURL(url);
   }
 
-  // Helper method to convert to CSV
   convertToCsv(trackings) {
     if (trackings.length === 0) return '';
 
     const headers = [
-      'Tracking ID', 'Title', 'School', 'Department', 'Current Stage', 
-      'Status', 'Priority', 'Initiated By', 'Current Assignee', 
-      'Created Date', 'Days in Stage', 'Total Days'
+      'Tracking ID', 'Title', 'Display Title', 'Display Code', 'School', 'Department', 
+      'Academic Level', 'Current Stage', 'Status', 'Priority', 'Initiated By', 
+      'Initiated By Email', 'Current Assignee', 'Current Assignee Email',
+      'Created Date', 'Expected Completion', 'Days in Stage', 'Total Days',
+      'Is Active', 'Is Completed', 'Is Ideation Stage', 'Proposed Duration',
+      'Proposed Effective Date', 'Proposed Expiry Date'
     ];
 
     const rows = trackings.map(tracking => [
-      tracking.trackingId,
-      tracking.title,
-      tracking.school,
-      tracking.department,
-      tracking.currentStage,
-      tracking.status,
-      tracking.priority,
-      tracking.initiatedByName,
-      tracking.currentAssigneeName,
-      tracking.submittedDate,
-      tracking.daysInCurrentStage,
-      tracking.totalDays
+      tracking.trackingId || '',
+      tracking.title || '',
+      tracking.displayTitle || '',
+      tracking.displayCode || '',
+      tracking.school || '',
+      tracking.department || '',
+      tracking.academicLevel || '',
+      tracking.currentStage || '',
+      tracking.status || '',
+      tracking.priority || '',
+      tracking.initiatedByName || '',
+      tracking.initiatedByEmail || '',
+      tracking.currentAssigneeName || '',
+      tracking.currentAssigneeEmail || '',
+      tracking.submittedDate || '',
+      tracking.expectedCompletionDate || '',
+      tracking.daysInCurrentStage || 0,
+      tracking.totalDays || 0,
+      tracking.isActive || false,
+      tracking.isCompleted || false,
+      tracking.isIdeationStage || false,
+      tracking.proposedDurationSemesters || '',
+      tracking.proposedEffectiveDate || '',
+      tracking.proposedExpiryDate || ''
     ]);
 
     const csvContent = [headers, ...rows]
@@ -1113,163 +974,92 @@ class CurriculumTrackingService {
     return csvContent;
   }
 
-  // VALIDATION AND HELPER METHODS
-
-  validateTrackingData(data) {
-    const errors = [];
-    
-    if (!data.proposedCurriculumName) errors.push('Curriculum name is required');
-    if (!data.proposedCurriculumCode) errors.push('Curriculum code is required');
-    if (!data.schoolId) errors.push('School is required');
-    if (!data.departmentId) errors.push('Department is required');
-    if (!data.academicLevelId) errors.push('Academic level is required');
-    if (!data.proposedDurationSemesters) errors.push('Duration is required');
-    if (!data.curriculumDescription) errors.push('Description is required');
-
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
-  }
-
-  getTrackingDisplayData(tracking) {
-    return {
-      title: tracking.title,
-      id: tracking.trackingId,
-      status: tracking.statusDisplayName || tracking.status,
-      stage: tracking.currentStageDisplayName || tracking.currentStage,
-      school: tracking.school,
-      department: tracking.department,
-      priority: tracking.priority,
-      daysInStage: tracking.daysInCurrentStage,
-      assignee: tracking.currentAssigneeName,
-      initiator: tracking.initiatedByName
-    };
-  }
-}
-
-const curriculumTrackingService = new CurriculumTrackingService();
-
-//  debug helpers
-if (typeof window !== 'undefined') {
-  window.curriculumTrackingService = curriculumTrackingService;
   
- 
-  window.testTrackingInitiate = (data, docs) => curriculumTrackingService.initiateCurriculumTracking(data, docs);
-  window.testTrackingAction = (id, action, notes, docs) => curriculumTrackingService.performTrackingAction(id, action, notes, docs);
-  window.testTrackingStage = (stage) => curriculumTrackingService.getTrackingsByStage(stage);
-  window.testDocumentDownload = (id) => curriculumTrackingService.downloadTrackingDocument(id);
-  
- 
-  window.testGetTrackingById = (id) => curriculumTrackingService.getTrackingById(id);
-  window.testGetMyInitiated = (page, size) => curriculumTrackingService.getMyInitiatedTrackings(page, size);
-  window.testGetMyAssigned = (page, size) => curriculumTrackingService.getMyAssignedTrackings(page, size);
-  window.testGetBySchool = (schoolId, page, size) => curriculumTrackingService.getTrackingBySchool(schoolId, page, size);
-  window.testSearchTrackings = (params, page, size) => curriculumTrackingService.searchTrackings(params, page, size);
-  window.testTrackingStats = () => curriculumTrackingService.getTrackingStatistics();
-  window.testExportTrackings = (format, filters) => curriculumTrackingService.exportTrackings(format, filters);
-  
-  // Debug function to test ID extraction
-  window.testIdExtraction = (curriculum) => {
-    try {
-      const numericId = curriculumTrackingService.extractNumericId(curriculum);
-      console.log(`✅ Extracted ID: ${numericId} from curriculum:`, curriculum);
-      return numericId;
-    } catch (error) {
-      console.error(`❌ Failed to extract ID from curriculum:`, curriculum, error);
-      return null;
-    }
-  };
-  
-  
-  window.debugTrackingMappings = (curriculum) => {
-    console.log('🔍 Enhanced Debugging Curriculum Mappings:');
-    console.log('Raw API Data:', curriculum._rawApiData);
-    console.log('Transformed Data:', curriculum);
-    
-    const criticalFields = [
-      'id', 'trackingId', 'initiatedByName', 'initiatedByEmail', 
-      'currentAssigneeName', 'currentAssigneeEmail',
-      'displayCurriculumName', 'currentStageDisplayName', 'statusDisplayName',
-      'proposedCurriculumName', 'proposedCurriculumCode', 'proposedDurationSemesters',
-      'curriculumDescription', 'schoolId', 'schoolName', 'departmentId', 'departmentName',
-      'academicLevelId', 'academicLevelName', 'currentStage', 'status',
-      'proposedEffectiveDate', 'proposedExpiryDate', 'initialNotes'
-    ];
-    
-    const mappingReport = {};
-    criticalFields.forEach(field => {
-      mappingReport[field] = {
-        'API Value': curriculum._rawApiData?.[field] || 'NOT FOUND',
-        'Frontend Value': curriculum[field] || 'NOT MAPPED',
-        'Status': curriculum[field] ? '✅ MAPPED' : '❌ MISSING'
-      };
-    });
-    
-    console.table(mappingReport);
-    return mappingReport;
-  };
-  
- 
-  window.testAllNewEndpoints = async () => {
+  async testAllNewEndpoints() {
     console.log('🔄 Testing all new endpoints...');
     
     try {
-     
-      console.log('1. Testing getTrackingById...');
-      const byId = await curriculumTrackingService.getTrackingById(2);
-      console.log('✅ getTrackingById result:', byId);
+      console.log('1. Testing getTrackingsByAssignee...');
+      const byAssignee = await this.getTrackingsByAssignee(15, 0, 5);
+      console.log('✅ getTrackingsByAssignee result:', byAssignee);
       
+      console.log('2. Testing getTrackingsByInitiator...');
+      const byInitiator = await this.getTrackingsByInitiator(15, 0, 5);
+      console.log('✅ getTrackingsByInitiator result:', byInitiator);
       
-      console.log('2. Testing getMyInitiatedTrackings...');
-      const myInitiated = await curriculumTrackingService.getMyInitiatedTrackings(0, 5);
-      console.log('✅ getMyInitiatedTrackings result:', myInitiated);
+      console.log('3. Testing getTrackingsByDepartment...');
+      const byDepartment = await this.getTrackingsByDepartment(1, 0, 5);
+      console.log('✅ getTrackingsByDepartment result:', byDepartment);
       
-      
-      console.log('3. Testing getMyAssignedTrackings...');
-      const myAssigned = await curriculumTrackingService.getMyAssignedTrackings(0, 5);
-      console.log('✅ getMyAssignedTrackings result:', myAssigned);
-      
-     
-      console.log('4. Testing getTrackingBySchool...');
-      const bySchool = await curriculumTrackingService.getTrackingBySchool(1, 0, 5);
-      console.log('✅ getTrackingBySchool result:', bySchool);
-      
-      
-      console.log('5. Testing getTrackingStatistics...');
-      const stats = await curriculumTrackingService.getTrackingStatistics();
-      console.log('✅ getTrackingStatistics result:', stats);
+      console.log('4. Testing enhanced view mode handler...');
+      const viewModeTest = await this.getTrackingsForViewMode('by-assignee', 15, 0, 5);
+      console.log('✅ getTrackingsForViewMode result:', viewModeTest);
       
       console.log('🎉 All new endpoints tested successfully!');
       return {
-        byId, myInitiated, myAssigned, bySchool, stats
+        byAssignee, byInitiator, byDepartment, viewModeTest
       };
       
     } catch (error) {
       console.error('❌ Error testing new endpoints:', error);
       return { error: error.message };
     }
-  };
+  }
+
+  getServiceInfo() {
+    return {
+      baseURL: this.baseURL,
+      availableEndpoints: Object.keys(this.endpointsRegistry.endpoints),
+      cacheStats: {
+        size: this.cacheManager.cache.size,
+        keys: Array.from(this.cacheManager.cache.keys())
+      },
+      transformationInfo: {
+        stageOrder: this.dataTransformer.STAGE_ORDER,
+        stageMappings: Object.keys(this.dataTransformer.STAGE_MAPPINGS.API_TO_FRONTEND).length,
+        statusMappings: Object.keys(this.dataTransformer.STAGE_MAPPINGS.STATUS_TO_FRONTEND).length
+      }
+    };
+  }
+
   
- 
-  window.testTrackingActionFixed = async (curriculum) => {
-    try {
-      console.log('🔄 Testing fixed tracking action with curriculum:', curriculum);
-      const numericId = curriculumTrackingService.extractNumericId(curriculum);
-      console.log(`✅ Extracted numeric ID: ${numericId}`);
-      
-      const result = await curriculumTrackingService.performTrackingAction(
-        numericId, 
-        'APPROVE', 
-        'Testing fixed action with numeric ID'
-      );
-      console.log('✅ Fixed tracking action result:', result);
-      return result;
-    } catch (error) {
-      console.error('❌ Fixed tracking action failed:', error);
-      return { error: error.message };
-    }
-  };
+  clearAllCaches() {
+    this.cacheManager.clear();
+    console.log('🧹 [Tracking Service] All caches cleared');
+  }
+}
+
+
+const curriculumTrackingService = new CurriculumTrackingService();
+
+// Debugging tools for development
+if (typeof window !== 'undefined') {
+  window.curriculumTrackingService = curriculumTrackingService;
+  
+  //  testing functions
+  window.testTrackingsByAssignee = (assigneeId, page, size) => 
+    curriculumTrackingService.getTrackingsByAssignee(assigneeId, page, size);
+  window.testTrackingsByInitiator = (initiatorId, page, size) => 
+    curriculumTrackingService.getTrackingsByInitiator(initiatorId, page, size);
+  window.testTrackingsByDepartment = (departmentId, page, size) => 
+    curriculumTrackingService.getTrackingsByDepartment(departmentId, page, size);
+  window.testTrackingsForViewMode = (viewMode, identifier, page, size) => 
+    curriculumTrackingService.getTrackingsForViewMode(viewMode, identifier, page, size);
+  
+  
+  window.testAllNewTrackingEndpoints = () => curriculumTrackingService.testAllNewEndpoints();
+  window.getTrackingServiceInfo = () => curriculumTrackingService.getServiceInfo();
+  window.clearTrackingCache = () => curriculumTrackingService.clearAllCaches();
+  
+  // Registry inspection tools
+  window.inspectTrackingEndpoints = () => curriculumTrackingService.endpointsRegistry.endpoints;
+  window.testEndpointUrl = (endpointName, pathParams, queryParams) => 
+    curriculumTrackingService.endpointsRegistry.buildUrl(
+      curriculumTrackingService.baseURL, 
+      endpointName, 
+      pathParams, 
+      queryParams
+    );
 }
 
 export default curriculumTrackingService;

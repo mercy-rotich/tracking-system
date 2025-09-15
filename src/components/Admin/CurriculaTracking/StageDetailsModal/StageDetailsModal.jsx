@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './StageDetailsModal.css';
 
-const StageDetailsModal = ({ 
+const EnhancedStageDetailsModal = ({ 
   curriculum, 
   onClose, 
   onStageAction, 
@@ -79,14 +79,95 @@ const StageDetailsModal = ({
 
   const canTakeAction = ['under_review', 'on_hold'].includes(currentStageData?.status);
 
+  
+  const DataField = ({ label, value, type = 'text', icon = null, copyable = false }) => {
+    const displayValue = value || 'Not specified';
+    const isEmpty = !value;
+
+    const handleCopy = () => {
+      if (copyable && value) {
+        navigator.clipboard.writeText(value);
+       
+      }
+    };
+
+    return (
+      <div className="tracking-data-field" style={{ marginBottom: '0.75rem' }}>
+        <div style={{ 
+          fontSize: '0.875rem', 
+          fontWeight: '600', 
+          color: 'var(--tracking-text-primary)', 
+          marginBottom: '0.25rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          {icon && <i className={icon} style={{ color: 'var(--tracking-primary)', fontSize: '0.875rem' }}></i>}
+          {label}
+          {copyable && value && (
+            <button
+              onClick={handleCopy}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '0.125rem',
+                color: 'var(--tracking-text-muted)',
+                fontSize: '0.75rem'
+              }}
+              title="Copy to clipboard"
+            >
+              <i className="fas fa-copy"></i>
+            </button>
+          )}
+        </div>
+        <div style={{ 
+          color: isEmpty ? 'var(--tracking-text-muted)' : 'var(--tracking-text-secondary)',
+          fontStyle: isEmpty ? 'italic' : 'normal',
+          fontSize: '0.875rem',
+          lineHeight: '1.4'
+        }}>
+          {type === 'email' && value ? (
+            <a href={`mailto:${value}`} style={{ color: 'var(--tracking-primary)' }}>
+              {displayValue}
+            </a>
+          ) : type === 'date' && value ? (
+            formatDisplayDate(value)
+          ) : type === 'datetime' && value ? (
+            formatDate(value)
+          ) : type === 'boolean' ? (
+            <span className={`tracking-badge ${value ? 'tracking-badge-success' : 'tracking-badge-neutral'}`}>
+              <i className={`fas fa-${value ? 'check' : 'times'}`}></i>
+              {value ? 'Yes' : 'No'}
+            </span>
+          ) : type === 'number' && value ? (
+            <span style={{ fontWeight: '600' }}>{displayValue}</span>
+          ) : (
+            displayValue
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="tracking-modal-overlay" onClick={onClose}>
       <div className="tracking-modal-content" onClick={(e) => e.stopPropagation()}>
-        {/* Modal Header */}
+        {/*  Modal Header */}
         <div className="tracking-modal-header">
           <div className="tracking-modal-title">
             <i className={currentStageInfo?.icon || 'fas fa-info-circle'}></i>
             {currentStageInfo?.title || 'Stage Details'}
+            {curriculum.trackingId && (
+              <span style={{ 
+                fontSize: '0.75rem', 
+                color: 'var(--tracking-text-muted)', 
+                fontWeight: '400',
+                marginLeft: '0.5rem'
+              }}>
+                {curriculum.trackingId}
+              </span>
+            )}
           </div>
           <button className="tracking-modal-close" onClick={onClose}>
             <i className="fas fa-times"></i>
@@ -98,7 +179,11 @@ const StageDetailsModal = ({
           {/*  Curriculum Info */}
           <div className="tracking-curriculum-summary tracking-card tracking-curriculum-info-card">
             <div className="tracking-card-body">
-              <h4 className="tracking-curriculum-title">{curriculum.title}</h4>
+              <h4 className="tracking-curriculum-title">
+                {curriculum.displayTitle || curriculum.title}
+              </h4>
+              
+              {/* Status and Priority Indicators */}
               <div className="tracking-curriculum-meta-grid" style={{ 
                 display: 'grid', 
                 gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
@@ -111,41 +196,54 @@ const StageDetailsModal = ({
                     {curriculum.trackingId}
                   </span>
                 </div>
+                
+                {curriculum.displayCode && (
+                  <div className="tracking-curriculum-meta-item">
+                    <span className="tracking-badge tracking-badge-primary">
+                      <i className="fas fa-code"></i>
+                      {curriculum.displayCode}
+                    </span>
+                  </div>
+                )}
+                
                 <div className="tracking-curriculum-meta-item">
                   <span className="tracking-badge tracking-badge-secondary">
                     <i className="fas fa-university"></i>
                     {curriculum.school}
                   </span>
                 </div>
+                
                 <div className="tracking-curriculum-meta-item">
-                  <span className="tracking-badge tracking-badge-primary">
+                  <span className="tracking-badge tracking-badge-warning">
                     <i className="fas fa-graduation-cap"></i>
                     {curriculum.academicLevel}
                   </span>
                 </div>
-                <div className="tracking-curriculum-meta-item">
-                  <span className="tracking-badge tracking-badge-warning">
-                    <i className="fas fa-clock"></i>
-                    {curriculum.proposedDurationSemesters} Semesters
-                  </span>
-                </div>
-              </div>
-              
-              {/* People Information */}
-              <div style={{ marginTop: '1rem', fontSize: '0.875rem', color: 'var(--tracking-text-secondary)' }}>
-                <div style={{ marginBottom: '0.5rem' }}>
-                  <strong>Initiated by:</strong> {curriculum.initiatedByName} ({curriculum.initiatedByEmail})
-                </div>
-                {curriculum.currentAssigneeName && (
-                  <div>
-                    <strong>Currently assigned to:</strong> {curriculum.currentAssigneeName} ({curriculum.currentAssigneeEmail})
+                
+                {curriculum.proposedDurationSemesters && (
+                  <div className="tracking-curriculum-meta-item">
+                    <span className="tracking-badge tracking-badge-info">
+                      <i className="fas fa-clock"></i>
+                      {curriculum.proposedDurationSemesters} Semesters
+                    </span>
                   </div>
                 )}
+                
+                <div className="tracking-curriculum-meta-item">
+                  <span className={`tracking-badge ${
+                    curriculum.priority === 'high' ? 'tracking-badge-danger' :
+                    curriculum.priority === 'medium' ? 'tracking-badge-warning' :
+                    'tracking-badge-neutral'
+                  }`}>
+                    <i className="fas fa-flag"></i>
+                    {curriculum.priority?.charAt(0).toUpperCase() + curriculum.priority?.slice(1)} Priority
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Stage Status */}
+          {/*  Stage Status */}
           <div className="tracking-stage-status-overview tracking-stage-status-section">
             <div className="tracking-stage-status-header">
               <div 
@@ -160,10 +258,10 @@ const StageDetailsModal = ({
               
               <div className="tracking-stage-status-info">
                 <h3 className="tracking-stage-status-title">
-                  {currentStageData?.status?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Pending'}
+                  {curriculum.statusDisplayName || currentStageData?.status?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Pending'}
                 </h3>
                 <div className="tracking-stage-status-subtitle">
-                  Current stage in the curriculum approval process
+                  {curriculum.currentStageDisplayName || 'Current stage in the curriculum approval process'}
                 </div>
               </div>
             </div>
@@ -175,7 +273,9 @@ const StageDetailsModal = ({
               {[
                 { key: 'overview', label: 'Overview', icon: 'fas fa-info-circle' },
                 { key: 'details', label: 'Curriculum Details', icon: 'fas fa-book' },
-                { key: 'timeline', label: 'Timeline', icon: 'fas fa-clock' },
+                { key: 'people', label: 'People & Assignments', icon: 'fas fa-users' },
+                { key: 'timeline', label: 'Timeline & Dates', icon: 'fas fa-clock' },
+                { key: 'technical', label: 'Technical Info', icon: 'fas fa-cog' },
                 { key: 'documents', label: 'Documents', icon: 'fas fa-file-alt' },
                 { key: 'notes', label: 'Notes & Feedback', icon: 'fas fa-comments' }
               ].map(tab => (
@@ -191,118 +291,71 @@ const StageDetailsModal = ({
             </div>
           </div>
 
-          {/* Tab Content */}
+          {/*  Tab Content */}
           <div className="tracking-tab-content">
             {/* Overview Tab */}
             {activeTab === 'overview' && (
               <div className="tracking-overview-tab">
                 <div className="tracking-overview-grid">
-                  <div className="tracking-info-group">
-                    <h5 className="tracking-info-label">Initiated By</h5>
-                    <p className="tracking-info-value">
-                      {curriculum.initiatedByName || 'Not specified'}
-                      {curriculum.initiatedByEmail && (
-                        <div style={{ fontSize: '0.75rem', color: 'var(--tracking-text-muted)', marginTop: '0.25rem' }}>
-                          📧 {curriculum.initiatedByEmail}
-                        </div>
-                      )}
-                    </p>
-                  </div>
+                  <DataField 
+                    label="Tracking ID" 
+                    value={curriculum.trackingId} 
+                    icon="fas fa-hashtag"
+                    copyable={true}
+                  />
                   
-                  <div className="tracking-info-group">
-                    <h5 className="tracking-info-label">Current Assignee</h5>
-                    <p className="tracking-info-value">
-                      {curriculum.currentAssigneeName || 'Not assigned'}
-                      {curriculum.currentAssigneeEmail && (
-                        <div style={{ fontSize: '0.75rem', color: 'var(--tracking-text-muted)', marginTop: '0.25rem' }}>
-                          📧 {curriculum.currentAssigneeEmail}
-                        </div>
-                      )}
-                    </p>
-                  </div>
+                  <DataField 
+                    label="Current Status" 
+                    value={curriculum.statusDisplayName || curriculum.status} 
+                    icon="fas fa-info-circle"
+                  />
                   
-                  <div className="tracking-info-group">
-                    <h5 className="tracking-info-label">Current Status</h5>
-                    <span className={`tracking-badge ${
-                      currentStageData?.status === 'completed' ? 'tracking-badge-success' :
-                      currentStageData?.status === 'under_review' ? 'tracking-badge-primary' :
-                      currentStageData?.status === 'on_hold' ? 'tracking-badge-warning' :
-                      currentStageData?.status === 'rejected' ? 'tracking-badge-danger' :
-                      'tracking-badge-neutral'
-                    }`}>
-                      {currentStageData?.status?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Pending'}
-                    </span>
-                  </div>
+                  <DataField 
+                    label="Current Stage" 
+                    value={curriculum.currentStageDisplayName || curriculum.currentStage} 
+                    icon="fas fa-route"
+                  />
                   
-                  <div className="tracking-info-group">
-                    <h5 className="tracking-info-label">Created Date</h5>
-                    <p className="tracking-info-value">{formatDate(curriculum.createdAt)}</p>
-                  </div>
+                  <DataField 
+                    label="Priority Level" 
+                    value={curriculum.priority} 
+                    icon="fas fa-flag"
+                  />
                   
-                  <div className="tracking-info-group">
-                    <h5 className="tracking-info-label">Last Updated</h5>
-                    <p className="tracking-info-value">{formatDate(curriculum.updatedAt)}</p>
-                  </div>
+                  <DataField 
+                    label="Is Active" 
+                    value={curriculum.isActive} 
+                    type="boolean"
+                    icon="fas fa-power-off"
+                  />
                   
-                  <div className="tracking-info-group">
-                    <h5 className="tracking-info-label">Days in Current Stage</h5>
-                    <p className="tracking-info-value">{curriculum.daysInCurrentStage} days</p>
-                  </div>
+                  <DataField 
+                    label="Is Completed" 
+                    value={curriculum.isCompleted} 
+                    type="boolean"
+                    icon="fas fa-check-circle"
+                  />
                   
-                  <div className="tracking-info-group">
-                    <h5 className="tracking-info-label">Total Days</h5>
-                    <p className="tracking-info-value">{curriculum.totalDays} days</p>
-                  </div>
+                  <DataField 
+                    label="Is Ideation Stage" 
+                    value={curriculum.isIdeationStage} 
+                    type="boolean"
+                    icon="fas fa-lightbulb"
+                  />
                   
-                  {curriculum.expectedCompletionDate && (
-                    <div className="tracking-info-group">
-                      <h5 className="tracking-info-label">Expected Completion</h5>
-                      <p className="tracking-info-value">{formatDisplayDate(curriculum.expectedCompletionDate)}</p>
-                    </div>
-                  )}
+                  <DataField 
+                    label="Days in Current Stage" 
+                    value={curriculum.daysInCurrentStage} 
+                    type="number"
+                    icon="fas fa-calendar-day"
+                  />
                   
-                  {curriculum.actualCompletionDate && (
-                    <div className="tracking-info-group">
-                      <h5 className="tracking-info-label">Actual Completion</h5>
-                      <p className="tracking-info-value">{formatDisplayDate(curriculum.actualCompletionDate)}</p>
-                    </div>
-                  )}
-                  
-                  <div className="tracking-info-group">
-                    <h5 className="tracking-info-label">Priority</h5>
-                    <span className={`tracking-badge ${
-                      curriculum.priority === 'high' ? 'tracking-badge-danger' :
-                      curriculum.priority === 'medium' ? 'tracking-badge-warning' :
-                      'tracking-badge-neutral'
-                    }`}>
-                      <i className="fas fa-flag"></i>
-                      {curriculum.priority?.charAt(0).toUpperCase() + curriculum.priority?.slice(1)}
-                    </span>
-                  </div>
-                  
-                  <div className="tracking-info-group">
-                    <h5 className="tracking-info-label">Status Flags</h5>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                      {curriculum.isActive && (
-                        <span className="tracking-badge tracking-badge-success">
-                          <i className="fas fa-check"></i>
-                          Active
-                        </span>
-                      )}
-                      {curriculum.isCompleted && (
-                        <span className="tracking-badge tracking-badge-success">
-                          <i className="fas fa-check-circle"></i>
-                          Completed
-                        </span>
-                      )}
-                      {curriculum.isIdeationStage && (
-                        <span className="tracking-badge tracking-badge-primary">
-                          <i className="fas fa-lightbulb"></i>
-                          Ideation
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                  <DataField 
+                    label="Total Days in System" 
+                    value={curriculum.totalDays} 
+                    type="number"
+                    icon="fas fa-calendar-alt"
+                  />
                 </div>
               </div>
             )}
@@ -311,124 +364,311 @@ const StageDetailsModal = ({
             {activeTab === 'details' && (
               <div className="tracking-details-tab">
                 <div className="tracking-overview-grid">
-                  <div className="tracking-info-group">
-                    <h5 className="tracking-info-label">Proposed Name</h5>
-                    <p className="tracking-info-value">{curriculum.proposedCurriculumName}</p>
-                  </div>
+                  <DataField 
+                    label="Display Name" 
+                    value={curriculum.displayTitle} 
+                    icon="fas fa-eye"
+                  />
                   
-                  <div className="tracking-info-group">
-                    <h5 className="tracking-info-label">Proposed Code</h5>
-                    <p className="tracking-info-value">{curriculum.proposedCurriculumCode}</p>
-                  </div>
+                  <DataField 
+                    label="Proposed Name" 
+                    value={curriculum.proposedCurriculumName} 
+                    icon="fas fa-book"
+                  />
                   
-                  <div className="tracking-info-group">
-                    <h5 className="tracking-info-label">Duration</h5>
-                    <p className="tracking-info-value">{curriculum.proposedDurationSemesters} semesters</p>
-                  </div>
+                  <DataField 
+                    label="Display Code" 
+                    value={curriculum.displayCode} 
+                    icon="fas fa-code"
+                    copyable={true}
+                  />
                   
-                  <div className="tracking-info-group">
-                    <h5 className="tracking-info-label">Academic Level</h5>
-                    <p className="tracking-info-value">{curriculum.academicLevel}</p>
-                  </div>
+                  <DataField 
+                    label="Proposed Code" 
+                    value={curriculum.proposedCurriculumCode} 
+                    icon="fas fa-code"
+                    copyable={true}
+                  />
                   
-                  {curriculum.proposedEffectiveDate && (
-                    <div className="tracking-info-group">
-                      <h5 className="tracking-info-label">Proposed Effective Date</h5>
-                      <p className="tracking-info-value">{formatDisplayDate(curriculum.proposedEffectiveDate)}</p>
-                    </div>
-                  )}
+                  <DataField 
+                    label="Curriculum ID" 
+                    value={curriculum.curriculumId} 
+                    type="number"
+                    icon="fas fa-id-card"
+                  />
                   
-                  {curriculum.proposedExpiryDate && (
-                    <div className="tracking-info-group">
-                      <h5 className="tracking-info-label">Proposed Expiry Date</h5>
-                      <p className="tracking-info-value">{formatDisplayDate(curriculum.proposedExpiryDate)}</p>
-                    </div>
-                  )}
+                  <DataField 
+                    label="Curriculum Name (System)" 
+                    value={curriculum.curriculumName} 
+                    icon="fas fa-database"
+                  />
+                  
+                  <DataField 
+                    label="Curriculum Code (System)" 
+                    value={curriculum.curriculumCode} 
+                    icon="fas fa-database"
+                  />
+                  
+                  <DataField 
+                    label="Duration (Semesters)" 
+                    value={curriculum.proposedDurationSemesters} 
+                    type="number"
+                    icon="fas fa-clock"
+                  />
+                  
+                  <DataField 
+                    label="Academic Level" 
+                    value={curriculum.academicLevel} 
+                    icon="fas fa-graduation-cap"
+                  />
+                  
+                  <DataField 
+                    label="Academic Level ID" 
+                    value={curriculum.academicLevelId} 
+                    type="number"
+                    icon="fas fa-id-badge"
+                  />
                 </div>
                 
                 {curriculum.curriculumDescription && (
                   <div className="tracking-info-group" style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
-                    <h5 className="tracking-info-label">Description</h5>
-                    <div style={{ 
-                      padding: '1rem', 
-                      backgroundColor: 'var(--tracking-bg-secondary)', 
-                      borderRadius: '8px',
-                      lineHeight: '1.6'
-                    }}>
-                      {curriculum.curriculumDescription}
-                    </div>
-                  </div>
-                )}
-                
-                {curriculum.initialNotes && (
-                  <div className="tracking-info-group" style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
-                    <h5 className="tracking-info-label">Initial Notes</h5>
-                    <div style={{ 
-                      padding: '1rem', 
-                      backgroundColor: 'rgba(0, 214, 102, 0.05)', 
-                      border: '1px solid rgba(0, 214, 102, 0.2)',
-                      borderRadius: '8px',
-                      lineHeight: '1.6'
-                    }}>
-                      {curriculum.initialNotes}
-                    </div>
+                    <DataField 
+                      label="Curriculum Description" 
+                      value={curriculum.curriculumDescription} 
+                      icon="fas fa-file-text"
+                    />
                   </div>
                 )}
               </div>
             )}
 
-            {/* Timeline Tab */}
+            {/* People & Assignments Tab */}
+            {activeTab === 'people' && (
+              <div className="tracking-people-tab">
+                <div className="tracking-overview-grid">
+                  <DataField 
+                    label="Initiated By (Name)" 
+                    value={curriculum.initiatedByName} 
+                    icon="fas fa-user-plus"
+                  />
+                  
+                  <DataField 
+                    label="Initiated By (Email)" 
+                    value={curriculum.initiatedByEmail} 
+                    type="email"
+                    icon="fas fa-envelope"
+                    copyable={true}
+                  />
+                  
+                  <DataField 
+                    label="Current Assignee (Name)" 
+                    value={curriculum.currentAssigneeName} 
+                    icon="fas fa-user-check"
+                  />
+                  
+                  <DataField 
+                    label="Current Assignee (Email)" 
+                    value={curriculum.currentAssigneeEmail} 
+                    type="email"
+                    icon="fas fa-envelope"
+                    copyable={true}
+                  />
+                  
+                  <DataField 
+                    label="School Name" 
+                    value={curriculum.schoolName} 
+                    icon="fas fa-university"
+                  />
+                  
+                  <DataField 
+                    label="School ID" 
+                    value={curriculum.schoolId} 
+                    type="number"
+                    icon="fas fa-id-badge"
+                  />
+                  
+                  <DataField 
+                    label="Department Name" 
+                    value={curriculum.departmentName} 
+                    icon="fas fa-building"
+                  />
+                  
+                  <DataField 
+                    label="Department ID" 
+                    value={curriculum.departmentId} 
+                    type="number"
+                    icon="fas fa-id-badge"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Timeline & Dates Tab */}
             {activeTab === 'timeline' && (
               <div className="tracking-timeline-tab">
-                <div className="tracking-timeline">
-                  {stages.map(stage => {
-                    const stageData = curriculum.stages[stage.key];
-                    const isCompleted = stageData?.status === 'completed';
-                    const isCurrent = stage.key === curriculum.currentStage;
-                    const isActive = ['under_review', 'on_hold'].includes(stageData?.status);
-                    
-                    return (
-                      <div key={stage.key} className="tracking-timeline-item">
-                        <div className={`tracking-timeline-marker ${
-                          isCompleted ? 'tracking-timeline-marker-completed' :
-                          isActive ? 'tracking-timeline-marker-active' :
-                          'tracking-timeline-marker-pending'
-                        }`}>
-                          <i className={isCompleted ? 'fas fa-check' : stage.icon}></i>
-                        </div>
-                        
-                        <div className="tracking-timeline-content">
-                          <div className="tracking-timeline-title">
-                            {stage.title}
-                            {isCurrent && (
-                              <span className="tracking-badge tracking-badge-primary tracking-current-badge">
-                                Current
-                              </span>
-                            )}
-                          </div>
-                          
-                          <div className="tracking-timeline-meta">
-                            {stageData?.assignedTo && (
-                              <div>Assigned to: {stageData.assignedTo}</div>
-                            )}
-                            {stageData?.startedDate && (
-                              <div>Started: {formatDate(stageData.startedDate)}</div>
-                            )}
-                            {stageData?.completedDate && (
-                              <div>Completed: {formatDate(stageData.completedDate)}</div>
-                            )}
-                          </div>
-                          
-                          {stageData?.notes && (
-                            <div className="tracking-timeline-description">
-                              {stageData.notes}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div className="tracking-overview-grid">
+                  <DataField 
+                    label="Created At" 
+                    value={curriculum.createdAt} 
+                    type="datetime"
+                    icon="fas fa-plus-circle"
+                  />
+                  
+                  <DataField 
+                    label="Last Updated" 
+                    value={curriculum.updatedAt} 
+                    type="datetime"
+                    icon="fas fa-edit"
+                  />
+                  
+                  <DataField 
+                    label="Submitted Date" 
+                    value={curriculum.submittedDate} 
+                    type="date"
+                    icon="fas fa-paper-plane"
+                  />
+                  
+                  <DataField 
+                    label="Expected Completion" 
+                    value={curriculum.expectedCompletionDate} 
+                    type="datetime"
+                    icon="fas fa-flag-checkered"
+                  />
+                  
+                  <DataField 
+                    label="Actual Completion" 
+                    value={curriculum.actualCompletionDate} 
+                    type="datetime"
+                    icon="fas fa-check-circle"
+                  />
+                  
+                  <DataField 
+                    label="Proposed Effective Date" 
+                    value={curriculum.proposedEffectiveDate} 
+                    type="date"
+                    icon="fas fa-calendar-check"
+                  />
+                  
+                  <DataField 
+                    label="Proposed Expiry Date" 
+                    value={curriculum.proposedExpiryDate} 
+                    type="date"
+                    icon="fas fa-calendar-times"
+                  />
                 </div>
+                
+                {/* Timeline Visualization */}
+                <div style={{ marginTop: '2rem' }}>
+                  <h5 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <i className="fas fa-route" style={{ color: 'var(--tracking-primary)' }}></i>
+                    Workflow Timeline
+                  </h5>
+                  <div className="tracking-timeline">
+                    {stages.map((stage, index) => {
+                      const stageData = curriculum.stages[stage.key];
+                      const isCompleted = stageData?.status === 'completed';
+                      const isCurrent = stage.key === curriculum.currentStage;
+                      const isActive = ['under_review', 'on_hold'].includes(stageData?.status);
+                      
+                      return (
+                        <div key={stage.key} className="tracking-timeline-item">
+                          <div className={`tracking-timeline-marker ${
+                            isCompleted ? 'tracking-timeline-marker-completed' :
+                            isActive ? 'tracking-timeline-marker-active' :
+                            'tracking-timeline-marker-pending'
+                          }`}>
+                            <i className={isCompleted ? 'fas fa-check' : stage.icon}></i>
+                          </div>
+                          
+                          <div className="tracking-timeline-content">
+                            <div className="tracking-timeline-title">
+                              {stage.title}
+                              {isCurrent && (
+                                <span className="tracking-badge tracking-badge-primary tracking-current-badge">
+                                  Current
+                                </span>
+                              )}
+                            </div>
+                            
+                            <div className="tracking-timeline-meta">
+                              {stageData?.assignedTo && (
+                                <div>Assigned to: {stageData.assignedTo}</div>
+                              )}
+                              {stageData?.startedDate && (
+                                <div>Started: {formatDate(stageData.startedDate)}</div>
+                              )}
+                              {stageData?.completedDate && (
+                                <div>Completed: {formatDate(stageData.completedDate)}</div>
+                              )}
+                            </div>
+                            
+                            {stageData?.notes && (
+                              <div className="tracking-timeline-description">
+                                {stageData.notes}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Technical Info Tab */}
+            {activeTab === 'technical' && (
+              <div className="tracking-technical-tab">
+                <div className="tracking-overview-grid">
+                  <DataField 
+                    label="Original Current Stage (API)" 
+                    value={curriculum.originalCurrentStage} 
+                    icon="fas fa-code"
+                  />
+                  
+                  <DataField 
+                    label="Original Status (API)" 
+                    value={curriculum.originalStatus} 
+                    icon="fas fa-code"
+                  />
+                  
+                  <DataField 
+                    label="Data Source" 
+                    value={curriculum._dataSource} 
+                    icon="fas fa-database"
+                  />
+                  
+                  <DataField 
+                    label="Transformed At" 
+                    value={curriculum._transformedAt} 
+                    type="datetime"
+                    icon="fas fa-sync"
+                  />
+                </div>
+                
+                {/* Raw API Data Display */}
+                {curriculum._rawApiData && (
+                  <div style={{ marginTop: '2rem' }}>
+                    <h5 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <i className="fas fa-database" style={{ color: 'var(--tracking-secondary)' }}></i>
+                      Raw API Data
+                    </h5>
+                    <div style={{ 
+                      backgroundColor: 'var(--tracking-bg-secondary)',
+                      border: '1px solid var(--tracking-border)',
+                      borderRadius: '8px',
+                      padding: '1rem',
+                      fontSize: '0.8rem',
+                      fontFamily: 'monospace',
+                      maxHeight: '300px',
+                      overflow: 'auto'
+                    }}>
+                      <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+                        {JSON.stringify(curriculum._rawApiData, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -479,55 +719,47 @@ const StageDetailsModal = ({
             {activeTab === 'notes' && (
               <div className="tracking-notes-tab">
                 <div className="tracking-notes-sections">
-                  {/* Current Notes */}
-                  {currentStageData?.notes && (
-                    <div className="tracking-notes-section tracking-notes-current">
-                      <h5 className="tracking-notes-section-title">
-                        <i className="fas fa-sticky-note"></i>
-                        Current Notes
-                      </h5>
-                      <div className="tracking-notes-content">
-                        {currentStageData.notes}
-                      </div>
-                    </div>
-                  )}
-
                   {/* Initial Notes */}
                   {curriculum.initialNotes && (
                     <div className="tracking-notes-section tracking-notes-initial">
-                      <h5 className="tracking-notes-section-title">
-                        <i className="fas fa-file-text"></i>
-                        Initial Notes
-                      </h5>
-                      <div className="tracking-notes-content">
-                        {curriculum.initialNotes}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Feedback */}
-                  {currentStageData?.feedback && (
-                    <div className="tracking-feedback-section tracking-notes-feedback">
-                      <h5 className="tracking-notes-section-title">
-                        <i className="fas fa-comments"></i>
-                        Feedback
-                      </h5>
-                      <div className="tracking-feedback-content">
-                        {currentStageData.feedback}
-                      </div>
+                      <DataField 
+                        label="Initial Notes" 
+                        value={curriculum.initialNotes} 
+                        icon="fas fa-file-text"
+                      />
                     </div>
                   )}
 
                   {/* Recent Steps */}
                   {curriculum.recentSteps && (
                     <div className="tracking-notes-section tracking-recent-steps">
-                      <h5 className="tracking-notes-section-title">
-                        <i className="fas fa-history"></i>
-                        Recent Steps
-                      </h5>
-                      <div className="tracking-notes-content">
-                        {curriculum.recentSteps}
-                      </div>
+                      <DataField 
+                        label="Recent Steps" 
+                        value={curriculum.recentSteps} 
+                        icon="fas fa-history"
+                      />
+                    </div>
+                  )}
+
+                  {/* Current Stage Notes */}
+                  {currentStageData?.notes && (
+                    <div className="tracking-notes-section tracking-notes-current">
+                      <DataField 
+                        label="Current Stage Notes" 
+                        value={currentStageData.notes} 
+                        icon="fas fa-sticky-note"
+                      />
+                    </div>
+                  )}
+
+                  {/* Current Stage Feedback */}
+                  {currentStageData?.feedback && (
+                    <div className="tracking-feedback-section tracking-notes-feedback">
+                      <DataField 
+                        label="Stage Feedback" 
+                        value={currentStageData.feedback} 
+                        icon="fas fa-comments"
+                      />
                     </div>
                   )}
 

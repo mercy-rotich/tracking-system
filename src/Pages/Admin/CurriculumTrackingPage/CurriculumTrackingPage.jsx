@@ -12,29 +12,35 @@ import NotificationBanner from '../../../components/Admin/CurriculaTracking/Noti
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import curriculumTrackingService from '../../../services/CurriculumTrackingService';
 import curriculumService from '../../../services/curriculumService';
-import statisticsService from '../../../services/statisticsService';
 import './CurriculumTrackingPage.css';
 
 const CurriculumTrackingPage = () => {
-  // Main state
+ 
   const [curricula, setCurricula] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState(false);
-  const [viewMode, setViewMode] = useState('all'); // Enhanced view modes
+  const [viewMode, setViewMode] = useState('all');
   const [selectedCurriculum, setSelectedCurriculum] = useState(null);
   const [error, setError] = useState(null);
 
- 
+  
+  const [currentDataSource, setCurrentDataSource] = useState('all');
+  const [currentIdentifier, setCurrentIdentifier] = useState(null);
+
+  
   const [filters, setFilters] = useState({
     search: '',
     school: '',
     department: '',
     stage: '',
     status: '',
-    schoolId: '' 
+    schoolId: '',
+    departmentId: '',
+    assigneeId: '',
+    initiatorId: ''
   });
 
-  // Modal states
+  
   const [modals, setModals] = useState({
     stageDetails: false,
     documentUpload: false,
@@ -42,14 +48,18 @@ const CurriculumTrackingPage = () => {
     initiateCurriculum: false
   });
 
+  
   const [notification, setNotification] = useState({
     show: false,
     message: '',
     type: 'success'
   });
   
+  
   const [schools, setSchools] = useState([]);
   const [departments, setDepartments] = useState([]);
+  
+  
   const [pagination, setPagination] = useState({
     currentPage: 0,
     totalPages: 1,
@@ -71,9 +81,6 @@ const CurriculumTrackingPage = () => {
     byPriority: {}
   });
 
- 
-  const [currentDataSource, setCurrentDataSource] = useState('all');
-
   const showNotification = useCallback((message, type = 'success') => {
     setNotification({ show: true, message, type });
     setTimeout(() => {
@@ -91,33 +98,49 @@ const CurriculumTrackingPage = () => {
     setSelectedCurriculum(null);
   }, []);
 
-  const loadCurriculaData = useCallback(async (page = 0, size = 20, showLoading = true, source = 'all') => {
+
+  const loadCurriculaData = useCallback(async (page = 0, size = 20, showLoading = true, source = 'all', identifier = null) => {
     try {
       if (showLoading) setIsLoading(true);
       setError(null);
       setCurrentDataSource(source);
+      setCurrentIdentifier(identifier);
 
-      console.log('🔄 Loading curricula data...', { page, size, filters, source });
+      console.log('🔄 Loading curricula data...', { page, size, filters, source, identifier });
 
       let result;
 
-     
-      switch (source) {
-        case 'my-initiated':
-          result = await curriculumTrackingService.getMyInitiatedTrackings(page, size);
-          break;
-        case 'my-assigned':
-          result = await curriculumTrackingService.getMyAssignedTrackings(page, size);
-          break;
-        case 'by-school':
-          if (filters.schoolId) {
-            result = await curriculumTrackingService.getTrackingBySchool(filters.schoolId, page, size);
-          } else {
-            throw new Error('School ID is required for school filtering');
-          }
-          break;
-        case 'by-stage':
-          if (filters.stage) {
+      
+      try {
+        result = await curriculumTrackingService.getTrackingsForViewMode(source, identifier, page, size);
+      } catch (serviceError) {
+        console.error('❌ Service method failed, trying fallback:', serviceError);
+        
+        switch (source) {
+          case 'my-initiated':
+            result = await curriculumTrackingService.getMyInitiatedTrackings(page, size);
+            break;
+          case 'my-assigned':
+            result = await curriculumTrackingService.getMyAssignedTrackings(page, size);
+            break;
+          case 'by-school':
+            if (!identifier) throw new Error('School ID is required');
+            result = await curriculumTrackingService.getTrackingBySchool(identifier, page, size);
+            break;
+          case 'by-department':
+            if (!identifier) throw new Error('Department ID is required');
+            result = await curriculumTrackingService.getTrackingsByDepartment(identifier, page, size);
+            break;
+          case 'by-assignee':
+            if (!identifier) throw new Error('Assignee ID is required');
+            result = await curriculumTrackingService.getTrackingsByAssignee(identifier, page, size);
+            break;
+          case 'by-initiator':
+            if (!identifier) throw new Error('Initiator ID is required');
+            result = await curriculumTrackingService.getTrackingsByInitiator(identifier, page, size);
+            break;
+          case 'by-stage':
+            if (!identifier) throw new Error('Stage is required');
             const stageMapping = {
               'initiation': 'IDEATION',
               'school_board': 'SCHOOL_BOARD_APPROVAL',
@@ -128,24 +151,35 @@ const CurriculumTrackingPage = () => {
               'cue_review': 'CUE_REVIEW',
               'site_inspection': 'SITE_INSPECTION'
             };
-            const apiStage = stageMapping[filters.stage] || 'IDEATION';
+            const apiStage = stageMapping[identifier] || 'IDEATION';
             result = await curriculumTrackingService.getTrackingsByStage(apiStage, page, size);
-          } else {
+            break;
+          case 'search':
+            result = await curriculumTrackingService.searchTrackings(filters, page, size);
+            break;
+          default:
             result = await curriculumTrackingService.getAllCurricula(page, size);
-          }
-          break;
-        case 'search':
-          result = await curriculumTrackingService.searchTrackings(filters, page, size);
-          break;
-        default: // 'all'
-          result = await curriculumTrackingService.getAllCurricula(page, size);
-          break;
+            break;
+        }
       }
 
       if (result.success) {
-        let filteredData = result.data || [];
-
         
+        let filteredData = [];
+        
+        if (Array.isArray(result.data)) {
+          filteredData = result.data;
+        } else if (result.data && Array.isArray(result.data.trackings)) {
+          filteredData = result.data.trackings;
+         
+          if (result.data.pagination) {
+            setPagination(result.data.pagination);
+          }
+        } else if (result.data) {
+          filteredData = [result.data]; 
+        }
+
+     
         if (source === 'all' || source === 'by-stage') {
           if (filters.search) {
             const searchLower = filters.search.toLowerCase();
@@ -177,10 +211,6 @@ const CurriculumTrackingPage = () => {
         }
 
         setCurricula(filteredData);
-        
-        if (result.pagination) {
-          setPagination(result.pagination);
-        }
 
         showNotification(
           `Loaded ${filteredData.length} curriculum tracking record${filteredData.length !== 1 ? 's' : ''} from ${source.replace('-', ' ')}`,
@@ -209,11 +239,9 @@ const CurriculumTrackingPage = () => {
 
   const loadSupportingData = useCallback(async () => {
     try {
-      // Load schools
       const schoolsResult = await curriculumService.getAllSchoolsEnhanced();
       setSchools(schoolsResult || []);
 
-      // Load departments  
       const departmentsResult = await curriculumService.getDepartmentsFromCurriculums();
       setDepartments(departmentsResult || []);
 
@@ -222,7 +250,6 @@ const CurriculumTrackingPage = () => {
     }
   }, []);
 
- 
   const loadStatistics = useCallback(async () => {
     try {
       const stats = await curriculumTrackingService.getTrackingStatistics();
@@ -255,6 +282,47 @@ const CurriculumTrackingPage = () => {
   }, [curricula]);
 
  
+  
+  const handleViewModeChange = useCallback((mode) => {
+    setViewMode(mode);
+    setFilters(prev => ({ ...prev, schoolId: '', departmentId: '', assigneeId: '', initiatorId: '' }));
+    loadCurriculaData(0, pagination.pageSize, true, mode);
+  }, [pagination.pageSize, loadCurriculaData]);
+
+  const handleShowMyInitiated = useCallback(() => {
+    setViewMode('my-initiated');
+    loadCurriculaData(0, pagination.pageSize, true, 'my-initiated');
+  }, [pagination.pageSize, loadCurriculaData]);
+
+  const handleShowMyAssigned = useCallback(() => {
+    setViewMode('my-assigned');
+    loadCurriculaData(0, pagination.pageSize, true, 'my-assigned');
+  }, [pagination.pageSize, loadCurriculaData]);
+
+  const handleShowBySchool = useCallback((schoolId) => {
+    setViewMode('by-school');
+    setFilters(prev => ({ ...prev, schoolId }));
+    loadCurriculaData(0, pagination.pageSize, true, 'by-school', schoolId);
+  }, [pagination.pageSize, loadCurriculaData]);
+
+  const handleShowByDepartment = useCallback((departmentId) => {
+    setViewMode('by-department');
+    setFilters(prev => ({ ...prev, departmentId }));
+    loadCurriculaData(0, pagination.pageSize, true, 'by-department', departmentId);
+  }, [pagination.pageSize, loadCurriculaData]);
+
+  const handleShowByAssignee = useCallback((assigneeId) => {
+    setViewMode('by-assignee');
+    setFilters(prev => ({ ...prev, assigneeId }));
+    loadCurriculaData(0, pagination.pageSize, true, 'by-assignee', assigneeId);
+  }, [pagination.pageSize, loadCurriculaData]);
+
+  const handleShowByInitiator = useCallback((initiatorId) => {
+    setViewMode('by-initiator');
+    setFilters(prev => ({ ...prev, initiatorId }));
+    loadCurriculaData(0, pagination.pageSize, true, 'by-initiator', initiatorId);
+  }, [pagination.pageSize, loadCurriculaData]);
+
   const handleStageAction = useCallback(async (curriculumIdentifier, stage, action, data = {}) => {
     try {
       setIsActionLoading(true);
@@ -268,9 +336,7 @@ const CurriculumTrackingPage = () => {
       );
 
       if (result.success) {
-       
         setCurricula(prev => prev.map(curriculum => {
-         
           const curriculumMatches = 
             curriculum.trackingId === curriculumIdentifier || 
             curriculum.id === curriculumIdentifier ||
@@ -287,9 +353,8 @@ const CurriculumTrackingPage = () => {
           'success'
         );
 
-       
         setTimeout(() => {
-          loadCurriculaData(pagination.currentPage, pagination.pageSize, false, currentDataSource);
+          loadCurriculaData(pagination.currentPage, pagination.pageSize, false, currentDataSource, currentIdentifier);
         }, 1000);
 
       } else {
@@ -302,9 +367,8 @@ const CurriculumTrackingPage = () => {
     } finally {
       setIsActionLoading(false);
     }
-  }, [pagination.currentPage, pagination.pageSize, currentDataSource, loadCurriculaData, showNotification]);
+  }, [pagination.currentPage, pagination.pageSize, currentDataSource, currentIdentifier, loadCurriculaData, showNotification]);
 
- 
   const handleDocumentUpload = useCallback(async (curriculumId, stage, documents) => {
     try {
       setIsActionLoading(true);
@@ -323,8 +387,7 @@ const CurriculumTrackingPage = () => {
           'success'
         );
 
-        
-        loadCurriculaData(pagination.currentPage, pagination.pageSize, false, currentDataSource);
+        loadCurriculaData(pagination.currentPage, pagination.pageSize, false, currentDataSource, currentIdentifier);
       } else {
         throw new Error(result.message || 'Failed to upload documents');
       }
@@ -335,9 +398,8 @@ const CurriculumTrackingPage = () => {
     } finally {
       setIsActionLoading(false);
     }
-  }, [pagination.currentPage, pagination.pageSize, currentDataSource, loadCurriculaData, showNotification]);
+  }, [pagination.currentPage, pagination.pageSize, currentDataSource, currentIdentifier, loadCurriculaData, showNotification]);
 
- 
   const handleAddNotes = useCallback(async (curriculumId, stage, notes) => {
     try {
       setIsActionLoading(true);
@@ -352,9 +414,7 @@ const CurriculumTrackingPage = () => {
 
       if (result.success) {
         showNotification('Notes added successfully', 'success');
-        
-       
-        loadCurriculaData(pagination.currentPage, pagination.pageSize, false, currentDataSource);
+        loadCurriculaData(pagination.currentPage, pagination.pageSize, false, currentDataSource, currentIdentifier);
       } else {
         throw new Error(result.message || 'Failed to add notes');
       }
@@ -365,7 +425,7 @@ const CurriculumTrackingPage = () => {
     } finally {
       setIsActionLoading(false);
     }
-  }, [pagination.currentPage, pagination.pageSize, currentDataSource, loadCurriculaData, showNotification]);
+  }, [pagination.currentPage, pagination.pageSize, currentDataSource, currentIdentifier, loadCurriculaData, showNotification]);
 
   const handleInitiateCurriculum = useCallback(async (trackingData, documents = []) => {
     try {
@@ -383,7 +443,7 @@ const CurriculumTrackingPage = () => {
           'success'
         );
 
-        loadCurriculaData(0, pagination.pageSize, false, currentDataSource);
+        loadCurriculaData(0, pagination.pageSize, false, currentDataSource, currentIdentifier);
         closeModal('initiateCurriculum');
       } else {
         throw new Error(result.message || 'Failed to initiate curriculum tracking');
@@ -395,9 +455,8 @@ const CurriculumTrackingPage = () => {
     } finally {
       setIsActionLoading(false);
     }
-  }, [pagination.pageSize, currentDataSource, loadCurriculaData, showNotification, closeModal]);
+  }, [pagination.pageSize, currentDataSource, currentIdentifier, loadCurriculaData, showNotification, closeModal]);
 
-  
   const handleDocumentDownload = useCallback(async (documentId, filename) => {
     try {
       console.log('🔄 Downloading document:', { documentId, filename });
@@ -419,31 +478,6 @@ const CurriculumTrackingPage = () => {
     }
   }, [showNotification]);
 
- 
-  const handleViewModeChange = useCallback((mode) => {
-    setViewMode(mode);
-    setFilters(prev => ({ ...prev, schoolId: '' })); // Reset school filter
-    loadCurriculaData(0, pagination.pageSize, true, mode);
-  }, [pagination.pageSize, loadCurriculaData]);
-
-  
-  const handleShowMyInitiated = useCallback(() => {
-    setViewMode('my-initiated');
-    loadCurriculaData(0, pagination.pageSize, true, 'my-initiated');
-  }, [pagination.pageSize, loadCurriculaData]);
-
-  const handleShowMyAssigned = useCallback(() => {
-    setViewMode('my-assigned');
-    loadCurriculaData(0, pagination.pageSize, true, 'my-assigned');
-  }, [pagination.pageSize, loadCurriculaData]);
-
-  const handleShowBySchool = useCallback((schoolId) => {
-    setViewMode('by-school');
-    setFilters(prev => ({ ...prev, schoolId }));
-    loadCurriculaData(0, pagination.pageSize, true, 'by-school');
-  }, [pagination.pageSize, loadCurriculaData]);
-
- 
   const handleExportData = useCallback(async (format) => {
     try {
       const result = await curriculumTrackingService.exportTrackings(format, filters);
@@ -456,6 +490,7 @@ const CurriculumTrackingPage = () => {
     }
   }, [filters, showNotification]);
 
+ 
   const handleFilterChange = useCallback((filterName, value) => {
     setFilters(prev => ({ ...prev, [filterName]: value }));
   }, []);
@@ -467,17 +502,21 @@ const CurriculumTrackingPage = () => {
       department: '',
       stage: '',
       status: '',
-      schoolId: ''
+      schoolId: '',
+      departmentId: '',
+      assigneeId: '',
+      initiatorId: ''
     });
   }, []);
 
+ 
   const getUniqueValues = (field) => {
     return [...new Set(curricula.map(c => c[field]))].filter(Boolean);
   };
 
   const refreshData = useCallback(() => {
-    loadCurriculaData(pagination.currentPage, pagination.pageSize, true, currentDataSource);
-  }, [loadCurriculaData, pagination.currentPage, pagination.pageSize, currentDataSource]);
+    loadCurriculaData(pagination.currentPage, pagination.pageSize, true, currentDataSource, currentIdentifier);
+  }, [loadCurriculaData, pagination.currentPage, pagination.pageSize, currentDataSource, currentIdentifier]);
 
  
   useEffect(() => {
@@ -490,26 +529,29 @@ const CurriculumTrackingPage = () => {
     initializeData();
   }, [loadSupportingData, loadCurriculaData, loadStatistics]);
 
-  
   useEffect(() => {
     if (curricula.length > 0) {
       loadStatistics();
     }
   }, [curricula, loadStatistics]);
 
-  
   useEffect(() => {
     if (!isLoading) {
       const timeoutId = setTimeout(() => {
         const source = filters.schoolId ? 'by-school' : 
+                     filters.departmentId ? 'by-department' :
+                     filters.assigneeId ? 'by-assignee' :
+                     filters.initiatorId ? 'by-initiator' :
                      filters.stage ? 'by-stage' : 
                      filters.search ? 'search' : 'all';
-        loadCurriculaData(0, pagination.pageSize, false, source);
+        const identifier = filters.schoolId || filters.departmentId || filters.assigneeId || filters.initiatorId || filters.stage;
+        loadCurriculaData(0, pagination.pageSize, false, source, identifier);
       }, 300);
 
       return () => clearTimeout(timeoutId);
     }
   }, [filters, loadCurriculaData, pagination.pageSize, isLoading]);
+
 
   if (isLoading && curricula.length === 0) {
     return (
@@ -549,6 +591,7 @@ const CurriculumTrackingPage = () => {
     );
   }
 
+  
   return (
     <div className="dashboard-main-content">
       <div className="tracking-page">
@@ -567,11 +610,14 @@ const CurriculumTrackingPage = () => {
           onShowMyInitiated={handleShowMyInitiated}
           onShowMyAssigned={handleShowMyAssigned}
           onShowBySchool={handleShowBySchool}
+          onShowByDepartment={handleShowByDepartment}
+          onShowByAssignee={handleShowByAssignee}
+          onShowByInitiator={handleShowByInitiator}
           onExportData={handleExportData}
           trackingStats={statsData}
         />
 
-        {/*  Statistics Cards */}
+        {/* Statistics Cards */}
         <TrackingStats 
           stats={statsData} 
           curricula={curricula}
@@ -579,7 +625,7 @@ const CurriculumTrackingPage = () => {
           currentDataSource={currentDataSource}
         />
 
-        {/*  Filters Section */}
+        {/* Filters Section */}
         <TrackingFilters
           filters={filters}
           onFilterChange={handleFilterChange}
@@ -624,7 +670,7 @@ const CurriculumTrackingPage = () => {
           />
         )}
 
-        {/*  Pagination Info */}
+        {/*  Pagination and Data Source Info */}
         {pagination.totalElements > 0 && (
           <div className="tracking-pagination-info" style={{ 
             textAlign: 'center', 
@@ -644,14 +690,15 @@ const CurriculumTrackingPage = () => {
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--tracking-text-muted)' }}>
               Data Source: <strong>{currentDataSource.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</strong>
+              {currentIdentifier && (
+                <span> | Identifier: <strong>{currentIdentifier}</strong></span>
+              )}
               {viewMode !== 'all' && (
                 <span> | View Mode: <strong>{viewMode.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</strong></span>
               )}
             </div>
           </div>
         )}
-
-       
 
         {/* Modals */}
         {modals.stageDetails && selectedCurriculum && (
