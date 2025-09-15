@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './TrackingStats.css';
 
-const TrackingStats = ({ stats, curricula = [] }) => {
-  
+const TrackingStats = ({ stats, curricula = [], currentView, currentDataSource }) => {
+  const [expandedSection, setExpandedSection] = useState(null);
+
+ 
   const calculateEnhancedStats = () => {
     if (!curricula || curricula.length === 0) {
       return {
@@ -10,42 +12,61 @@ const TrackingStats = ({ stats, curricula = [] }) => {
         bySchool: {},
         byPriority: { high: 0, medium: 0, low: 0 },
         byAcademicLevel: {},
+        byDepartment: {},
         averageDays: 0,
         overdueCount: 0,
         activeAssignments: new Set(),
-        initiatedBy: new Set()
+        initiatedBy: new Set(),
+        byStatus: {},
+        completionRate: 0,
+        avgDaysInCurrentStage: 0
       };
     }
 
     const byStage = {};
     const bySchool = {};
+    const byDepartment = {};
     const byPriority = { high: 0, medium: 0, low: 0 };
     const byAcademicLevel = {};
+    const byStatus = {};
     const activeAssignments = new Set();
     const initiatedBy = new Set();
     let totalDays = 0;
+    let totalDaysInStage = 0;
     let overdueCount = 0;
 
     curricula.forEach(curriculum => {
-      
+      // Stage distribution
       const stage = curriculum.currentStage || 'unknown';
       byStage[stage] = (byStage[stage] || 0) + 1;
 
-      
+      // School distribution
       const school = curriculum.school || 'Unknown';
       bySchool[school] = (bySchool[school] || 0) + 1;
 
-    
+      // Department distribution
+      const department = curriculum.department || 'Unknown';
+      byDepartment[department] = (byDepartment[department] || 0) + 1;
+
+      // Status distribution
+      const status = curriculum.status || 'unknown';
+      byStatus[status] = (byStatus[status] || 0) + 1;
+
+      // Priority distribution
       const priority = curriculum.priority || 'medium';
       byPriority[priority] = (byPriority[priority] || 0) + 1;
 
-      
+      // Academic level distribution
       const level = curriculum.academicLevel || 'Unknown';
       byAcademicLevel[level] = (byAcademicLevel[level] || 0) + 1;
 
       // Days calculation
       if (curriculum.totalDays) {
         totalDays += curriculum.totalDays;
+      }
+
+      if (curriculum.daysInCurrentStage) {
+        totalDaysInStage += curriculum.daysInCurrentStage;
       }
 
       // Overdue check
@@ -68,56 +89,88 @@ const TrackingStats = ({ stats, curricula = [] }) => {
       }
     });
 
+    const completedCount = byStatus.completed || 0;
+    const totalCount = curricula.length;
+
     return {
       byStage,
       bySchool,
+      byDepartment,
       byPriority,
       byAcademicLevel,
+      byStatus,
       averageDays: curricula.length > 0 ? Math.round(totalDays / curricula.length) : 0,
+      avgDaysInCurrentStage: curricula.length > 0 ? Math.round(totalDaysInStage / curricula.length) : 0,
       overdueCount,
       activeAssignments,
-      initiatedBy
+      initiatedBy,
+      completionRate: totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
     };
   };
 
   const enhancedStats = calculateEnhancedStats();
 
+  
   const statCards = [
     {
       key: 'total',
       title: 'Total Curricula',
-      value: stats.total,
+      value: stats.total || curricula.length,
       icon: 'fas fa-book',
       color: 'tracking-badge-secondary',
       bgColor: 'rgba(26, 58, 110, 0.1)',
-      description: `${Object.keys(enhancedStats.bySchool).length} schools involved`
+      description: `${Object.keys(enhancedStats.bySchool).length} schools • ${Object.keys(enhancedStats.byDepartment).length} departments`,
+      trend: currentView !== 'all' ? `Filtered view: ${currentView.replace('-', ' ')}` : null
+    },
+    {
+      key: 'myInitiated',
+      title: 'My Initiated',
+      value: stats.myInitiated || 0,
+      icon: 'fas fa-user-plus',
+      color: 'tracking-badge-primary',
+      bgColor: 'rgba(0, 214, 102, 0.1)',
+      description: 'Trackings I started',
+      visible: currentView === 'all' || currentView === 'my-initiated'
+    },
+    {
+      key: 'myAssigned',
+      title: 'My Assigned',
+      value: stats.myAssigned || 0,
+      icon: 'fas fa-user-check',
+      color: 'tracking-badge-warning',
+      bgColor: 'rgba(245, 158, 11, 0.1)',
+      description: 'Trackings assigned to me',
+      visible: currentView === 'all' || currentView === 'my-assigned'
     },
     {
       key: 'inProgress',
       title: 'In Progress',
-      value: stats.inProgress,
+      value: stats.inProgress || enhancedStats.byStatus.under_review || 0,
       icon: 'fas fa-clock',
       color: 'tracking-badge-primary',
       bgColor: 'rgba(0, 214, 102, 0.1)',
-      description: `${enhancedStats.activeAssignments.size} active assignees`
+      description: `${enhancedStats.activeAssignments.size} active assignees`,
+      trend: enhancedStats.avgDaysInCurrentStage > 0 ? `Avg ${enhancedStats.avgDaysInCurrentStage}d in stage` : null
     },
     {
       key: 'onHold',
       title: 'On Hold',
-      value: stats.onHold,
+      value: stats.onHold || enhancedStats.byStatus.on_hold || 0,
       icon: 'fas fa-pause-circle',
       color: 'tracking-badge-warning',
       bgColor: 'rgba(245, 158, 11, 0.1)',
-      description: 'Requiring attention'
+      description: 'Requiring attention',
+      urgent: (stats.onHold || enhancedStats.byStatus.on_hold || 0) > 0
     },
     {
       key: 'completed',
       title: 'Completed',
-      value: stats.completed,
+      value: stats.completed || enhancedStats.byStatus.completed || 0,
       icon: 'fas fa-check-circle',
       color: 'tracking-badge-success',
       bgColor: 'rgba(16, 185, 129, 0.1)',
-      description: 'Successfully approved'
+      description: 'Successfully approved',
+      trend: `${enhancedStats.completionRate}% completion rate`
     },
     {
       key: 'overdue',
@@ -126,12 +179,13 @@ const TrackingStats = ({ stats, curricula = [] }) => {
       icon: 'fas fa-exclamation-triangle',
       color: 'tracking-badge-danger',
       bgColor: 'rgba(239, 68, 68, 0.1)',
-      description: 'Past expected completion'
+      description: 'Past expected completion',
+      urgent: (stats.overdue || enhancedStats.overdueCount) > 0
     },
     {
       key: 'averageDays',
       title: 'Average Duration',
-      value: enhancedStats.averageDays,
+      value: stats.averageDays || enhancedStats.averageDays,
       icon: 'fas fa-calendar-day',
       color: 'tracking-badge-neutral',
       bgColor: 'rgba(107, 114, 128, 0.1)',
@@ -152,74 +206,44 @@ const TrackingStats = ({ stats, curricula = [] }) => {
     }
   };
 
-  const getPriorityStats = () => {
-    return [
-      { 
-        label: 'High Priority', 
-        value: enhancedStats.byPriority.high, 
-        color: '#ef4444',
-        percentage: stats.total > 0 ? Math.round((enhancedStats.byPriority.high / stats.total) * 100) : 0
-      },
-      { 
-        label: 'Medium Priority', 
-        value: enhancedStats.byPriority.medium, 
-        color: '#f59e0b',
-        percentage: stats.total > 0 ? Math.round((enhancedStats.byPriority.medium / stats.total) * 100) : 0
-      },
-      { 
-        label: 'Low Priority', 
-        value: enhancedStats.byPriority.low, 
-        color: '#6b7280',
-        percentage: stats.total > 0 ? Math.round((enhancedStats.byPriority.low / stats.total) * 100) : 0
-      }
-    ];
+  const toggleSection = (section) => {
+    setExpandedSection(expandedSection === section ? null : section);
   };
 
-  const getTopSchools = () => {
-    return Object.entries(enhancedStats.bySchool)
+  const getTopItems = (distribution, limit = 5) => {
+    return Object.entries(distribution)
       .sort(([,a], [,b]) => b - a)
-      .slice(0, 3)
-      .map(([school, count]) => ({
-        school,
+      .slice(0, limit)
+      .map(([item, count]) => ({
+        item,
         count,
-        percentage: stats.total > 0 ? Math.round((count / stats.total) * 100) : 0
+        percentage: curricula.length > 0 ? Math.round((count / curricula.length) * 100) : 0
       }));
-  };
-
-  const getStageDistribution = () => {
-    const stageNames = {
-      initiation: 'Initiation',
-      school_board: 'School Board',
-      dean_committee: 'Dean Committee',
-      senate: 'Senate',
-      qa_review: 'QA Review',
-      vice_chancellor: 'Vice Chancellor',
-      cue_review: 'CUE Review',
-      site_inspection: 'Site Inspection'
-    };
-
-    return Object.entries(enhancedStats.byStage)
-      .map(([stage, count]) => ({
-        stage: stageNames[stage] || stage,
-        count,
-        percentage: stats.total > 0 ? Math.round((count / stats.total) * 100) : 0
-      }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 4);
   };
 
   return (
     <div className="tracking-stats">
+      
+
       {/* Main Statistics Cards */}
       <div className="tracking-grid tracking-grid-auto">
-        {statCards.map(stat => (
+        {statCards
+          .filter(stat => stat.visible !== false)
+          .map(stat => (
           <div key={stat.key} className="tracking-card tracking-stat-card">
             <div className="tracking-card-body">
               <div className="tracking-flex tracking-items-center tracking-justify-between tracking-mb-4">
                 <div className="tracking-stat-info">
                   <h3 className="tracking-stat-title">{stat.title}</h3>
-                  <div className="tracking-stat-value">
-                    {stat.value}{stat.suffix || ''}
+                  <div className="tracking-stat-value" style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
+                    <span>{stat.value}{stat.suffix || ''}</span>
+                    {stat.urgent && (
+                      <i className="fas fa-exclamation-circle" style={{ 
+                        fontSize: '1rem', 
+                        color: 'var(--tracking-danger)',
+                        animation: 'tracking-pulse-danger 2s infinite'
+                      }}></i>
+                    )}
                   </div>
                   {stat.description && (
                     <div style={{ 
@@ -228,6 +252,16 @@ const TrackingStats = ({ stats, curricula = [] }) => {
                       marginTop: '0.25rem' 
                     }}>
                       {stat.description}
+                    </div>
+                  )}
+                  {stat.trend && (
+                    <div style={{ 
+                      fontSize: '0.6875rem', 
+                      color: 'var(--tracking-primary)', 
+                      marginTop: '0.25rem',
+                      fontWeight: '600'
+                    }}>
+                      {stat.trend}
                     </div>
                   )}
                 </div>
@@ -249,46 +283,37 @@ const TrackingStats = ({ stats, curricula = [] }) => {
                 </div>
               </div>
               
-              {/* Progress indicator for some stats */}
-              {stat.key === 'inProgress' && stats.total > 0 && (
+              {/*  progress indicators */}
+              {stat.key === 'inProgress' && curricula.length > 0 && (
                 <div className="tracking-progress-container">
                   <div className="tracking-progress-bar">
                     <div 
                       className="tracking-progress-fill" 
-                      style={{ width: `${(stats.inProgress / stats.total) * 100}%` }}
+                      style={{ width: `${(stat.value / curricula.length) * 100}%` }}
                     ></div>
                   </div>
                   <div className="tracking-progress-text">
                     <span style={{ fontSize: '0.75rem', color: 'var(--tracking-text-muted)' }}>
-                      {Math.round((stats.inProgress / stats.total) * 100)}% of total curricula
+                      {Math.round((stat.value / curricula.length) * 100)}% of total curricula
                     </span>
                   </div>
                 </div>
               )}
               
-              {stat.key === 'overdue' && (stats.overdue > 0 || enhancedStats.overdueCount > 0) && (
-                <div className="tracking-mt-2">
-                  <span className="tracking-badge tracking-badge-danger">
-                    <i className="fas fa-exclamation-circle"></i>
-                    Requires Immediate Attention
-                  </span>
-                </div>
-              )}
-
-              {stat.key === 'completed' && stats.total > 0 && (
+              {stat.key === 'completed' && curricula.length > 0 && (
                 <div className="tracking-progress-container">
                   <div className="tracking-progress-bar">
                     <div 
                       className="tracking-progress-fill" 
                       style={{ 
-                        width: `${(stats.completed / stats.total) * 100}%`,
+                        width: `${(stat.value / curricula.length) * 100}%`,
                         background: 'var(--tracking-success)'
                       }}
                     ></div>
                   </div>
                   <div className="tracking-progress-text">
                     <span style={{ fontSize: '0.75rem', color: 'var(--tracking-text-muted)' }}>
-                      {Math.round((stats.completed / stats.total) * 100)}% completion rate
+                      {Math.round((stat.value / curricula.length) * 100)}% completion rate
                     </span>
                   </div>
                 </div>
@@ -298,104 +323,33 @@ const TrackingStats = ({ stats, curricula = [] }) => {
         ))}
       </div>
 
-      {/*  Analytics Section */}
+      {/* Analytics Section */}
       {curricula.length > 0 && (
         <div className="tracking-grid tracking-grid-auto" style={{ marginTop: '2rem' }}>
-          {/* Priority Distribution */}
-          <div className="tracking-card">
-            <div className="tracking-card-header">
-              <h4 style={{ margin: 0, color: 'var(--tracking-text-primary)', fontSize: '1rem' }}>
-                <i className="fas fa-flag" style={{ marginRight: '0.5rem', color: 'var(--tracking-primary)' }}></i>
-                Priority Distribution
-              </h4>
-            </div>
-            <div className="tracking-card-body">
-              {getPriorityStats().map((priority, index) => (
-                <div key={index} style={{ marginBottom: '1rem' }}>
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    marginBottom: '0.5rem'
-                  }}>
-                    <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>
-                      {priority.label}
-                    </span>
-                    <span style={{ 
-                      fontSize: '0.875rem', 
-                      fontWeight: '600',
-                      color: priority.color
-                    }}>
-                      {priority.value} ({priority.percentage}%)
-                    </span>
-                  </div>
-                  <div className="tracking-progress-bar" style={{ height: '6px' }}>
-                    <div 
-                      className="tracking-progress-fill" 
-                      style={{ 
-                        width: `${priority.percentage}%`,
-                        background: priority.color
-                      }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Top Schools */}
-          <div className="tracking-card">
-            <div className="tracking-card-header">
-              <h4 style={{ margin: 0, color: 'var(--tracking-text-primary)', fontSize: '1rem' }}>
-                <i className="fas fa-university" style={{ marginRight: '0.5rem', color: 'var(--tracking-secondary)' }}></i>
-                Top Schools
-              </h4>
-            </div>
-            <div className="tracking-card-body">
-              {getTopSchools().map((school, index) => (
-                <div key={index} style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  padding: '0.75rem 0',
-                  borderBottom: index < getTopSchools().length - 1 ? '1px solid var(--tracking-border-light)' : 'none'
-                }}>
-                  <div>
-                    <div style={{ fontWeight: '500', fontSize: '0.875rem' }}>
-                      {school.school}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--tracking-text-muted)' }}>
-                      {school.percentage}% of total
-                    </div>
-                  </div>
-                  <span className="tracking-badge tracking-badge-primary">
-                    {school.count}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Stage Distribution */}
           <div className="tracking-card">
-            <div className="tracking-card-header">
-              <h4 style={{ margin: 0, color: 'var(--tracking-text-primary)', fontSize: '1rem' }}>
-                <i className="fas fa-route" style={{ marginRight: '0.5rem', color: 'var(--tracking-accent)' }}></i>
+            <div className="tracking-card-header" style={{ cursor: 'pointer' }} onClick={() => toggleSection('stages')}>
+              <h4 style={{ margin: 0, color: 'var(--tracking-text-primary)', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <i className="fas fa-route" style={{ color: 'var(--tracking-primary)' }}></i>
                 Current Stages
+                <span className="tracking-badge tracking-badge-neutral" style={{ fontSize: '0.6875rem' }}>
+                  {Object.keys(enhancedStats.byStage).length}
+                </span>
               </h4>
+              <i className={`fas fa-chevron-${expandedSection === 'stages' ? 'up' : 'down'}`} style={{ color: 'var(--tracking-text-muted)' }}></i>
             </div>
-            <div className="tracking-card-body">
-              {getStageDistribution().map((stage, index) => (
+            <div className="tracking-card-body" style={{ display: expandedSection === 'stages' ? 'block' : 'none' }}>
+              {getTopItems(enhancedStats.byStage).map((stage, index) => (
                 <div key={index} style={{ 
                   display: 'flex', 
                   justifyContent: 'space-between', 
                   alignItems: 'center',
                   padding: '0.75rem 0',
-                  borderBottom: index < getStageDistribution().length - 1 ? '1px solid var(--tracking-border-light)' : 'none'
+                  borderBottom: index < getTopItems(enhancedStats.byStage).length - 1 ? '1px solid var(--tracking-border-light)' : 'none'
                 }}>
                   <div>
                     <div style={{ fontWeight: '500', fontSize: '0.875rem' }}>
-                      {stage.stage}
+                      {stage.item.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--tracking-text-muted)' }}>
                       {stage.percentage}% of active
@@ -409,15 +363,101 @@ const TrackingStats = ({ stats, curricula = [] }) => {
             </div>
           </div>
 
+          {/* School Distribution */}
+          <div className="tracking-card">
+            <div className="tracking-card-header" style={{ cursor: 'pointer' }} onClick={() => toggleSection('schools')}>
+              <h4 style={{ margin: 0, color: 'var(--tracking-text-primary)', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <i className="fas fa-university" style={{ color: 'var(--tracking-secondary)' }}></i>
+                Schools
+                <span className="tracking-badge tracking-badge-neutral" style={{ fontSize: '0.6875rem' }}>
+                  {Object.keys(enhancedStats.bySchool).length}
+                </span>
+              </h4>
+              <i className={`fas fa-chevron-${expandedSection === 'schools' ? 'up' : 'down'}`} style={{ color: 'var(--tracking-text-muted)' }}></i>
+            </div>
+            <div className="tracking-card-body" style={{ display: expandedSection === 'schools' ? 'block' : 'none' }}>
+              {getTopItems(enhancedStats.bySchool).map((school, index) => (
+                <div key={index} style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  padding: '0.75rem 0',
+                  borderBottom: index < getTopItems(enhancedStats.bySchool).length - 1 ? '1px solid var(--tracking-border-light)' : 'none'
+                }}>
+                  <div>
+                    <div style={{ fontWeight: '500', fontSize: '0.875rem' }}>
+                      {school.item}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--tracking-text-muted)' }}>
+                      {school.percentage}% of total
+                    </div>
+                  </div>
+                  <span className="tracking-badge tracking-badge-primary">
+                    {school.count}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Priority Distribution */}
+          <div className="tracking-card">
+            <div className="tracking-card-header" style={{ cursor: 'pointer' }} onClick={() => toggleSection('priority')}>
+              <h4 style={{ margin: 0, color: 'var(--tracking-text-primary)', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <i className="fas fa-flag" style={{ color: 'var(--tracking-accent)' }}></i>
+                Priority Distribution
+              </h4>
+              <i className={`fas fa-chevron-${expandedSection === 'priority' ? 'up' : 'down'}`} style={{ color: 'var(--tracking-text-muted)' }}></i>
+            </div>
+            <div className="tracking-card-body" style={{ display: expandedSection === 'priority' ? 'block' : 'none' }}>
+              {Object.entries(enhancedStats.byPriority).map(([priority, count], index) => {
+                const percentage = curricula.length > 0 ? Math.round((count / curricula.length) * 100) : 0;
+                const priorityColor = priority === 'high' ? '#ef4444' : priority === 'medium' ? '#f59e0b' : '#6b7280';
+                
+                return (
+                  <div key={index} style={{ marginBottom: '1rem' }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      marginBottom: '0.5rem'
+                    }}>
+                      <span style={{ fontSize: '0.875rem', fontWeight: '500', textTransform: 'capitalize' }}>
+                        {priority} Priority
+                      </span>
+                      <span style={{ 
+                        fontSize: '0.875rem', 
+                        fontWeight: '600',
+                        color: priorityColor
+                      }}>
+                        {count} ({percentage}%)
+                      </span>
+                    </div>
+                    <div className="tracking-progress-bar" style={{ height: '6px' }}>
+                      <div 
+                        className="tracking-progress-fill" 
+                        style={{ 
+                          width: `${percentage}%`,
+                          background: priorityColor
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Key Metrics */}
           <div className="tracking-card">
-            <div className="tracking-card-header">
-              <h4 style={{ margin: 0, color: 'var(--tracking-text-primary)', fontSize: '1rem' }}>
-                <i className="fas fa-chart-bar" style={{ marginRight: '0.5rem', color: 'var(--tracking-success)' }}></i>
+            <div className="tracking-card-header" style={{ cursor: 'pointer' }} onClick={() => toggleSection('metrics')}>
+              <h4 style={{ margin: 0, color: 'var(--tracking-text-primary)', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <i className="fas fa-chart-bar" style={{ color: 'var(--tracking-success)' }}></i>
                 Key Metrics
               </h4>
+              <i className={`fas fa-chevron-${expandedSection === 'metrics' ? 'up' : 'down'}`} style={{ color: 'var(--tracking-text-muted)' }}></i>
             </div>
-            <div className="tracking-card-body">
+            <div className="tracking-card-body" style={{ display: expandedSection === 'metrics' ? 'block' : 'none' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div style={{ 
                   display: 'flex', 
@@ -461,7 +501,21 @@ const TrackingStats = ({ stats, curricula = [] }) => {
                   </span>
                 </div>
 
-                {stats.total > 0 && (
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center'
+                }}>
+                  <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>
+                    <i className="fas fa-building" style={{ marginRight: '0.5rem', color: 'var(--tracking-neutral)' }}></i>
+                    Departments
+                  </span>
+                  <span className="tracking-badge tracking-badge-neutral">
+                    {Object.keys(enhancedStats.byDepartment).length}
+                  </span>
+                </div>
+
+                {curricula.length > 0 && (
                   <div style={{ 
                     display: 'flex', 
                     justifyContent: 'space-between', 
@@ -472,15 +526,46 @@ const TrackingStats = ({ stats, curricula = [] }) => {
                       Success Rate
                     </span>
                     <span className="tracking-badge tracking-badge-success">
-                      {Math.round((stats.completed / stats.total) * 100)}%
+                      {enhancedStats.completionRate}%
                     </span>
                   </div>
                 )}
+
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center'
+                }}>
+                  <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>
+                    <i className="fas fa-clock" style={{ marginRight: '0.5rem', color: 'var(--tracking-info)' }}></i>
+                    Avg Days in Stage
+                  </span>
+                  <span className="tracking-badge tracking-badge-info">
+                    {enhancedStats.avgDaysInCurrentStage}d
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Real-time Update Indicator */}
+      <div className="tracking-update-indicator" style={{
+        marginTop: '1rem',
+        textAlign: 'center',
+        fontSize: '0.75rem',
+        color: 'var(--tracking-text-muted)',
+        padding: '0.5rem',
+        backgroundColor: 'var(--tracking-bg-secondary)',
+        borderRadius: '4px',
+        border: '1px solid var(--tracking-border)'
+      }}>
+        <i className="fas fa-sync-alt" style={{ marginRight: '0.25rem', color: 'var(--tracking-primary)' }}></i>
+        Last updated: {new Date().toLocaleString()} • 
+        Data source: <strong>{currentDataSource.replace('-', ' ')}</strong> • 
+        {curricula.length} records loaded
+      </div>
     </div>
   );
 };
