@@ -1,63 +1,7 @@
-import authService from "./authService";
+// src/services/CurriculumTrackingService.js
 
-
-class TrackingEndpointsRegistry {
-  constructor() {
-   
-    this.endpoints = {
-      
-      GET_BY_ID: { path: '/tracking/{id}', method: 'GET' },
-      GET_MY_INITIATED: { path: '/tracking/my-trackings', method: 'GET' },
-      GET_MY_ASSIGNED: { path: '/tracking/my-assignments', method: 'GET' },
-      GET_BY_SCHOOL: { path: '/tracking/school/{schoolId}', method: 'GET' },
-      GET_BY_STAGE: { path: '/tracking/stage/{stage}', method: 'GET' },
-      
-      
-      GET_BY_ASSIGNEE: { path: '/tracking/assignee/{assigneeId}', method: 'GET' },
-      GET_BY_INITIATOR: { path: '/tracking/initiator/{initiatorId}', method: 'GET' },
-      GET_BY_DEPARTMENT: { path: '/tracking/department/{departmentId}', method: 'GET' },
-      
-      // Action endpoints
-      INITIATE: { path: '/tracking/initiate', method: 'POST' },
-      PERFORM_ACTION: { path: '/tracking/action', method: 'POST' },
-      DOWNLOAD_DOCUMENT: { path: '/tracking/documents/download/{documentId}', method: 'GET' },
-      
-      
-      GET_STATISTICS: { path: '/tracking/statistics', method: 'GET' },
-      SEARCH: { path: '/tracking/search', method: 'GET' },
-      EXPORT: { path: '/tracking/export', method: 'GET' }
-    };
-  }
-
-  getEndpoint(name) {
-    const endpoint = this.endpoints[name];
-    if (!endpoint) {
-      throw new Error(`Endpoint ${name} not found in registry`);
-    }
-    return endpoint;
-  }
-
-  buildUrl(baseURL, endpointName, pathParams = {}, queryParams = {}) {
-    const endpoint = this.getEndpoint(endpointName);
-    let path = endpoint.path;
-    
-    
-    Object.entries(pathParams).forEach(([key, value]) => {
-      path = path.replace(`{${key}}`, value);
-    });
-    
-    const url = new URL(`${baseURL}${path}`);
-    
-    
-    Object.entries(queryParams).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && value !== '') {
-        url.searchParams.append(key, String(value));
-      }
-    });
-    
-    return url.toString();
-  }
-}
+import {TrackingEndpointsRegistry} from '../tracking/TrackingEndpointsRegistry.js'
+import { TrackingApiClient } from '../tracking/TrackingApiClient.js';
 
 
 class TrackingDataTransformer {
@@ -99,19 +43,6 @@ class TrackingDataTransformer {
         'COMPLETED': 'completed',
         'ACCREDITED': 'completed'
       }
-    };
-
-    this.STAGE_ESTIMATES = {
-      'IDEATION': 30,
-      'DEPARTMENT_APPROVAL': 14,
-      'SCHOOL_BOARD_APPROVAL': 21,
-      'DEAN_APPROVAL': 21,
-      'SENATE_APPROVAL': 30,
-      'QA_REVIEW': 45,
-      'VICE_CHANCELLOR_APPROVAL': 14,
-      'CUE_REVIEW': 60,
-      'CUE_EXTERNAL_AUDIT': 60,
-      'SITE_INSPECTION': 30
     };
   }
 
@@ -179,7 +110,7 @@ class TrackingDataTransformer {
     const currentFrontendStage = this.mapApiStageToFrontend(apiData.currentStage);
     const currentIndex = this.STAGE_ORDER.indexOf(currentFrontendStage);
 
-    
+    // Mark previous stages as completed
     for (let i = 0; i < currentIndex; i++) {
       stages[this.STAGE_ORDER[i]] = {
         ...stages[this.STAGE_ORDER[i]],
@@ -188,7 +119,7 @@ class TrackingDataTransformer {
       };
     }
 
-    
+    // Set current stage
     if (currentIndex >= 0) {
       const mappedStatus = this.mapApiStatusToFrontend(apiData.status);
       stages[currentFrontendStage] = {
@@ -224,7 +155,7 @@ class TrackingDataTransformer {
       proposedDurationSemesters: apiData.proposedDurationSemesters,
       curriculumDescription: apiData.curriculumDescription,
       
-      // Academic structure
+      // Academic structure 
       schoolId: apiData.schoolId,
       schoolName: apiData.schoolName,
       school: apiData.schoolName,
@@ -243,7 +174,7 @@ class TrackingDataTransformer {
       statusDisplayName: apiData.statusDisplayName,
       originalStatus: apiData.status,
       
-      // People information
+      // People information 
       initiatedByName: apiData.initiatedByName,
       initiatedByEmail: apiData.initiatedByEmail,
       currentAssigneeName: apiData.currentAssigneeName,
@@ -256,13 +187,15 @@ class TrackingDataTransformer {
       actualCompletionDate: apiData.actualCompletionDate,
       submittedDate: this.formatDate(apiData.createdAt),
       lastUpdated: this.formatDate(apiData.updatedAt),
+      proposedEffectiveDate: apiData.proposedEffectiveDate,
+      proposedExpiryDate: apiData.proposedExpiryDate,
       
       // Calculated fields
       daysInCurrentStage: this.calculateDaysFromDate(apiData.updatedAt),
       totalDays: this.calculateDaysFromDate(apiData.createdAt),
       priority: this.determinePriority(apiData),
       
-      // Status flags
+      // Status flags 
       isActive: apiData.isActive,
       isCompleted: apiData.isCompleted,
       isIdeationStage: apiData.isIdeationStage,
@@ -270,13 +203,11 @@ class TrackingDataTransformer {
       // Workflow stages
       stages: this.createStagesObject(apiData),
       
-      // Additional fields from new endpoints
-      proposedEffectiveDate: apiData.proposedEffectiveDate,
-      proposedExpiryDate: apiData.proposedExpiryDate,
+      // Additional content fields
       initialNotes: apiData.initialNotes,
       recentSteps: apiData.recentSteps,
       
-      // Preserve raw API data for debugging and future use
+      // Preserve raw API data for debugging
       _rawApiData: apiData,
       
       // Metadata
@@ -312,7 +243,7 @@ class TrackingDataTransformer {
   }
 }
 
-
+// Cache Manager Class
 class TrackingCacheManager {
   constructor() {
     this.cache = new Map();
@@ -351,51 +282,31 @@ class TrackingCacheManager {
     this.cache.clear();
     this.expiry.clear();
   }
-
-  isValid(key) {
-    const expiry = this.expiry.get(key);
-    return expiry && Date.now() < expiry;
-  }
 }
+
 
 class CurriculumTrackingService {
   constructor() {
     this.baseURL = import.meta.env.VITE_BASE_URL;
     this.endpointsRegistry = new TrackingEndpointsRegistry();
+    this.apiClient = new TrackingApiClient(this.baseURL, this.endpointsRegistry);
     this.dataTransformer = new TrackingDataTransformer();
     this.cacheManager = new TrackingCacheManager();
     
     console.log('🔄 Enhanced Curriculum Tracking Service initialized');
   }
 
-  
-  async getHeaders(isFormData = false) {
-    try {
-      const token = await authService.getValidToken();
-      const headers = { 'Authorization': `Bearer ${token}` };
-      if (!isFormData) headers['Content-Type'] = 'application/json';
-      return headers;
-    } catch (error) {
-      console.error('❌ [Tracking Service] Failed to get valid token:', error);
-      throw new Error('Authentication required. Please log in again.');
-    }
-  }
-
   async makeRequest(endpointName, options = {}) {
-    const {
-      pathParams = {},
-      queryParams = {},
-      body = null,
-      useCache = true,
-      cacheKey = null
-    } = options;
+    const { useCache = true, cacheKey = null, ...apiOptions } = options;
 
     try {
-     
-      const finalCacheKey = cacheKey || this.cacheManager.generateKey(endpointName, { ...pathParams, ...queryParams });
-      
-     
+      // Check cache for GET requests
       const endpoint = this.endpointsRegistry.getEndpoint(endpointName);
+      const finalCacheKey = cacheKey || this.cacheManager.generateKey(endpointName, { 
+        ...apiOptions.pathParams, 
+        ...apiOptions.queryParams 
+      });
+      
       if (endpoint.method === 'GET' && useCache) {
         const cached = this.cacheManager.get(finalCacheKey);
         if (cached) {
@@ -404,53 +315,20 @@ class CurriculumTrackingService {
         }
       }
 
-      // Build URL
-      const url = this.endpointsRegistry.buildUrl(this.baseURL, endpointName, pathParams, queryParams);
-      console.log(`🔄 [Tracking Service] ${endpoint.method} ${url}`);
-
-      
-      const requestOptions = {
-        method: endpoint.method,
-        headers: await this.getHeaders(body instanceof FormData)
-      };
-
-      if (body && endpoint.method !== 'GET') {
-        requestOptions.body = body instanceof FormData ? body : JSON.stringify(body);
-      }
-
-      // Make request
-      const response = await fetch(url, requestOptions);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`${endpoint.method} ${endpointName} failed: ${response.status} - ${errorText}`);
-      }
-
-      const result = await response.json();
-      console.log(`✅ [Tracking Service] ${endpointName} successful:`, result);
-
+      const result = await this.apiClient.makeRequest(endpointName, apiOptions);
       
       const transformedData = this.dataTransformer.transformApiResponse(result);
       
       const finalResult = {
-        success: true,
-        message: result.message || 'Request successful',
-        data: transformedData,
-        raw: result,
-        _requestInfo: {
-          endpoint: endpointName,
-          method: endpoint.method,
-          url,
-          timestamp: new Date().toISOString()
-        }
+        ...result,
+        data: transformedData
       };
 
-      
       if (endpoint.method === 'GET' && useCache) {
         this.cacheManager.set(finalCacheKey, finalResult);
       }
 
-      
+      // Clear cache for write operations
       if (endpoint.method !== 'GET') {
         this.cacheManager.clear();
       }
@@ -459,14 +337,65 @@ class CurriculumTrackingService {
 
     } catch (error) {
       console.error(`❌ [Tracking Service] ${endpointName} failed:`, error);
-      throw new Error(`Failed to ${endpointName}: ${error.message}`);
+      throw error;
     }
   }
 
-
+  // CRUD Operations
   async getTrackingById(trackingId) {
     return this.makeRequest('GET_BY_ID', {
       pathParams: { id: trackingId }
+    });
+  }
+
+  async updateTracking(trackingId, updateData) {
+    console.log('🔄 [Tracking Service] Updating tracking:', { trackingId, updateData });
+    
+    const allowedFields = [
+      'proposedCurriculumName', 'proposedCurriculumCode', 
+      'proposedDurationSemesters', 'curriculumDescription',
+      'schoolId', 'departmentId', 'academicLevelId',
+      'proposedEffectiveDate', 'proposedExpiryDate', 'initialNotes'
+    ];
+    
+    const formData = this.apiClient.createFormData(updateData, allowedFields);
+    
+    return this.makeRequest('UPDATE_TRACKING', {
+      pathParams: { id: trackingId },
+      body: formData,
+      useCache: false
+    });
+  }
+
+  // Status Management
+  async deactivateTracking(trackingId) {
+    console.log('🔄 [Tracking Service] Deactivating tracking:', trackingId);
+    return this.makeRequest('DEACTIVATE_TRACKING', {
+      pathParams: { id: trackingId },
+      useCache: false
+    });
+  }
+
+  async reactivateTracking(trackingId) {
+    console.log('🔄 [Tracking Service] Reactivating tracking:', trackingId);
+    return this.makeRequest('REACTIVATE_TRACKING', {
+      pathParams: { id: trackingId },
+      useCache: false
+    });
+  }
+
+  async toggleTrackingStatus(trackingId, isActive) {
+    return isActive 
+      ? this.deactivateTracking(trackingId)
+      : this.reactivateTracking(trackingId);
+  }
+
+  // Assignment Management
+  async assignTracking(trackingId, userId) {
+    console.log('🔄 [Tracking Service] Assigning tracking:', { trackingId, userId });
+    return this.makeRequest('ASSIGN_TRACKING', {
+      pathParams: { id: trackingId, userId: userId },
+      useCache: false
     });
   }
 
@@ -496,9 +425,7 @@ class CurriculumTrackingService {
     });
   }
 
- 
   async getTrackingsByAssignee(assigneeId, page = 0, size = 20) {
-    console.log('🔄 [Tracking Service] Getting trackings by assignee:', assigneeId);
     return this.makeRequest('GET_BY_ASSIGNEE', {
       pathParams: { assigneeId },
       queryParams: { page, size }
@@ -506,7 +433,6 @@ class CurriculumTrackingService {
   }
 
   async getTrackingsByInitiator(initiatorId, page = 0, size = 20) {
-    console.log('🔄 [Tracking Service] Getting trackings by initiator:', initiatorId);
     return this.makeRequest('GET_BY_INITIATOR', {
       pathParams: { initiatorId },
       queryParams: { page, size }
@@ -514,7 +440,6 @@ class CurriculumTrackingService {
   }
 
   async getTrackingsByDepartment(departmentId, page = 0, size = 20) {
-    console.log('🔄 [Tracking Service] Getting trackings by department:', departmentId);
     return this.makeRequest('GET_BY_DEPARTMENT', {
       pathParams: { departmentId },
       queryParams: { page, size }
@@ -527,30 +452,23 @@ class CurriculumTrackingService {
     switch (viewMode) {
       case 'my-initiated':
         return this.getMyInitiatedTrackings(page, size);
-      
       case 'my-assigned':
         return this.getMyAssignedTrackings(page, size);
-      
       case 'by-school':
         if (!identifier) throw new Error('School ID required for by-school view');
         return this.getTrackingBySchool(identifier, page, size);
-      
       case 'by-department':
         if (!identifier) throw new Error('Department ID required for by-department view');
         return this.getTrackingsByDepartment(identifier, page, size);
-      
       case 'by-assignee':
         if (!identifier) throw new Error('Assignee ID required for by-assignee view');
         return this.getTrackingsByAssignee(identifier, page, size);
-      
       case 'by-initiator':
         if (!identifier) throw new Error('Initiator ID required for by-initiator view');
         return this.getTrackingsByInitiator(identifier, page, size);
-      
       case 'by-stage':
         if (!identifier) throw new Error('Stage required for by-stage view');
         return this.getTrackingsByStage(identifier, page, size);
-      
       case 'all':
       default:
         return this.getAllCurricula(page, size);
@@ -571,6 +489,7 @@ class CurriculumTrackingService {
     }
   }
 
+  // Action methods
   extractNumericId(curriculum) {
     if (curriculum.id && typeof curriculum.id === 'number') {
       return curriculum.id;
@@ -701,7 +620,7 @@ class CurriculumTrackingService {
     }
   }
 
-
+  // Statistics and reporting
   async getTrackingStatistics() {
     try {
       console.log('🔄 [Tracking Service] Getting tracking statistics...');
@@ -844,7 +763,7 @@ class CurriculumTrackingService {
 
       const response = await fetch(this.endpointsRegistry.buildUrl(this.baseURL, 'DOWNLOAD_DOCUMENT', { documentId }), {
         method: 'GET',
-        headers: await this.getHeaders(),
+        headers: await this.apiClient.getHeaders(),
       });
 
       if (!response.ok) {
@@ -974,42 +893,16 @@ class CurriculumTrackingService {
     return csvContent;
   }
 
-  
-  async testAllNewEndpoints() {
-    console.log('🔄 Testing all new endpoints...');
-    
-    try {
-      console.log('1. Testing getTrackingsByAssignee...');
-      const byAssignee = await this.getTrackingsByAssignee(15, 0, 5);
-      console.log('✅ getTrackingsByAssignee result:', byAssignee);
-      
-      console.log('2. Testing getTrackingsByInitiator...');
-      const byInitiator = await this.getTrackingsByInitiator(15, 0, 5);
-      console.log('✅ getTrackingsByInitiator result:', byInitiator);
-      
-      console.log('3. Testing getTrackingsByDepartment...');
-      const byDepartment = await this.getTrackingsByDepartment(1, 0, 5);
-      console.log('✅ getTrackingsByDepartment result:', byDepartment);
-      
-      console.log('4. Testing enhanced view mode handler...');
-      const viewModeTest = await this.getTrackingsForViewMode('by-assignee', 15, 0, 5);
-      console.log('✅ getTrackingsForViewMode result:', viewModeTest);
-      
-      console.log('🎉 All new endpoints tested successfully!');
-      return {
-        byAssignee, byInitiator, byDepartment, viewModeTest
-      };
-      
-    } catch (error) {
-      console.error('❌ Error testing new endpoints:', error);
-      return { error: error.message };
-    }
+  // Service utilities
+  clearAllCaches() {
+    this.cacheManager.clear();
+    console.log('🧹 [Tracking Service] All caches cleared');
   }
 
   getServiceInfo() {
     return {
       baseURL: this.baseURL,
-      availableEndpoints: Object.keys(this.endpointsRegistry.endpoints),
+      availableEndpoints: this.endpointsRegistry.getAllEndpoints(),
       cacheStats: {
         size: this.cacheManager.cache.size,
         keys: Array.from(this.cacheManager.cache.keys())
@@ -1021,45 +914,34 @@ class CurriculumTrackingService {
       }
     };
   }
-
-  
-  clearAllCaches() {
-    this.cacheManager.clear();
-    console.log('🧹 [Tracking Service] All caches cleared');
-  }
 }
 
 
 const curriculumTrackingService = new CurriculumTrackingService();
 
-// Debugging tools for development
+// Development debugging tools
 if (typeof window !== 'undefined') {
   window.curriculumTrackingService = curriculumTrackingService;
   
-  //  testing functions
+  
+  window.testUpdateTracking = (id, data) => curriculumTrackingService.updateTracking(id, data);
+  window.testDeactivateTracking = (id) => curriculumTrackingService.deactivateTracking(id);
+  window.testReactivateTracking = (id) => curriculumTrackingService.reactivateTracking(id);
+  window.testAssignTracking = (id, userId) => curriculumTrackingService.assignTracking(id, userId);
+  window.testToggleStatus = (id, isActive) => curriculumTrackingService.toggleTrackingStatus(id, isActive);
+  
+  
   window.testTrackingsByAssignee = (assigneeId, page, size) => 
     curriculumTrackingService.getTrackingsByAssignee(assigneeId, page, size);
   window.testTrackingsByInitiator = (initiatorId, page, size) => 
     curriculumTrackingService.getTrackingsByInitiator(initiatorId, page, size);
   window.testTrackingsByDepartment = (departmentId, page, size) => 
     curriculumTrackingService.getTrackingsByDepartment(departmentId, page, size);
-  window.testTrackingsForViewMode = (viewMode, identifier, page, size) => 
-    curriculumTrackingService.getTrackingsForViewMode(viewMode, identifier, page, size);
   
-  
-  window.testAllNewTrackingEndpoints = () => curriculumTrackingService.testAllNewEndpoints();
+  // Utility functions
   window.getTrackingServiceInfo = () => curriculumTrackingService.getServiceInfo();
   window.clearTrackingCache = () => curriculumTrackingService.clearAllCaches();
-  
-  // Registry inspection tools
   window.inspectTrackingEndpoints = () => curriculumTrackingService.endpointsRegistry.endpoints;
-  window.testEndpointUrl = (endpointName, pathParams, queryParams) => 
-    curriculumTrackingService.endpointsRegistry.buildUrl(
-      curriculumTrackingService.baseURL, 
-      endpointName, 
-      pathParams, 
-      queryParams
-    );
 }
 
 export default curriculumTrackingService;

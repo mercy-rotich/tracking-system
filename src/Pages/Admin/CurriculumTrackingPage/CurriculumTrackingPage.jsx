@@ -8,14 +8,17 @@ import StageDetailsModal from '../../../components/Admin/CurriculaTracking/Stage
 import DocumentUploadModal from '../../../components/Admin/CurriculaTracking/DocumentUploadModal/DocumentUploadModal';
 import NotesModal from '../../../components/Admin/CurriculaTracking/NotesModal/NotesModal';
 import InitiateCurriculumModal from './InitiateCurriculumModal/InitiateCurriculumModal';
+import EditTrackingModal from '../../../components/Admin/CurriculaTracking/EditTrackingModal/EditTrackingModal';
+import AssignTrackingModal from '../../../components/Admin/CurriculaTracking/AssignTrackingModal/AssignTrackingModal';
+import StatusManagementModal from '../../../components/Admin/CurriculaTracking/StatusManagementModal/StatusManagementModal';
 import NotificationBanner from '../../../components/Admin/CurriculaTracking/NotificationBanner/NotificationBanner';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
-import curriculumTrackingService from '../../../services/CurriculumTrackingService';
+import curriculumTrackingService from '../../../services/tracking/CurriculumTrackingService';
 import curriculumService from '../../../services/curriculumService';
 import './CurriculumTrackingPage.css';
 
 const CurriculumTrackingPage = () => {
- 
+  
   const [curricula, setCurricula] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState(false);
@@ -23,11 +26,10 @@ const CurriculumTrackingPage = () => {
   const [selectedCurriculum, setSelectedCurriculum] = useState(null);
   const [error, setError] = useState(null);
 
-  
   const [currentDataSource, setCurrentDataSource] = useState('all');
   const [currentIdentifier, setCurrentIdentifier] = useState(null);
 
-  
+  // Filters state
   const [filters, setFilters] = useState({
     search: '',
     school: '',
@@ -40,15 +42,18 @@ const CurriculumTrackingPage = () => {
     initiatorId: ''
   });
 
-  
+ 
   const [modals, setModals] = useState({
     stageDetails: false,
     documentUpload: false,
     notes: false,
-    initiateCurriculum: false
+    initiateCurriculum: false,
+    editTracking: false,       
+    assignTracking: false,      
+    statusManagement: false     
   });
 
-  
+ 
   const [notification, setNotification] = useState({
     show: false,
     message: '',
@@ -59,7 +64,7 @@ const CurriculumTrackingPage = () => {
   const [schools, setSchools] = useState([]);
   const [departments, setDepartments] = useState([]);
   
-  
+ 
   const [pagination, setPagination] = useState({
     currentPage: 0,
     totalPages: 1,
@@ -67,7 +72,7 @@ const CurriculumTrackingPage = () => {
     pageSize: 20
   });
 
-  
+  // Statistics state
   const [statsData, setStatsData] = useState({
     total: 0,
     inProgress: 0,
@@ -81,6 +86,7 @@ const CurriculumTrackingPage = () => {
     byPriority: {}
   });
 
+  // Utility functions
   const showNotification = useCallback((message, type = 'success') => {
     setNotification({ show: true, message, type });
     setTimeout(() => {
@@ -98,7 +104,7 @@ const CurriculumTrackingPage = () => {
     setSelectedCurriculum(null);
   }, []);
 
-
+  // Data loading functions
   const loadCurriculaData = useCallback(async (page = 0, size = 20, showLoading = true, source = 'all', identifier = null) => {
     try {
       if (showLoading) setIsLoading(true);
@@ -110,7 +116,6 @@ const CurriculumTrackingPage = () => {
 
       let result;
 
-      
       try {
         result = await curriculumTrackingService.getTrackingsForViewMode(source, identifier, page, size);
       } catch (serviceError) {
@@ -164,14 +169,12 @@ const CurriculumTrackingPage = () => {
       }
 
       if (result.success) {
-        
         let filteredData = [];
         
         if (Array.isArray(result.data)) {
           filteredData = result.data;
         } else if (result.data && Array.isArray(result.data.trackings)) {
           filteredData = result.data.trackings;
-         
           if (result.data.pagination) {
             setPagination(result.data.pagination);
           }
@@ -179,7 +182,7 @@ const CurriculumTrackingPage = () => {
           filteredData = [result.data]; 
         }
 
-     
+        //  client-side filters 
         if (source === 'all' || source === 'by-stage') {
           if (filters.search) {
             const searchLower = filters.search.toLowerCase();
@@ -281,8 +284,7 @@ const CurriculumTrackingPage = () => {
     }
   }, [curricula]);
 
- 
-  
+  // View mode handlers
   const handleViewModeChange = useCallback((mode) => {
     setViewMode(mode);
     setFilters(prev => ({ ...prev, schoolId: '', departmentId: '', assigneeId: '', initiatorId: '' }));
@@ -323,6 +325,7 @@ const CurriculumTrackingPage = () => {
     loadCurriculaData(0, pagination.pageSize, true, 'by-initiator', initiatorId);
   }, [pagination.pageSize, loadCurriculaData]);
 
+  // Action handlers
   const handleStageAction = useCallback(async (curriculumIdentifier, stage, action, data = {}) => {
     try {
       setIsActionLoading(true);
@@ -368,6 +371,103 @@ const CurriculumTrackingPage = () => {
       setIsActionLoading(false);
     }
   }, [pagination.currentPage, pagination.pageSize, currentDataSource, currentIdentifier, loadCurriculaData, showNotification]);
+
+  // Update tracking handler
+  const handleUpdateTracking = useCallback(async (trackingId, updateData, documents = []) => {
+    try {
+      setIsActionLoading(true);
+      console.log('🔄 Updating tracking:', { trackingId, updateData, documents });
+
+      const result = await curriculumTrackingService.updateTracking(trackingId, updateData);
+
+      if (result.success) {
+        setCurricula(prev => prev.map(curriculum => 
+          curriculum.id === trackingId ? result.data : curriculum
+        ));
+
+        showNotification('Tracking updated successfully', 'success');
+        closeModal('editTracking');
+        
+        setTimeout(() => {
+          loadCurriculaData(pagination.currentPage, pagination.pageSize, false, currentDataSource, currentIdentifier);
+        }, 1000);
+
+      } else {
+        throw new Error(result.message || 'Failed to update tracking');
+      }
+
+    } catch (error) {
+      console.error('❌ Error updating tracking:', error);
+      showNotification(`Failed to update tracking: ${error.message}`, 'error');
+    } finally {
+      setIsActionLoading(false);
+    }
+  }, [pagination.currentPage, pagination.pageSize, currentDataSource, currentIdentifier, loadCurriculaData, showNotification, closeModal]);
+
+  // Toggle tracking status handler
+  const handleToggleTrackingStatus = useCallback(async (trackingId, isActive, notes = '') => {
+    try {
+      setIsActionLoading(true);
+      console.log('🔄 Toggling tracking status:', { trackingId, isActive, notes });
+
+      const action = isActive ? 'deactivate' : 'reactivate';
+      const result = await curriculumTrackingService.toggleTrackingStatus(trackingId, isActive);
+
+      if (result.success) {
+        setCurricula(prev => prev.map(curriculum => 
+          curriculum.id === trackingId ? result.data : curriculum
+        ));
+
+        showNotification(`Tracking ${action}d successfully`, 'success');
+        closeModal('statusManagement');
+        
+        setTimeout(() => {
+          loadCurriculaData(pagination.currentPage, pagination.pageSize, false, currentDataSource, currentIdentifier);
+        }, 1000);
+
+      } else {
+        throw new Error(result.message || `Failed to ${action} tracking`);
+      }
+
+    } catch (error) {
+      console.error('❌ Error toggling tracking status:', error);
+      showNotification(`Failed to change tracking status: ${error.message}`, 'error');
+    } finally {
+      setIsActionLoading(false);
+    }
+  }, [pagination.currentPage, pagination.pageSize, currentDataSource, currentIdentifier, loadCurriculaData, showNotification, closeModal]);
+
+  //Assign tracking handler
+  const handleAssignTracking = useCallback(async (trackingId, userId, notes = '') => {
+    try {
+      setIsActionLoading(true);
+      console.log('🔄 Assigning tracking:', { trackingId, userId, notes });
+
+      const result = await curriculumTrackingService.assignTracking(trackingId, userId);
+
+      if (result.success) {
+        setCurricula(prev => prev.map(curriculum => 
+          curriculum.id === trackingId ? result.data : curriculum
+        ));
+
+        showNotification('Tracking assigned successfully', 'success');
+        closeModal('assignTracking');
+        
+        setTimeout(() => {
+          loadCurriculaData(pagination.currentPage, pagination.pageSize, false, currentDataSource, currentIdentifier);
+        }, 1000);
+
+      } else {
+        throw new Error(result.message || 'Failed to assign tracking');
+      }
+
+    } catch (error) {
+      console.error('❌ Error assigning tracking:', error);
+      showNotification(`Failed to assign tracking: ${error.message}`, 'error');
+    } finally {
+      setIsActionLoading(false);
+    }
+  }, [pagination.currentPage, pagination.pageSize, currentDataSource, currentIdentifier, loadCurriculaData, showNotification, closeModal]);
 
   const handleDocumentUpload = useCallback(async (curriculumId, stage, documents) => {
     try {
@@ -490,7 +590,7 @@ const CurriculumTrackingPage = () => {
     }
   }, [filters, showNotification]);
 
- 
+  // Filter handlers
   const handleFilterChange = useCallback((filterName, value) => {
     setFilters(prev => ({ ...prev, [filterName]: value }));
   }, []);
@@ -509,7 +609,7 @@ const CurriculumTrackingPage = () => {
     });
   }, []);
 
- 
+  // Utility functions
   const getUniqueValues = (field) => {
     return [...new Set(curricula.map(c => c[field]))].filter(Boolean);
   };
@@ -518,7 +618,7 @@ const CurriculumTrackingPage = () => {
     loadCurriculaData(pagination.currentPage, pagination.pageSize, true, currentDataSource, currentIdentifier);
   }, [loadCurriculaData, pagination.currentPage, pagination.pageSize, currentDataSource, currentIdentifier]);
 
- 
+  
   useEffect(() => {
     const initializeData = async () => {
       await loadSupportingData();
@@ -552,7 +652,7 @@ const CurriculumTrackingPage = () => {
     }
   }, [filters, loadCurriculaData, pagination.pageSize, isLoading]);
 
-
+  // Loading state
   if (isLoading && curricula.length === 0) {
     return (
       <div className="dashboard-main-content">
@@ -566,6 +666,7 @@ const CurriculumTrackingPage = () => {
     );
   }
 
+  // Error state
   if (error && curricula.length === 0) {
     return (
       <div className="dashboard-main-content">
@@ -591,7 +692,7 @@ const CurriculumTrackingPage = () => {
     );
   }
 
-  
+  // Main render
   return (
     <div className="dashboard-main-content">
       <div className="tracking-page">
@@ -601,7 +702,7 @@ const CurriculumTrackingPage = () => {
           onClose={() => setNotification({ show: false, message: '', type: '' })}
         />
 
-        
+        {/* Header */}
         <TrackingHeader 
           onRefresh={refreshData}
           onInitiateCurriculum={() => openModal('initiateCurriculum')}
@@ -664,13 +765,25 @@ const CurriculumTrackingPage = () => {
               setSelectedCurriculum(curriculum);
               openModal('stageDetails');
             }}
+            onEditTracking={(curriculum) => {
+              setSelectedCurriculum(curriculum);
+              openModal('editTracking');
+            }}
+            onAssignTracking={(curriculum) => {
+              setSelectedCurriculum(curriculum);
+              openModal('assignTracking');
+            }}
+            onToggleStatus={(curriculum) => {
+              setSelectedCurriculum(curriculum);
+              openModal('statusManagement');
+            }}
             isLoading={isActionLoading}
             currentViewMode={viewMode}
             currentDataSource={currentDataSource}
           />
         )}
 
-        {/*  Pagination and Data Source Info */}
+        {/* Pagination and Data Source Info */}
         {pagination.totalElements > 0 && (
           <div className="tracking-pagination-info" style={{ 
             textAlign: 'center', 
@@ -748,11 +861,35 @@ const CurriculumTrackingPage = () => {
           />
         )}
 
-        {/* Initiate Curriculum Modal */}
         {modals.initiateCurriculum && (
           <InitiateCurriculumModal
             onClose={() => closeModal('initiateCurriculum')}
             onInitiate={handleInitiateCurriculum}
+          />
+        )}
+
+        
+        {modals.editTracking && selectedCurriculum && (
+          <EditTrackingModal
+            curriculum={selectedCurriculum}
+            onClose={() => closeModal('editTracking')}
+            onUpdate={handleUpdateTracking}
+          />
+        )}
+
+        {modals.assignTracking && selectedCurriculum && (
+          <AssignTrackingModal
+            curriculum={selectedCurriculum}
+            onClose={() => closeModal('assignTracking')}
+            onAssign={handleAssignTracking}
+          />
+        )}
+
+        {modals.statusManagement && selectedCurriculum && (
+          <StatusManagementModal
+            curriculum={selectedCurriculum}
+            onClose={() => closeModal('statusManagement')}
+            onStatusChange={handleToggleTrackingStatus}
           />
         )}
       </div>

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import './StageDetailsModal.css';
-
-const EnhancedStageDetailsModal = ({ 
+const StageDetailsModal = ({ 
   curriculum, 
   onClose, 
   onStageAction, 
@@ -868,4 +867,4 @@ const EnhancedStageDetailsModal = ({
   );
 };
 
-export default StageDetailsModal;
+export default StageDetailsModal

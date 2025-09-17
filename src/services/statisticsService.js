@@ -1,5 +1,5 @@
 import curriculumService from "./curriculumService";
-import curriculumTrackingService from "./CurriculumTrackingService";
+import curriculumTrackingService from "./tracking/CurriculumTrackingService";
 
 class StatisticsService {
     constructor() {
