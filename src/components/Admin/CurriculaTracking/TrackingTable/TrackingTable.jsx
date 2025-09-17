@@ -1,7 +1,15 @@
 import React from 'react';
 import './TrackingTable.css';
 
-const TrackingTable = ({ curricula, onStageAction, onViewDetails, isLoading }) => {
+const TrackingTable = ({ 
+  curricula, 
+  onStageAction, 
+  onViewDetails, 
+  isLoading,
+  onEditTracking,      
+  onAssignTracking,    
+  onToggleStatus       
+}) => {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'completed': return 'tracking-badge-success';
@@ -11,7 +19,7 @@ const TrackingTable = ({ curricula, onStageAction, onViewDetails, isLoading }) =
       case 'rejected': return 'tracking-badge-danger';
       default: return 'tracking-badge-neutral';
     }
-  };
+  }
 
   const getStatusLabel = (status) => {
     switch (status) {
@@ -407,9 +415,10 @@ const TrackingTable = ({ curricula, onStageAction, onViewDetails, isLoading }) =
                     </div>
                   </td>
 
-                  {/* Actions */}
+                  {/*  Actions Column */}
                   <td className="tracking-table-td tracking-text-center">
                     <div className="tracking-table-actions tracking-table-row-actions">
+                      {/* Primary Action: View Details */}
                       <button
                         className="tracking-btn tracking-btn-outline tracking-btn-sm"
                         onClick={() => onViewDetails(curriculum)}
@@ -419,6 +428,7 @@ const TrackingTable = ({ curricula, onStageAction, onViewDetails, isLoading }) =
                         Details
                       </button>
                       
+                      {/* Workflow Actions for Active Trackings */}
                       {(['under_review', 'pending_approval'].includes(curriculum.status)) && (
                         <>
                           <button
@@ -450,6 +460,7 @@ const TrackingTable = ({ curricula, onStageAction, onViewDetails, isLoading }) =
                         </>
                       )}
                       
+                      {/* Resume Action for On Hold */}
                       {curriculum.status === 'on_hold' && (
                         <button
                           className="tracking-btn tracking-btn-primary tracking-btn-sm"
@@ -460,6 +471,51 @@ const TrackingTable = ({ curricula, onStageAction, onViewDetails, isLoading }) =
                           Resume
                         </button>
                       )}
+
+                      {/*  Management Actions */}
+                      <div style={{ 
+                        marginTop: '0.5rem', 
+                        padding: '0.5rem 0', 
+                        borderTop: '1px solid var(--tracking-border-light)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.25rem'
+                      }}>
+                        {/* Edit Tracking */}
+                        <button
+                          className="tracking-btn tracking-btn-outline tracking-btn-sm"
+                          onClick={() => onEditTracking && onEditTracking(curriculum)}
+                          title="Edit tracking information"
+                          style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}
+                        >
+                          <i className="fas fa-edit"></i>
+                          Edit Tracking
+                        </button>
+
+                        {/* Assign Tracking */}
+                        <button
+                          className="tracking-btn tracking-btn-outline tracking-btn-sm"
+                          onClick={() => onAssignTracking && onAssignTracking(curriculum)}
+                          title="Assign to user"
+                          style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}
+                        >
+                          <i className="fas fa-user-plus"></i>
+                          Assign User
+                        </button>
+
+                        {/* Toggle Status */}
+                        <button
+                          className={`tracking-btn tracking-btn-sm ${
+                            curriculum.isActive ? 'tracking-btn-warning' : 'tracking-btn-success'
+                          }`}
+                          onClick={() => onToggleStatus && onToggleStatus(curriculum)}
+                          title={curriculum.isActive ? "Deactivate tracking" : "Activate tracking"}
+                          style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}
+                        >
+                          <i className={`fas fa-${curriculum.isActive ? 'pause' : 'play'}`}></i>
+                          {curriculum.isActive ? 'Deactivate' : 'Activate'}
+                        </button>
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -496,5 +552,4 @@ const TrackingTable = ({ curricula, onStageAction, onViewDetails, isLoading }) =
     </div>
   );
 };
-
 export default TrackingTable;

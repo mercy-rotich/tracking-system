@@ -10,7 +10,10 @@ const WorkflowStage = ({
   onStageAction, 
   onViewDetails, 
   onUploadDocument, 
-  onAddNotes 
+  onAddNotes,
+  onEditTracking,      
+  onAssignTracking,    
+  onToggleStatus       
 }) => {
   const [showDetails, setShowDetails] = useState(false);
 
@@ -130,10 +133,8 @@ const WorkflowStage = ({
   const timelineInfo = getTimelineInfo();
 
   const getAssigneeInfo = () => {
-    
     const assignee = stageData?.assignedTo || curriculum.currentAssigneeName;
     const assigneeEmail = curriculum.currentAssigneeEmail;
-    
     return { assignee, assigneeEmail };
   };
 
@@ -265,7 +266,7 @@ const WorkflowStage = ({
           </div>
         )}
 
-        {/*  Documents Section */}
+        {/* Documents Section */}
         {stageData?.documents && stageData.documents.length > 0 && (
           <div className="tracking-stage-documents">
             <div className="tracking-documents-label">
@@ -289,7 +290,7 @@ const WorkflowStage = ({
           </div>
         )}
 
-        {/*  Notes/Feedback Preview */}
+        {/* Notes/Feedback Preview */}
         {(stageData?.notes || stageData?.feedback || curriculum.initialNotes) && (
           <div className="tracking-stage-notes-preview">
             <div className="tracking-notes-label">
@@ -316,7 +317,7 @@ const WorkflowStage = ({
           </div>
         )}
 
-        {/* Additional Curriculum Information for Current Stage */}
+        {/*  Curriculum Information for Current Stage */}
         {isActive && (
           <div style={{ 
             gridColumn: '1 / -1',
@@ -368,9 +369,9 @@ const WorkflowStage = ({
         )}
       </div>
 
-      {/* Action Buttons */}
+      {/*  Action Buttons */}
       <div className="tracking-stage-actions">
-        {/* Primary Actions */}
+        {/* Primary Workflow Actions */}
         {canTakeAction && (
           <div className="tracking-stage-primary-actions">
             <button
@@ -402,7 +403,7 @@ const WorkflowStage = ({
           </div>
         )}
 
-        {/* Secondary Actions */}
+        {/* Document and Notes Actions */}
         <div className="tracking-stage-secondary-actions">
           <button
             className="tracking-stage-action-btn tracking-action-secondary"
@@ -429,6 +430,48 @@ const WorkflowStage = ({
           >
             <i className="fas fa-sticky-note"></i>
             Notes
+          </button>
+        </div>
+
+        {/*  Management Actions Row */}
+        <div className="tracking-stage-management-actions" style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '0.375rem',
+          marginTop: '0.5rem'
+        }}>
+          <button
+            className="tracking-stage-action-btn tracking-action-secondary"
+            onClick={() => onEditTracking && onEditTracking(curriculum)}
+            title="Edit tracking information"
+            style={{ fontSize: '0.75rem' }}
+          >
+            <i className="fas fa-edit"></i>
+            Edit Tracking
+          </button>
+          
+          <button
+            className="tracking-stage-action-btn tracking-action-secondary"
+            onClick={() => onAssignTracking && onAssignTracking(curriculum)}
+            title="Assign to user"
+            style={{ fontSize: '0.75rem' }}
+          >
+            <i className="fas fa-user-plus"></i>
+            Assign user
+          </button>
+          
+          <button
+            className="tracking-stage-action-btn tracking-action-secondary"
+            onClick={() => onToggleStatus && onToggleStatus(curriculum)}
+            title={curriculum.isActive ? "Deactivate tracking" : "Activate tracking"}
+            style={{ 
+              fontSize: '0.75rem',
+              color: curriculum.isActive ? 'var(--tracking-warning)' : 'var(--tracking-success)',
+              borderColor: curriculum.isActive ? 'var(--tracking-warning)' : 'var(--tracking-success)'
+            }}
+          >
+            <i className={`fas fa-${curriculum.isActive ? 'pause' : 'play'}`}></i>
+            {curriculum.isActive ? 'Deactivate' : 'Activate'}
           </button>
         </div>
 

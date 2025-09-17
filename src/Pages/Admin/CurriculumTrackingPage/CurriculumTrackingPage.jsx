@@ -756,6 +756,18 @@ const CurriculumTrackingPage = () => {
               openModal('notes');
             }}
             isLoading={isActionLoading}
+            onEditTracking={(curriculum) => {
+              setSelectedCurriculum(curriculum);
+              openModal('editTracking');
+            }}
+            onAssignTracking={(curriculum) => {
+              setSelectedCurriculum(curriculum);
+              openModal('assignTracking');
+            }}
+            onToggleStatus={(curriculum) => {
+              setSelectedCurriculum(curriculum);
+              openModal('statusManagement');
+            }}
           />
         ) : (
           <TrackingTable

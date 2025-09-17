@@ -9,10 +9,14 @@ const CurriculumWorkflow = ({
   onViewDetails, 
   onUploadDocument, 
   onAddNotes, 
-  isLoading 
+  isLoading,
+  onEditTracking,     
+  onAssignTracking,    
+  onToggleStatus       
 }) => {
   const [selectedCurriculum, setSelectedCurriculum] = useState(null);
-  const [viewMode, setViewMode] = useState('workflow'); 
+  const [viewMode, setViewMode] = useState('workflow');
+  
   const stages = [
     {
       key: 'initiation',
@@ -128,13 +132,16 @@ const CurriculumWorkflow = ({
         </div>
       </div>
 
-      {/* Table View */}
+      {/* Table View  */}
       {viewMode === 'table' && (
         <TrackingTable
           curricula={curricula}
           onStageAction={onStageAction}
           onViewDetails={onViewDetails}
           isLoading={isLoading}
+          onEditTracking={onEditTracking}      
+          onAssignTracking={onAssignTracking}  
+          onToggleStatus={onToggleStatus}      
         />
       )}
 
@@ -151,7 +158,7 @@ const CurriculumWorkflow = ({
               <div className="tracking-selector-count">
                 {curricula.length} curriculum{curricula.length !== 1 ? 's' : ''}
               </div>
-            </div>
+              </div>
             
             <div className="tracking-curriculum-cards">
               {curricula.map(curriculum => (
@@ -195,7 +202,7 @@ const CurriculumWorkflow = ({
             </div>
           </div>
 
-          {/* Selected Curriculum Workflow */}
+           {/* Selected Curriculum Workflow */}
           {(selectedCurriculum || curricula[0]) && (
             <div className="tracking-active-workflow">
               {/* Workflow Header */}
@@ -300,6 +307,9 @@ const CurriculumWorkflow = ({
                       onViewDetails={onViewDetails}
                       onUploadDocument={onUploadDocument}
                       onAddNotes={onAddNotes}
+                      onEditTracking={onEditTracking}      // Pass through the new props
+                      onAssignTracking={onAssignTracking}  // Pass through the new props
+                      onToggleStatus={onToggleStatus}      // Pass through the new props
                     />
                   ))}
                 </div>
@@ -313,3 +323,4 @@ const CurriculumWorkflow = ({
 };
 
 export default CurriculumWorkflow;
+            
