@@ -1,38 +1,57 @@
-
 import React, { useState, useRef } from 'react';
+import documentManagementService, { DOCUMENT_TYPES, DOCUMENT_TYPE_DISPLAY_NAMES } from '../../../../services/tracking/DocumentManagementService';
 import './DocumentUploadModal.css';
 
+const getStepIdFromStage = (stageName) => {
+  
+  const stageToStepMapping = {
+    'initiation': 1,
+    'IDEATION': 1,
+    'school_board': 2,
+    'SCHOOL_BOARD_APPROVAL': 2,
+    'dean_committee': 3,
+    'DEAN_APPROVAL': 3,
+    'senate': 4,
+    'SENATE_APPROVAL': 4,
+    'qa_review': 5,
+    'QA_REVIEW': 5,
+    'vice_chancellor': 6,
+    'VICE_CHANCELLOR_APPROVAL': 6,
+    'cue_review': 7,
+    'CUE_REVIEW': 7,
+    'site_inspection': 8,
+    'SITE_INSPECTION': 8
+  };
+  
+  return stageToStepMapping[stageName] || 1; // Default to 1 if not found
+};
 const DocumentUploadModal = ({ curriculum, onClose, onUpload }) => {
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({});
   const [dragActive, setDragActive] = useState(false);
+  const [documentType, setDocumentType] = useState(DOCUMENT_TYPES.SUPPORTING_DOCUMENTS);
+  const [description, setDescription] = useState('');
+  const [validationErrors, setValidationErrors] = useState([]);
   const fileInputRef = useRef(null);
 
-  const allowedTypes = [
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'image/jpeg',
-    'image/png',
-    'image/gif'
-  ];
-
-  const maxFileSize = 10 * 1024 * 1024; // 10MB
-
   const handleFileSelect = (selectedFiles) => {
-    const validFiles = Array.from(selectedFiles).filter(file => {
-      if (!allowedTypes.includes(file.type)) {
-        alert(`File type ${file.type} is not allowed`);
-        return false;
-      }
-      if (file.size > maxFileSize) {
-        alert(`File ${file.name} is too large. Maximum size is 10MB`);
-        return false;
-      }
-      return true;
-    });
-
-    setFiles(prev => [...prev, ...validFiles]);
+    const fileArray = Array.from(selectedFiles);
+    
+    
+    const validation = documentManagementService.validator.validateFiles(fileArray);
+    
+    if (validation.isValid) {
+      setFiles(prev => [...prev, ...validation.validFiles]);
+      setValidationErrors([]);
+    } else {
+      // Show validation errors
+      const errors = validation.results
+        .filter(result => !result.isValid)
+        .map(result => result.errors)
+        .flat();
+      setValidationErrors(errors);
+    }
   };
 
   const handleDrag = (e) => {
@@ -71,6 +90,7 @@ const DocumentUploadModal = ({ curriculum, onClose, onUpload }) => {
     if (type.includes('pdf')) return 'fas fa-file-pdf';
     if (type.includes('word')) return 'fas fa-file-word';
     if (type.includes('image')) return 'fas fa-file-image';
+    if (type.includes('excel') || type.includes('sheet')) return 'fas fa-file-excel';
     return 'fas fa-file-alt';
   };
 
@@ -78,33 +98,54 @@ const DocumentUploadModal = ({ curriculum, onClose, onUpload }) => {
     if (type.includes('pdf')) return '#dc2626';
     if (type.includes('word')) return '#2563eb';
     if (type.includes('image')) return '#059669';
+    if (type.includes('excel') || type.includes('sheet')) return '#059669';
     return 'var(--tracking-text-muted)';
   };
-
   const handleUpload = async () => {
     if (files.length === 0) {
       alert('Please select at least one file to upload');
       return;
     }
-
+  
     setUploading(true);
+    setUploadProgress({});
+  
     try {
-      // Simulate upload process
-      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Convert files to document names 
-      const documentNames = files.map(file => file.name);
-      onUpload(documentNames);
+      console.log('📤 Passing files to parent handler:', files.length);
+      
+      // Create progress tracking
+      const progress = {};
+      files.forEach(file => {
+        progress[file.name] = 50; // Show some progress
+      });
+      setUploadProgress(progress);
+      
+      // Call parent's onUpload callback with the files
+      
+      await onUpload(files);
+      
+      
+      const finalProgress = {};
+      files.forEach(file => {
+        finalProgress[file.name] = 100;
+      });
+      setUploadProgress(finalProgress);
+      
+     
+  
     } catch (error) {
-      console.error('Upload error:', error);
-      alert('Failed to upload files. Please try again.');
-    } finally {
+      console.error('❌ Upload error:', error);
+      alert(`Failed to upload files: ${error.message}`);
+      setUploadProgress({});
       setUploading(false);
     }
   };
-
   const currentStage = curriculum.selectedStage || curriculum.currentStage;
   const stageTitle = currentStage?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+  // Get supported file types info
+  const supportedTypes = documentManagementService.getSupportedFileTypes();
 
   return (
     <div className="tracking-modal-overlay" onClick={onClose}>
@@ -134,6 +175,53 @@ const DocumentUploadModal = ({ curriculum, onClose, onUpload }) => {
               </div>
             </div>
           </div>
+
+          {/* Document Type Selection */}
+          <div className="tracking-form-group" style={{ marginBottom: '1rem' }}>
+            <label className="tracking-form-label">
+              Document Type *
+            </label>
+            <select
+              value={documentType}
+              onChange={(e) => setDocumentType(e.target.value)}
+              className="tracking-form-control"
+            >
+              {Object.entries(DOCUMENT_TYPE_DISPLAY_NAMES).map(([key, displayName]) => (
+                <option key={key} value={key}>
+                  {displayName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Description Field */}
+          <div className="tracking-form-group" style={{ marginBottom: '1rem' }}>
+            <label className="tracking-form-label">
+              Description (Optional)
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="tracking-form-control"
+              rows="2"
+              placeholder="Brief description of the documents being uploaded..."
+            />
+          </div>
+
+          {/* Validation Errors */}
+          {validationErrors.length > 0 && (
+            <div className="tracking-file-error" style={{ marginBottom: '1rem' }}>
+              <i className="fas fa-exclamation-triangle"></i>
+              <div>
+                <strong>File Validation Errors:</strong>
+                <ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
+                  {validationErrors.map((error, index) => (
+                    <li key={index}>{error}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
 
           {/* Upload Area */}
           <div className="tracking-upload-section tracking-upload-dropzone-section">
@@ -166,16 +254,16 @@ const DocumentUploadModal = ({ curriculum, onClose, onUpload }) => {
                 multiple
                 className="tracking-upload-file-input"
                 onChange={(e) => handleFileSelect(e.target.files)}
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
+                accept={supportedTypes.extensions.join(',')}
               />
             </div>
 
             {/* File Type Info */}
             <div className="tracking-upload-info tracking-upload-file-info">
               <div className="tracking-upload-file-info-text">
-                <strong>Supported formats:</strong> PDF, Word documents, Images (JPG, PNG, GIF)
+                <strong>Supported formats:</strong> {supportedTypes.extensions.join(', ')}
                 <br />
-                <strong>Maximum file size:</strong> 10MB per file
+                <strong>Maximum file size:</strong> {supportedTypes.formattedMaxSize}
               </div>
             </div>
           </div>
@@ -204,17 +292,32 @@ const DocumentUploadModal = ({ curriculum, onClose, onUpload }) => {
                           {file.name}
                         </div>
                         <div className="tracking-file-meta">
-                          {formatFileSize(file.size)} • {file.type.split('/')[1].toUpperCase()}
+                          {formatFileSize(file.size)} • {file.type.split('/')[1]?.toUpperCase() || 'FILE'}
                         </div>
+                        {uploadProgress[file.name] !== undefined && (
+                          <div className="tracking-file-progress" style={{ marginTop: '0.25rem' }}>
+                            <div className="tracking-progress-bar" style={{ height: '4px' }}>
+                              <div 
+                                className="tracking-progress-fill" 
+                                style={{ width: `${uploadProgress[file.name]}%` }}
+                              ></div>
+                            </div>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--tracking-text-muted)' }}>
+                              {uploadProgress[file.name]}%
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     
-                    <button
-                      className="tracking-btn tracking-btn-outline tracking-btn-sm tracking-file-remove"
-                      onClick={() => removeFile(index)}
-                    >
-                      <i className="fas fa-trash"></i>
-                    </button>
+                    {!uploading && (
+                      <button
+                        className="tracking-btn tracking-btn-outline tracking-btn-sm tracking-file-remove"
+                        onClick={() => removeFile(index)}
+                      >
+                        <i className="fas fa-trash"></i>
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -226,7 +329,7 @@ const DocumentUploadModal = ({ curriculum, onClose, onUpload }) => {
             <div className="tracking-upload-progress tracking-upload-progress-section">
               <div className="tracking-upload-progress-header">
                 <i className="fas fa-spinner tracking-btn-loading"></i>
-                <span>Uploading files...</span>
+                <span>Uploading {files.length} file{files.length !== 1 ? 's' : ''}...</span>
               </div>
               <div className="tracking-progress-bar">
                 <div className="tracking-progress-fill tracking-upload-progress-fill"></div>
@@ -264,7 +367,46 @@ const DocumentUploadModal = ({ curriculum, onClose, onUpload }) => {
                   <li>Committee feedback and recommendations</li>
                 </ul>
               )}
-              {!['initiation', 'school_board', 'dean_committee'].includes(currentStage) && (
+              {currentStage === 'senate' && (
+                <ul className="tracking-stage-requirements-list">
+                  <li>Senate meeting minutes</li>
+                  <li>Academic senate approval document</li>
+                  <li>Any required revisions or amendments</li>
+                </ul>
+              )}
+              {currentStage === 'qa_review' && (
+                <ul className="tracking-stage-requirements-list">
+                  <li>Quality assurance evaluation report</li>
+                  <li>Standards compliance documentation</li>
+                  <li>External review reports (if any)</li>
+                  <li>QA recommendations and findings</li>
+                </ul>
+              )}
+              {currentStage === 'vice_chancellor' && (
+                <ul className="tracking-stage-requirements-list">
+                  <li>Executive summary and recommendation</li>
+                  <li>Vice Chancellor's approval letter</li>
+                  <li>CUE submission documentation</li>
+                  <li>Final institutional endorsement</li>
+                </ul>
+              )}
+              {currentStage === 'cue_review' && (
+                <ul className="tracking-stage-requirements-list">
+                  <li>CUE submission forms and documents</li>
+                  <li>External evaluation reports</li>
+                  <li>Commission feedback and requirements</li>
+                  <li>Response to CUE queries</li>
+                </ul>
+              )}
+              {currentStage === 'site_inspection' && (
+                <ul className="tracking-stage-requirements-list">
+                  <li>Site inspection reports</li>
+                  <li>Final accreditation documents</li>
+                  <li>Compliance verification</li>
+                  <li>Accreditation certificate</li>
+                </ul>
+              )}
+              {!['initiation', 'school_board', 'dean_committee', 'senate', 'qa_review', 'vice_chancellor', 'cue_review', 'site_inspection'].includes(currentStage) && (
                 <ul className="tracking-stage-requirements-list">
                   <li>Stage-specific documentation required</li>
                   <li>Review comments and feedback</li>
@@ -273,6 +415,45 @@ const DocumentUploadModal = ({ curriculum, onClose, onUpload }) => {
               )}
             </div>
           </div>
+
+          {/* Upload Summary */}
+          {files.length > 0 && (
+            <div style={{
+              marginTop: '1rem',
+              padding: '1rem',
+              backgroundColor: 'rgba(0, 214, 102, 0.05)',
+              border: '1px solid rgba(0, 214, 102, 0.2)',
+              borderRadius: '8px'
+            }}>
+              <h5 style={{ 
+                margin: '0 0 0.5rem 0', 
+                color: 'var(--tracking-text-primary)',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <i className="fas fa-check-circle" style={{ color: 'var(--tracking-success)' }}></i>
+                Upload Summary
+              </h5>
+              <div style={{ fontSize: '0.75rem', lineHeight: '1.4' }}>
+                <strong>{files.length}</strong> file{files.length !== 1 ? 's' : ''} selected for upload
+                <br />
+                <strong>Document Type:</strong> {DOCUMENT_TYPE_DISPLAY_NAMES[documentType]}
+                <br />
+                <strong>Stage:</strong> {stageTitle}
+                <br />
+                <strong>Total Size:</strong> {formatFileSize(files.reduce((sum, file) => sum + file.size, 0))}
+                {description && (
+                  <>
+                    <br />
+                    <strong>Description:</strong> {description}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Modal Footer */}

@@ -6,6 +6,7 @@ import CurriculumWorkflow from '../../../components/Admin/CurriculaTracking/Curr
 import TrackingTable from '../../../components/Admin/CurriculaTracking/TrackingTable/TrackingTable';
 import StageDetailsModal from '../../../components/Admin/CurriculaTracking/StageDetailsModal/StageDetailsModal';
 import DocumentUploadModal from '../../../components/Admin/CurriculaTracking/DocumentUploadModal/DocumentUploadModal';
+import DocumentViewer from '../../../components/Admin/CurriculaTracking/DocumentViewer/DocumentViewer';
 import NotesModal from '../../../components/Admin/CurriculaTracking/NotesModal/NotesModal';
 import InitiateCurriculumModal from './InitiateCurriculumModal/InitiateCurriculumModal';
 import EditTrackingModal from '../../../components/Admin/CurriculaTracking/EditTrackingModal/EditTrackingModal';
@@ -14,6 +15,7 @@ import StatusManagementModal from '../../../components/Admin/CurriculaTracking/S
 import NotificationBanner from '../../../components/Admin/CurriculaTracking/NotificationBanner/NotificationBanner';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import curriculumTrackingService from '../../../services/tracking/CurriculumTrackingService';
+import documentManagementService from '../../../services/tracking/DocumentManagementService';
 import curriculumService from '../../../services/curriculumService';
 import './CurriculumTrackingPage.css';
 
@@ -42,10 +44,11 @@ const CurriculumTrackingPage = () => {
     initiatorId: ''
   });
 
- 
+  // Modal states
   const [modals, setModals] = useState({
     stageDetails: false,
     documentUpload: false,
+    documentViewer: false,
     notes: false,
     initiateCurriculum: false,
     editTracking: false,       
@@ -53,18 +56,18 @@ const CurriculumTrackingPage = () => {
     statusManagement: false     
   });
 
- 
+  // Notification state
   const [notification, setNotification] = useState({
     show: false,
     message: '',
     type: 'success'
   });
   
-  
+  // Supporting data
   const [schools, setSchools] = useState([]);
   const [departments, setDepartments] = useState([]);
   
- 
+  // Pagination state
   const [pagination, setPagination] = useState({
     currentPage: 0,
     totalPages: 1,
@@ -437,7 +440,7 @@ const CurriculumTrackingPage = () => {
     }
   }, [pagination.currentPage, pagination.pageSize, currentDataSource, currentIdentifier, loadCurriculaData, showNotification, closeModal]);
 
-  //Assign tracking handler
+  // Assign tracking handler
   const handleAssignTracking = useCallback(async (trackingId, userId, notes = '') => {
     try {
       setIsActionLoading(true);
@@ -469,28 +472,54 @@ const CurriculumTrackingPage = () => {
     }
   }, [pagination.currentPage, pagination.pageSize, currentDataSource, currentIdentifier, loadCurriculaData, showNotification, closeModal]);
 
+  //  document upload handler
   const handleDocumentUpload = useCallback(async (curriculumId, stage, documents) => {
     try {
       setIsActionLoading(true);
       console.log('🔄 Uploading documents:', { curriculumId, stage, documents });
 
-      const result = await curriculumTrackingService.performTrackingAction(
-        curriculumId,
-        'UPLOAD_DOCUMENTS', 
-        'Document upload',
-        documents
-      );
+      const fileObjects = documents.map(doc => {
+        if (typeof doc === 'string') {
+          return new File([''], doc, { type: 'application/octet-stream' });
+        }
+        return doc;
+      });
 
-      if (result.success) {
-        showNotification(
-          `${documents.length} document${documents.length !== 1 ? 's' : ''} uploaded successfully`,
-          'success'
-        );
+      // Upload documents 
+      if (fileObjects.length === 1) {
+        const result = await documentManagementService.uploadDocument({
+          file: fileObjects[0],
+          trackingId: curriculumId,
+          stepId: stage,
+          documentType: 'SUPPORTING_DOCUMENTS',
+          description: `Document uploaded for ${stage} stage`
+        });
 
-        loadCurriculaData(pagination.currentPage, pagination.pageSize, false, currentDataSource, currentIdentifier);
-      } else {
-        throw new Error(result.message || 'Failed to upload documents');
+        if (result.success) {
+          showNotification(`Document uploaded successfully`, 'success');
+        } else {
+          throw new Error(result.message || 'Failed to upload document');
+        }
+      } else if (fileObjects.length > 1) {
+        const result = await documentManagementService.uploadDocumentsBatch({
+          files: fileObjects,
+          trackingId: curriculumId,
+          stepId: stage,
+          documentType: 'SUPPORTING_DOCUMENTS',
+          descriptions: fileObjects.map(() => `Document uploaded for ${stage} stage`)
+        });
+
+        if (result.success) {
+          showNotification(`${fileObjects.length} documents uploaded successfully`, 'success');
+        } else {
+          throw new Error(result.message || 'Failed to upload documents');
+        }
       }
+
+      // Refresh the curriculum data
+      setTimeout(() => {
+        loadCurriculaData(pagination.currentPage, pagination.pageSize, false, currentDataSource, currentIdentifier);
+      }, 1000);
 
     } catch (error) {
       console.error('❌ Error uploading documents:', error);
@@ -557,14 +586,12 @@ const CurriculumTrackingPage = () => {
     }
   }, [pagination.pageSize, currentDataSource, currentIdentifier, loadCurriculaData, showNotification, closeModal]);
 
+  //  document download handler
   const handleDocumentDownload = useCallback(async (documentId, filename) => {
     try {
       console.log('🔄 Downloading document:', { documentId, filename });
 
-      const result = await curriculumTrackingService.downloadTrackingDocument(
-        documentId,
-        filename
-      );
+      const result = await documentManagementService.downloadDocument(documentId, filename);
 
       if (result.success) {
         showNotification(`Document downloaded: ${result.filename}`, 'success');
@@ -618,7 +645,7 @@ const CurriculumTrackingPage = () => {
     loadCurriculaData(pagination.currentPage, pagination.pageSize, true, currentDataSource, currentIdentifier);
   }, [loadCurriculaData, pagination.currentPage, pagination.pageSize, currentDataSource, currentIdentifier]);
 
-  
+  // Initialize data
   useEffect(() => {
     const initializeData = async () => {
       await loadSupportingData();
@@ -843,19 +870,90 @@ const CurriculumTrackingPage = () => {
           />
         )}
 
-        {modals.documentUpload && selectedCurriculum && (
-          <DocumentUploadModal
-            curriculum={selectedCurriculum}
-            onClose={() => closeModal('documentUpload')}
-            onUpload={(documents) => {
-              handleDocumentUpload(
-                selectedCurriculum.trackingId || selectedCurriculum.id,
-                selectedCurriculum.selectedStage || selectedCurriculum.currentStage,
-                documents
-              );
-              closeModal('documentUpload');
-            }}
-          />
+{modals.documentUpload && selectedCurriculum && (
+  <DocumentUploadModal
+    curriculum={selectedCurriculum}
+    onClose={() => closeModal('documentUpload')}
+    onUpload={async (files) => {
+      try {
+        
+        const numericId = Number(selectedCurriculum.id);  
+        
+        const currentStage = selectedCurriculum.selectedStage || 
+                           selectedCurriculum.currentStage;
+        
+        const stageToStepMap = {
+          'initiation': 1, 'IDEATION': 1,
+          'school_board': 2, 'SCHOOL_BOARD_APPROVAL': 2,
+          'dean_committee': 3, 'DEAN_APPROVAL': 3,
+          'senate': 4, 'SENATE_APPROVAL': 4,
+          'qa_review': 5, 'QA_REVIEW': 5,
+          'vice_chancellor': 6, 'VICE_CHANCELLOR_APPROVAL': 6,
+          'cue_review': 7, 'CUE_REVIEW': 7,
+          'site_inspection': 8, 'SITE_INSPECTION': 8
+        };
+        const stepId = Number(stageToStepMap[currentStage] || 1);
+        
+        console.log('📤 Upload with:', { 
+          id: numericId,           
+          trackingId: selectedCurriculum.trackingId,  
+          stepId, 
+          currentStage,
+          fileCount: files.length 
+        });
+        
+        if (isNaN(numericId)) {
+          throw new Error(`Invalid numeric ID: ${selectedCurriculum.id}`);
+        }
+        if (isNaN(stepId)) {
+          throw new Error(`Invalid step ID for stage: ${currentStage}`);
+        }
+        
+        
+        await handleDocumentUpload(numericId, stepId, files);
+        closeModal('documentUpload');
+        
+      } catch (error) {
+        console.error('❌ Upload callback error:', error);
+        showNotification(`Upload failed: ${error.message}`, 'error');
+      }
+    }}
+  />
+)}
+
+        {/* Document Viewer Modal */}
+        {modals.documentViewer && selectedCurriculum && (
+          <div className="tracking-modal-overlay" onClick={() => closeModal('documentViewer')}>
+            <div className="tracking-modal-content" style={{ maxWidth: '95vw', maxHeight: '90vh' }} onClick={(e) => e.stopPropagation()}>
+              <div className="tracking-modal-header">
+                <div className="tracking-modal-title">
+                  <i className="fas fa-folder-open"></i>
+                  Documents - {selectedCurriculum.title}
+                </div>
+                <button className="tracking-modal-close" onClick={() => closeModal('documentViewer')}>
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+              <div className="tracking-modal-body" style={{ padding: 0 }}>
+                <DocumentViewer
+                  trackingId={selectedCurriculum.trackingId || selectedCurriculum.id}
+                  stepId={selectedCurriculum.selectedStage || selectedCurriculum.currentStage}
+                  showUploadButton={true}
+                  onUploadClick={() => {
+                    closeModal('documentViewer');
+                    openModal('documentUpload');
+                  }}
+                  onDocumentAction={(action, document, data) => {
+                    console.log('Document action:', action, document, data);
+                    if (action === 'download') {
+                      handleDocumentDownload(document.id, document.originalFilename);
+                    }
+                  }}
+                  className="document-viewer-modal"
+                />
+              </div>
+            </div>
+          </div>
         )}
 
         {modals.notes && selectedCurriculum && (
@@ -880,7 +978,6 @@ const CurriculumTrackingPage = () => {
           />
         )}
 
-        
         {modals.editTracking && selectedCurriculum && (
           <EditTrackingModal
             curriculum={selectedCurriculum}
