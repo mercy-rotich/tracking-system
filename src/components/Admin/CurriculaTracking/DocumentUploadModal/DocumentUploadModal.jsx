@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import documentManagementService, { DOCUMENT_TYPES, DOCUMENT_TYPE_DISPLAY_NAMES } from '../../../../services/tracking/DocumentManagementService';
+import authService from '../../../../services/authService';
 import './DocumentUploadModal.css';
 
 const getStepIdFromStage = (stageName) => {
@@ -109,6 +110,14 @@ const DocumentUploadModal = ({ curriculum, onClose, onUpload }) => {
   
     setUploading(true);
     setUploadProgress({});
+    
+    // Debug: Check authentication status
+    console.log('🔍 Pre-upload checks:', {
+      isAuthenticated: authService.isAuthenticated(),
+      hasAdmin: authService.isAdmin(),
+      currentUser: authService.getCurrentUser(),
+      tokenExists: !!authService.getToken()
+    });
   
     try {
       

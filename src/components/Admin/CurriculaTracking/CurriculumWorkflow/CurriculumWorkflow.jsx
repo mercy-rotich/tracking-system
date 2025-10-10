@@ -307,9 +307,9 @@ const CurriculumWorkflow = ({
                       onViewDetails={onViewDetails}
                       onUploadDocument={onUploadDocument}
                       onAddNotes={onAddNotes}
-                      onEditTracking={onEditTracking}      // Pass through the new props
-                      onAssignTracking={onAssignTracking}  // Pass through the new props
-                      onToggleStatus={onToggleStatus}      // Pass through the new props
+                      onEditTracking={onEditTracking}     
+                      onAssignTracking={onAssignTracking} 
+                      onToggleStatus={onToggleStatus}     
                     />
                   ))}
                 </div>

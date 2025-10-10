@@ -25,6 +25,7 @@ import NotificationsPage from './Pages/Admin/NotificationsPage/NotificationsPage
 import CurriculumTrackingPage from './Pages/Admin/CurriculumTrackingPage/CurriculumTrackingPage';
 import AboutPage from './Pages/LandingPage/AboutPage/AboutPage';
 
+
 function App() {
   return (
     <AuthProvider>
@@ -58,6 +59,7 @@ function App() {
                   <Route path="admin-reports" element={<Reports />} />
                   <Route path="admin-notifications" element={<NotificationsPage />} />
                   <Route path="admin-curriculum-tracking" element={<CurriculumTrackingPage />} />
+                  <Route path="admin-settings" element={<UserSettings/>} />
 
                 </Route>
                 

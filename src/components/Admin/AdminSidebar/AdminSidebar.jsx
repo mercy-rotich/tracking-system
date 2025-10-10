@@ -60,32 +60,7 @@ const AdminSidebar = () => {
           }
         ]
       },
-      {
-        id: 'workflow-management',
-        title: 'Workflow Management',
-        items: [
-          { 
-            id: 'stages', 
-            label: 'Stage Management', 
-            icon: 'fas fa-sitemap', 
-            path: '/admin/stage-management' 
-          },
-          { 
-            id: 'approvals', 
-            label: 'Pending Approvals', 
-            icon: 'fas fa-clipboard-check', 
-            badge: 5,
-            badgeColor: 'danger',
-            path: '/admin/pending-approvals' 
-          },
-          { 
-            id: 'deadlines', 
-            label: 'Deadline Management', 
-            icon: 'fas fa-clock', 
-            path: '/admin/deadlines' 
-          }
-        ]
-      },
+      
       {
         id: 'system-tools',
         title: 'System Tools',
@@ -106,7 +81,7 @@ const AdminSidebar = () => {
             id: 'settings', 
             label: 'System Settings', 
             icon: 'fas fa-cog', 
-            path: '/admin/settings' 
+            path: '/admin/admin-settings' 
           }
         ]
       }
