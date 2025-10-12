@@ -6,6 +6,7 @@ import './LandingPageHeader.css'
 const LandingPageHeader = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOnWhiteSection, setIsOnWhiteSection] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -80,10 +81,8 @@ const LandingPageHeader = () => {
   };
 
   const scrollToSection = (sectionId) => {
-   
     if (location.pathname !== '/') {
       navigate('/');
-     
       setTimeout(() => {
         const element = document.getElementById(sectionId);
         if (element) {
@@ -91,12 +90,31 @@ const LandingPageHeader = () => {
         }
       }, 100);
     } else {
-     
       const element = document.getElementById(sectionId);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
+  };
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleAboutClickMobile = (e) => {
+    e.preventDefault();
+    closeMobileMenu();
+    handleAboutClick(e);
+  };
+
+  const handleDashboardClickMobile = (e) => {
+    e.preventDefault();
+    closeMobileMenu();
+    handleDashboardClick(e);
   };
 
   return (
@@ -117,6 +135,7 @@ const LandingPageHeader = () => {
           </div>
         </div>
         
+        {/* Desktop Navigation */}
         <nav className="landing-nav-menu">
           <button 
             className="landing-nav-link" 
@@ -133,6 +152,44 @@ const LandingPageHeader = () => {
             Access Dashboard
           </button>
         </nav>
+
+        {/* Mobile Menu Button */}
+        <button 
+          className={`landing-mobile-menu-btn md:hidden ${isMobileMenuOpen ? 'active' : ''}`}
+          onClick={toggleMobileMenu}
+          aria-label="Toggle mobile menu"
+          aria-expanded={isMobileMenuOpen}
+        >
+          <span className="hamburger-line"></span>
+          <span className="hamburger-line"></span>
+          <span className="hamburger-line"></span>
+        </button>
+
+        {/* Mobile Navigation */}
+        {isMobileMenuOpen && (
+          <>
+            <div className="landing-mobile-menu-overlay" onClick={closeMobileMenu}></div>
+            <nav className="landing-mobile-nav">
+              <div className="landing-mobile-nav-content">
+                <button 
+                  className="landing-mobile-nav-link" 
+                  onClick={handleAboutClickMobile}
+                >
+                  <i className="fas fa-info-circle"></i>
+                  About
+                </button>
+                
+                <button 
+                  className="landing-mobile-dashboard-btn"
+                  onClick={handleDashboardClickMobile}
+                >
+                  <i className="fas fa-tachometer-alt"></i>
+                  Access Dashboard
+                </button>
+              </div>
+            </nav>
+          </>
+        )}
       </div>
     </header>
   );

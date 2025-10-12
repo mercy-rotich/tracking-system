@@ -122,6 +122,7 @@ const TrackingTable = ({
         </div>
 
         <div className="tracking-table-wrapper">
+          {/* Desktop Table View */}
           <table className="tracking-table">
             <thead className="tracking-table-header">
               <tr>
@@ -522,6 +523,199 @@ const TrackingTable = ({
               ))}
             </tbody>
           </table>
+
+          {/* Mobile Cards View */}
+          <div className="tracking-mobile-cards">
+            {curricula.map(curriculum => {
+              const progress = getProgress(curriculum);
+              return (
+                <div key={curriculum.id} className="tracking-mobile-card">
+                  <div className="tracking-mobile-card-header">
+                    <div className="tracking-mobile-card-title">
+                      {truncateText(curriculum.title, 40)}
+                    </div>
+                    <div className="tracking-mobile-card-id">
+                      #{curriculum.trackingId}
+                    </div>
+                  </div>
+                  
+                  <div className="tracking-mobile-card-content">
+                    <div className="tracking-mobile-field">
+                      <div className="tracking-mobile-field-label">
+                        <i className="fas fa-university"></i>
+                        School:
+                      </div>
+                      <div className="tracking-mobile-field-value">
+                        {curriculum.school}
+                      </div>
+                    </div>
+                    
+                    <div className="tracking-mobile-field">
+                      <div className="tracking-mobile-field-label">
+                        <i className="fas fa-building"></i>
+                        Department:
+                      </div>
+                      <div className="tracking-mobile-field-value">
+                        {curriculum.department}
+                      </div>
+                    </div>
+                    
+                    <div className="tracking-mobile-field">
+                      <div className="tracking-mobile-field-label">
+                        <i className="fas fa-route"></i>
+                        Stage:
+                      </div>
+                      <div className="tracking-mobile-field-value">
+                        <span className="tracking-badge tracking-badge-primary">
+                          {getStageName(curriculum.currentStage)}
+                        </span>
+                        <div style={{fontSize: '0.75rem', color: 'var(--tracking-text-muted)', marginTop: '0.25rem'}}>
+                          {curriculum.daysInCurrentStage} days in stage
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="tracking-mobile-field">
+                      <div className="tracking-mobile-field-label">
+                        <i className="fas fa-chart-line"></i>
+                        Progress:
+                      </div>
+                      <div className="tracking-mobile-field-value">
+                        <div className="tracking-mobile-progress">
+                          <div className="tracking-mobile-progress-header">
+                            <span>{Math.round(progress)}%</span>
+                            <span>{curriculum.totalDays}d total</span>
+                          </div>
+                          <div className="tracking-mobile-progress-bar">
+                            <div 
+                              className="tracking-mobile-progress-fill" 
+                              style={{ width: `${progress}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="tracking-mobile-field">
+                      <div className="tracking-mobile-field-label">
+                        <i className="fas fa-info-circle"></i>
+                        Status:
+                      </div>
+                      <div className="tracking-mobile-field-value">
+                        <span className={`tracking-badge ${getStatusBadge(curriculum.status)}`}>
+                          {getStatusLabel(curriculum.status)}
+                        </span>
+                        <div className="tracking-mobile-badges">
+                          {curriculum.isActive && (
+                            <span className="tracking-badge tracking-badge-sm tracking-badge-success">
+                              <i className="fas fa-check"></i>
+                              Active
+                            </span>
+                          )}
+                          {curriculum.isCompleted && (
+                            <span className="tracking-badge tracking-badge-sm tracking-badge-success">
+                              <i className="fas fa-check-circle"></i>
+                              Completed
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="tracking-mobile-field">
+                      <div className="tracking-mobile-field-label">
+                        <i className="fas fa-calendar"></i>
+                        Timeline:
+                      </div>
+                      <div className="tracking-mobile-field-value">
+                        <div style={{fontSize: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem'}}>
+                          <div>
+                            <i className="fas fa-play" style={{marginRight: '0.25rem', color: 'var(--tracking-primary)'}}></i>
+                            Created: {formatDate(curriculum.submittedDate)}
+                          </div>
+                          <div>
+                            <i className="fas fa-clock" style={{marginRight: '0.25rem', color: 'var(--tracking-warning)'}}></i>
+                            Updated: {formatDate(curriculum.lastUpdated)}
+                          </div>
+                          {curriculum.expectedCompletionDate && (
+                            <div>
+                              <i className="fas fa-flag-checkered" style={{marginRight: '0.25rem', color: 'var(--tracking-success)'}}></i>
+                              Expected: {formatDate(curriculum.expectedCompletionDate)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {curriculum.initiatedByName && (
+                      <div className="tracking-mobile-field">
+                        <div className="tracking-mobile-field-label">
+                          <i className="fas fa-user-plus"></i>
+                          Initiated by:
+                        </div>
+                        <div className="tracking-mobile-field-value">
+                          {curriculum.initiatedByName}
+                          {curriculum.initiatedByEmail && (
+                            <div style={{fontSize: '0.7rem', color: 'var(--tracking-text-muted)'}}>
+                              {curriculum.initiatedByEmail}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="tracking-mobile-actions">
+                    <button
+                      className="tracking-btn tracking-btn-outline tracking-btn-sm"
+                      onClick={() => onViewDetails(curriculum)}
+                    >
+                      <i className="fas fa-eye"></i>
+                      Details
+                    </button>
+                    
+                    {(['under_review', 'pending_approval'].includes(curriculum.status)) && (
+                      <>
+                        <button
+                          className="tracking-btn tracking-btn-success tracking-btn-sm"
+                          onClick={() => onStageAction(curriculum.id, curriculum.currentStage, 'approve')}
+                        >
+                          <i className="fas fa-check"></i>
+                          Approve
+                        </button>
+                        
+                        <button
+                          className="tracking-btn tracking-btn-warning tracking-btn-sm"
+                          onClick={() => onStageAction(curriculum.id, curriculum.currentStage, 'hold')}
+                        >
+                          <i className="fas fa-pause"></i>
+                          Hold
+                        </button>
+                        
+                        <button
+                          className="tracking-btn tracking-btn-danger tracking-btn-sm"
+                          onClick={() => onStageAction(curriculum.id, curriculum.currentStage, 'reject')}
+                        >
+                          <i className="fas fa-times"></i>
+                          Reject
+                        </button>
+                      </>
+                    )}
+                    
+                    {curriculum.status === 'on_hold' && (
+                      <button
+                        className="tracking-btn tracking-btn-primary tracking-btn-sm"
+                        onClick={() => onStageAction(curriculum.id, curriculum.currentStage, 'resume')}
+                      >
+                        <i className="fas fa-play"></i>
+                        Resume
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Table Footer */}
