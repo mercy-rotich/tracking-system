@@ -13,7 +13,10 @@ class CurriculumService{
 
   
   buildApiUrl(endpoint) {
-    const url = `${this.baseURL}/${endpoint}`;
+    // Ensure no double slashes when joining base URL and endpoint
+    const baseUrl = this.baseURL.endsWith('/') ? this.baseURL.slice(0, -1) : this.baseURL;
+    const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = `${baseUrl}${path}`;
     console.log('📍 Building API URL:', url);
     return url;
   }

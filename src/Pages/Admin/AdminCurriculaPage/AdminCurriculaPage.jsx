@@ -14,6 +14,7 @@ import { useCurriculumData } from '../../../hooks/useCurriculumData';
 import { useFilters } from '../../../hooks/useFilters';
 import { usePagination } from '../../../hooks/usePagination';
 import { useDepartments } from '../../../hooks/useDepartments';
+import LoadingSpinner from '../../../components/common/LoadingSpinner';
 
 
 const AdminCurriculaPage = () => {
@@ -431,16 +432,14 @@ const AdminCurriculaPage = () => {
     setShowExpiringAlert(false);
   };
 
-  if (!isInitialized) {
+  if (!isInitialized || (isLoading && !curricula.length)) {
     return (
       <div className='dashboard-main-content'>
         <div className="curricula-page">
-          <div className="content-section">
-            <div className="curricula-loading-spinner">
-              <div className="spinner"></div>
-              <p>Initializing admin page...</p>
-            </div>
-          </div>
+          <LoadingSpinner 
+            message="Loading Curricula System..." 
+            subtext="Initializing dashboard and fetching data..."
+          />
         </div>
       </div>
     );

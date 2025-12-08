@@ -1,6 +1,7 @@
 import React from 'react';
 import { getStatusBadge } from '../../../components/Admin/AdminAllCurricula/BadgeComponents';
 import Pagination from './Pagination';
+import LoadingSpinner from '../../common/LoadingSpinner';
 
 const CurriculumTable = ({
   curricula,
@@ -129,11 +130,10 @@ const CurriculumTable = ({
     return (
       <div className="curricula-table-container">
         <div className="content-section">
-          <div className="curricula-loading-spinner">
-            <div className="spinner"></div>
-            <p>Loading page {currentPage + 1} of curricula...</p>
-            <small>Fetching curriculum data and school information...</small>
-          </div>
+          <LoadingSpinner 
+            message={`Loading page ${currentPage + 1} of curricula...`}
+            subtext="Fetching curriculum data and school information..."
+          />
         </div>
       </div>
     );

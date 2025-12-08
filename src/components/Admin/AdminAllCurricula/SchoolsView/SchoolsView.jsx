@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getStatusBadge } from '../BadgeComponents';
 import Pagination from '../Pagination';
 import departmentService from '../../../../services/departmentService';
+import LoadingSpinner from '../../../common/LoadingSpinner';
 import './SchoolsView.css'
 
 const SchoolsView = ({
@@ -864,10 +865,7 @@ const SchoolsView = ({
         <div className="curricula-table-container" style={{ marginTop: '2rem' }}>
           {renderBreadcrumbs()}
           <div className="content-section">
-            <div className="curricula-loading-spinner">
-              <div className="spinner"></div>
-              <p>Loading program curricula...</p>
-            </div>
+            <LoadingSpinner message="Loading program curricula..." />
           </div>
         </div>
       );
@@ -1031,10 +1029,7 @@ const SchoolsView = ({
   if (isLoadingSchoolsData) {
     return (
       <div className="content-section">
-        <div className="curricula-loading-spinner">
-          <div className="spinner"></div>
-          <p>Loading schools data...</p>
-        </div>
+        <LoadingSpinner message="Loading schools data..." />
       </div>
     );
   }

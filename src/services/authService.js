@@ -48,14 +48,29 @@ class AuthService {
     try {
       console.log('🔐 Starting login process');
 
-      const response = await fetch(`${this.baseURL}/auth/login`, {
+      // Only send necessary fields to backend
+      const loginPayload = {
+        username: credentials.username,
+        password: credentials.password
+      };
+
+      const url = `${this.baseURL}/auth/login`;
+      console.log('Login URL:', url);
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify(loginPayload),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          console.error('Failed to parse error response:', e);
+          throw new Error(`Login failed with status: ${response.status}`);
+        }
         throw new Error(errorData.message || 'Invalid credentials');
       }
 
