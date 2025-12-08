@@ -27,7 +27,7 @@ const CurriculumModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
- 
+  // Department handling
   const [allDepartments, setAllDepartments] = useState([]);
   const [availableDepartments, setAvailableDepartments] = useState([]);
   const [isDepartmentsLoading, setIsDepartmentsLoading] = useState(false);
@@ -39,7 +39,7 @@ const CurriculumModal = ({
     { id: 3, label: "PhD Program", programId: 'phd' }
   ];
 
- 
+  // Load departments on mount
   useEffect(() => {
     if (isOpen) {
       loadAllDepartments();
@@ -55,7 +55,7 @@ const CurriculumModal = ({
     }
   }, [formData.schoolId, allDepartments]);
 
- 
+  
   useEffect(() => {
     if (isEdit && curriculum) {
       setFormData({
@@ -91,12 +91,9 @@ const CurriculumModal = ({
     setDepartmentsError('');
     
     try {
-      console.log('🔄 Loading all departments for curriculum modal...');
-      
       // Load all departments
       const departments = await departmentService.getAllDepartmentsSimple();
       
-      console.log('✅ Loaded departments for modal:', departments);
       setAllDepartments(departments);
       setAvailableDepartments(departments);
       
@@ -108,9 +105,8 @@ const CurriculumModal = ({
       console.error('❌ Failed to load departments for modal:', error);
       setDepartmentsError(`Failed to load departments: ${error.message}`);
       
-      // Fallback 
+      
       if (departments && departments.length > 0) {
-        console.log('🔄 Using fallback departments from props');
         setAllDepartments(departments);
         setAvailableDepartments(departments);
         setDepartmentsError('');
@@ -126,13 +122,24 @@ const CurriculumModal = ({
       return;
     }
 
+  
+    if (isNaN(parseInt(schoolId))) {
+      console.warn(`⚠️ Skipping server fetch for non-numeric school ID: ${schoolId}`);
+     
+      const filtered = allDepartments.filter(d => 
+        d.schoolId?.toString() === schoolId?.toString() || 
+        d.schoolName === schoolId
+      );
+      if (filtered.length > 0) {
+        setAvailableDepartments(filtered);
+      }
+      return;
+    }
+
     try {
-      console.log(`🔄 Loading departments for school: ${schoolId}`);
-      
       // Load departments for specific school
       const schoolDepartments = await departmentService.getDepartmentsBySchool(schoolId, 0, 1000);
       
-      console.log(`✅ Loaded ${schoolDepartments.length} departments for school ${schoolId}`);
       setAvailableDepartments(schoolDepartments);
       
      
@@ -146,16 +153,14 @@ const CurriculumModal = ({
     } catch (error) {
       console.error(`❌ Failed to load departments for school ${schoolId}:`, error);
       
-      // Fallback to filtering all departments by school
+     
       const filteredDepartments = allDepartments.filter(dept => 
         dept.schoolId?.toString() === schoolId?.toString()
       );
       
       if (filteredDepartments.length > 0) {
-        console.log(`🔄 Using filtered departments for school ${schoolId}`);
         setAvailableDepartments(filteredDepartments);
       } else {
-        console.log(`⚠️ No departments found for school ${schoolId}, using all departments`);
         setAvailableDepartments(allDepartments);
       }
     }
@@ -229,14 +234,20 @@ const CurriculumModal = ({
     setSubmitError('');
 
     try {
+     
+      const schoolIdInt = parseInt(formData.schoolId);
+      const departmentIdInt = parseInt(formData.departmentId);
+      const academicLevelIdInt = parseInt(formData.academicLevelId);
       
+      if (isNaN(schoolIdInt)) throw new Error("Invalid School ID selected");
+
       const apiData = {
         name: formData.name.trim(),
         code: formData.code.trim().toUpperCase(),
         durationSemesters: parseInt(formData.durationSemesters),
-        schoolId: parseInt(formData.schoolId),
-        departmentId: parseInt(formData.departmentId),
-        academicLevelId: parseInt(formData.academicLevelId)
+        schoolId: schoolIdInt,
+        departmentId: departmentIdInt,
+        academicLevelId: academicLevelIdInt
       };
 
       
@@ -390,7 +401,7 @@ const CurriculumModal = ({
               )}
             </div>
 
-            {/* Two column layout for Code and Duration */}
+           
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
               {/* Curriculum Code */}
               <div className="form-group">

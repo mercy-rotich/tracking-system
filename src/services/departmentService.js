@@ -5,28 +5,27 @@ class DepartmentService {
     this.baseURL = import.meta.env.VITE_BASE_URL;
     console.log('🏢 Department Service initialized with base URL:', this.baseURL);
     
-    
+    // Initialize cache
     this.departmentCache = new Map();
     this.cacheExpiry = new Map();
-    this.CACHE_DURATION = 5 * 60 * 1000; 
+    this.CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
     
-    
+    // School mapping cache
     this.schoolMappingCache = new Map();
     this.schoolMappingExpiry = null;
-    this.SCHOOL_MAPPING_DURATION = 10 * 60 * 1000; 
+    this.SCHOOL_MAPPING_DURATION = 10 * 60 * 1000; // 10 minutes
   }
+
   buildApiUrl(endpoint) {
-    // Ensure no double slashes when joining base URL and endpoint
-    const baseUrl = this.baseURL.endsWith('/') ? this.baseURL.slice(0, -1) : this.baseURL;
-    const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    const url = `${baseUrl}${path}`;
+    const url = `${this.baseURL}/${endpoint}`;
     console.log('📍 Building API URL:', url);
     return url;
   }
 
   async getHeaders() {
     try {
-      const token = localStorage.getItem('sessionToken');
+     
+      const token = await authService.getValidToken();
       
       if (!token) {
         throw new Error('No authentication token available. Please log in again.');
@@ -41,36 +40,13 @@ class DepartmentService {
       throw error;
     }
   }
-
   async checkAuthAndRefresh() {
     try {
-      const token = localStorage.getItem('sessionToken');
-      if (!token) {
-        throw new Error('No authentication token available');
+      if (!authService.isAuthenticated()) {
+        return false;
       }
-
-      
-      const tokenExpiry = localStorage.getItem('tokenExpiry');
-      if (tokenExpiry) {
-        const expiryTime = new Date(tokenExpiry).getTime();
-        const currentTime = Date.now();
-        const timeUntilExpiry = expiryTime - currentTime;
-        
-        
-        if (timeUntilExpiry < 5 * 60 * 1000) {
-          console.log('🔄 Token about to expire, attempting refresh...');
-          
-          try {
-            await authService.refreshToken();
-            console.log('✅ Token refreshed successfully');
-            return true;
-          } catch (refreshError) {
-            console.warn('⚠️ Token refresh failed, will try with current token:', refreshError.message);
-            
-          }
-        }
-      }
-      
+      // authService.getValidToken() handles refresh logic automatically
+      await authService.getValidToken(); 
       return true;
     } catch (error) {
       console.error('❌ Auth check failed:', error);
@@ -78,9 +54,10 @@ class DepartmentService {
     }
   }
 
+  // --- SCHOOL MAPPING & RESOLUTION ---
   
   async loadSchoolMapping() {
-    
+    // Return cached mapping if valid
     if (this.schoolMappingExpiry && Date.now() < this.schoolMappingExpiry && this.schoolMappingCache.size > 0) {
       return this.schoolMappingCache;
     }
@@ -88,60 +65,57 @@ class DepartmentService {
     try {
       console.log('🔄 Loading school mapping...');
       
-      
+      // Dynamic import to avoid circular dependency
       const { default: curriculumService } = await import('./curriculumService');
       
-      
+      // 1. Get schools from Schools API
       let schoolsFromApi = [];
       try {
         const schoolsResult = await curriculumService.makeRequest('/schools/get-all');
         schoolsFromApi = Array.isArray(schoolsResult) ? schoolsResult : (schoolsResult.data || []);
-        console.log('✅ Schools from API:', schoolsFromApi);
       } catch (error) {
         console.warn('⚠️ Schools API failed:', error.message);
       }
       
-      //  Get departments to extract school IDs
+      // 2. Get departments to extract school IDs
       let schoolIdsFromDepartments = new Map();
       try {
-        console.log('🔄 Trying to get school IDs from departments API...');
-        const deptResult = await this.makeRequest('user/departments/get-all-departments?page=0&size=1000');
+       
+        const headers = await this.getHeaders();
+        const response = await fetch(this.buildApiUrl('user/departments/get-all-departments?page=0&size=1000'), { headers });
+        const deptResult = await response.json();
+        
         const departments = deptResult.data?.departments || [];
         
         departments.forEach(dept => {
           if (dept.schoolId && dept.schoolName) {
             schoolIdsFromDepartments.set(dept.schoolName, dept.schoolId);
-            console.log(`📝 Found school mapping from departments: ${dept.schoolName} -> ${dept.schoolId}`);
           }
         });
       } catch (error) {
         console.warn('⚠️ Could not get departments for school mapping:', error.message);
       }
       
-      //  Get curricula to extract school IDs
+      // 3. Get curricula to extract school IDs
       let schoolIdsFromCurricula = new Map();
       try {
         const curriculaResult = await curriculumService.getAllCurriculums(0, 1000);
         curriculaResult.curriculums.forEach(curriculum => {
           if (curriculum.schoolId && curriculum.schoolName) {
             schoolIdsFromCurricula.set(curriculum.schoolName, curriculum.schoolId);
-            console.log(`📝 Found school mapping from curricula: ${curriculum.schoolName} -> ${curriculum.schoolId}`);
           }
         });
       } catch (error) {
         console.warn('⚠️ Could not get curricula for school mapping:', error.message);
       }
       
-  
+      // MERGE EVERYTHING INTO CACHE
       this.schoolMappingCache.clear();
-      
       
       schoolsFromApi.forEach(school => {
         let numericId = null;
         
-    
         numericId = schoolIdsFromDepartments.get(school.name);
-        
         
         if (!numericId) {
           numericId = schoolIdsFromCurricula.get(school.name);
@@ -150,28 +124,21 @@ class DepartmentService {
         if (numericId && !isNaN(parseInt(numericId))) {
           const parsedId = parseInt(numericId);
           
-          // Map code -> numeric ID
           if (school.code) {
             this.schoolMappingCache.set(school.code, parsedId);
-            console.log(`📝 Mapped school code: ${school.code} -> ${parsedId}`);
           }
           
-          // Map name -> numeric ID
           if (school.name) {
             this.schoolMappingCache.set(school.name, parsedId);
-            console.log(`📝 Mapped school name: ${school.name} -> ${parsedId}`);
           }
-        } else {
-          console.warn(`⚠️ Could not find numeric ID for school: ${school.name} (${school.code})`);
         }
       });
       
-
+      // Process found IDs
       schoolIdsFromDepartments.forEach((numericId, schoolName) => {
         if (!isNaN(parseInt(numericId))) {
           const parsedId = parseInt(numericId);
           this.schoolMappingCache.set(schoolName, parsedId);
-          
           
           const matchingSchool = schoolsFromApi.find(s => s.name === schoolName);
           if (matchingSchool && matchingSchool.code) {
@@ -186,7 +153,6 @@ class DepartmentService {
           if (!this.schoolMappingCache.has(schoolName)) {
             this.schoolMappingCache.set(schoolName, parsedId);
           }
-          
           
           const matchingSchool = schoolsFromApi.find(s => s.name === schoolName);
           if (matchingSchool && matchingSchool.code && !this.schoolMappingCache.has(matchingSchool.code)) {
@@ -206,13 +172,12 @@ class DepartmentService {
   }
 
   async resolveSchoolId(schoolIdentifier) {
-  
     if (schoolIdentifier === null || schoolIdentifier === undefined) {
       throw new Error('School identifier is null or undefined');
     }
 
     const schoolIdStr = String(schoolIdentifier);
-   
+    
     if (/^\d+$/.test(schoolIdStr)) {
       const numericId = parseInt(schoolIdStr);
       if (!isNaN(numericId) && numericId > 0) {
@@ -220,28 +185,22 @@ class DepartmentService {
       }
     }
 
-  
     const mapping = await this.loadSchoolMapping();
-    
-   
     const numericId = mapping.get(schoolIdentifier);
     
     if (numericId !== undefined && numericId !== null) {
       const parsed = parseInt(String(numericId));
       if (!isNaN(parsed) && parsed > 0) {
-        console.log(`🔍 Resolved school identifier "${schoolIdentifier}" to ID: ${parsed}`);
         return parsed;
-      } else {
-        console.warn(`⚠️ School mapping returned invalid numeric ID: ${numericId} for ${schoolIdentifier}`);
       }
     }
 
-   
-    const availableKeys = Array.from(mapping.keys()).slice(0, 10); 
+    const availableKeys = Array.from(mapping.keys()).slice(0, 10);
     throw new Error(`Cannot resolve school identifier "${schoolIdentifier}" to a valid numeric ID. Available mappings (first 10): ${availableKeys.join(', ')}. Total mappings: ${mapping.size}`);
   }
 
- 
+  // --- CACHE MANAGEMENT ---
+
   isCacheValid(key) {
     const expiry = this.cacheExpiry.get(key);
     return expiry && Date.now() < expiry;
@@ -252,7 +211,6 @@ class DepartmentService {
     this.cacheExpiry.set(key, Date.now() + this.CACHE_DURATION);
   }
 
- 
   getCache(key) {
     if (this.isCacheValid(key)) {
       return this.departmentCache.get(key);
@@ -260,27 +218,25 @@ class DepartmentService {
     return null;
   }
 
-  
   clearCache() {
     this.departmentCache.clear();
     this.cacheExpiry.clear();
-   
     this.schoolMappingCache.clear();
     this.schoolMappingExpiry = null;
   }
 
- 
+  // --- FALLBACK METHODS ---
+
   async getDepartmentsFromCurriculums(schoolId = null) {
     try {
       console.log('🔄 Fallback: Extracting departments from curriculum data...');
-      
       
       const { default: curriculumService } = await import('./curriculumService');
       
       let result;
       if (schoolId && schoolId !== 'all') {
-       
         try {
+          
           const resolvedId = await this.resolveSchoolId(schoolId);
           result = await curriculumService.getCurriculumsBySchool(resolvedId, 0, 1000);
         } catch (resolveError) {
@@ -321,15 +277,14 @@ class DepartmentService {
     }
   }
 
- 
+  // --- API METHODS ---
 
   async getAllDepartments(page = 0, size = 50, sortBy = 'id', sortDir = 'desc', search = '') {
     const cacheKey = `all-departments-${page}-${size}-${sortBy}-${sortDir}-${search}`;
     
-   
     const cached = this.getCache(cacheKey);
     if (cached) {
-      console.log(' Returning cached departments');
+      console.log('📦 Returning cached departments');
       return cached;
     }
 
@@ -352,7 +307,6 @@ class DepartmentService {
       }
 
       const url = this.buildApiUrl(`user/departments/get-all-departments?${params}`);
-      console.log('📍 Request URL:', url);
       
       const response = await fetch(url, {
         method: 'GET',
@@ -363,11 +317,9 @@ class DepartmentService {
         const responseText = await response.text();
         console.error('❌ Error response:', responseText);
         
-      
         console.log('🔄 API failed, using fallback strategy...');
         const fallbackResult = await this.getDepartmentsFromCurriculums();
         if (fallbackResult.length > 0) {
-          console.log('✅ Using fallback departments data');
           this.setCache(cacheKey, fallbackResult);
           return fallbackResult;
         }
@@ -376,22 +328,17 @@ class DepartmentService {
       }
 
       const result = await response.json();
-      console.log('✅ Departments API response:', result);
       
       const departments = result.data?.departments || [];
-      console.log('✅ Extracted departments:', departments.length);
-      
       this.setCache(cacheKey, departments);
       
       return departments;
     } catch (error) {
       console.error('❌ Error fetching departments:', error);
       
-     
       try {
         const fallbackResult = await this.getDepartmentsFromCurriculums();
         if (fallbackResult.length > 0) {
-          console.log('✅ Using fallback departments data');
           this.setCache(cacheKey, fallbackResult);
           return fallbackResult;
         }
@@ -399,7 +346,6 @@ class DepartmentService {
         console.error('❌ Fallback also failed:', fallbackError);
       }
       
-    
       console.warn('⚠️ Returning empty departments array');
       return [];
     }
@@ -407,7 +353,6 @@ class DepartmentService {
 
   async getDepartmentsBySchool(schoolId, page = 0, size = 50, sortBy = 'name', sortDir = 'asc', search = '') {
     const cacheKey = `school-departments-${schoolId}-${page}-${size}-${sortBy}-${sortDir}-${search}`;
-    
     
     const cached = this.getCache(cacheKey);
     if (cached) {
@@ -421,22 +366,17 @@ class DepartmentService {
       let resolvedSchoolId;
       try {
         resolvedSchoolId = await this.resolveSchoolId(schoolId);
-        console.log(`🔍 Resolved school ID: ${schoolId} -> ${resolvedSchoolId}`);
       } catch (resolveError) {
         console.error(`❌ Could not resolve school ID "${schoolId}":`, resolveError.message);
-       
         const fallbackResult = await this.getDepartmentsFromCurriculums(schoolId);
         if (fallbackResult.length > 0) {
-          console.log(`✅ Using fallback departments data for unresolved school ${schoolId}`);
           this.setCache(cacheKey, fallbackResult);
           return fallbackResult;
         }
         throw resolveError;
       }
       
-    
       await this.checkAuthAndRefresh();
-      
       const headers = await this.getHeaders();
       
       const params = new URLSearchParams({
@@ -450,9 +390,7 @@ class DepartmentService {
         params.append('search', search.trim());
       }
       
-     
       const url = this.buildApiUrl(`user/departments/school/${resolvedSchoolId}?${params}`);
-      console.log('📍 Request URL:', url);
       
       const response = await fetch(url, {
         method: 'GET',
@@ -463,11 +401,9 @@ class DepartmentService {
         const errorText = await response.text();
         console.error('❌ Error response:', errorText);
         
-        
         console.log('🔄 API failed, using fallback strategy...');
         const fallbackResult = await this.getDepartmentsFromCurriculums(schoolId);
         if (fallbackResult.length > 0) {
-          console.log(`✅ Using fallback departments data for school ${schoolId}`);
           this.setCache(cacheKey, fallbackResult);
           return fallbackResult;
         }
@@ -476,22 +412,16 @@ class DepartmentService {
       }
 
       const result = await response.json();
-      console.log('✅ School departments response:', result);
-      
       const departments = result.data?.departments || [];
-      
-     
       this.setCache(cacheKey, departments);
       
       return departments;
     } catch (error) {
       console.error('❌ Error fetching school departments:', error);
       
-     
       try {
         const fallbackResult = await this.getDepartmentsFromCurriculums(schoolId);
         if (fallbackResult.length > 0) {
-          console.log(`✅ Using fallback departments data for school ${schoolId}`);
           this.setCache(cacheKey, fallbackResult);
           return fallbackResult;
         }
@@ -499,49 +429,34 @@ class DepartmentService {
         console.error('❌ Fallback also failed:', fallbackError);
       }
       
-    
       console.warn(`⚠️ Returning empty departments array for school ${schoolId}`);
       return [];
     }
   }
 
-  
   async getDepartmentById(departmentId) {
     const cacheKey = `department-${departmentId}`;
     
-    
     const cached = this.getCache(cacheKey);
     if (cached) {
-      console.log(`📦 Returning cached department ${departmentId}`);
       return cached;
     }
 
     try {
-      console.log(`🔍 Fetching department ${departmentId}...`);
-      
       await this.checkAuthAndRefresh();
       const headers = await this.getHeaders();
       
       const url = this.buildApiUrl(`user/departments/department/${departmentId}`);
-      console.log('📍 Request URL:', url);
       
-      const response = await fetch(url, {
-        method: 'GET',
-        headers,
-      });
+      const response = await fetch(url, { method: 'GET', headers });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
         throw new Error(`Failed to fetch department: ${errorText}`);
       }
 
       const result = await response.json();
-      console.log('✅ Department response:', result);
-      
       const department = result.data;
-      
-     
       this.setCache(cacheKey, department);
       
       return department;
@@ -553,15 +468,10 @@ class DepartmentService {
 
   async getDepartmentCountBySchool(schoolId) {
     try {
-      console.log(`🔢 Fetching department count for school ${schoolId}...`);
-      
-      
       let resolvedSchoolId;
       try {
         resolvedSchoolId = await this.resolveSchoolId(schoolId);
       } catch (resolveError) {
-        console.error(`❌ Could not resolve school ID for count "${schoolId}":`, resolveError.message);
-       
         const fallbackDepartments = await this.getDepartmentsBySchool(schoolId, 0, 1000);
         return fallbackDepartments.length;
       }
@@ -570,44 +480,28 @@ class DepartmentService {
       const headers = await this.getHeaders();
       
       const url = this.buildApiUrl(`user/departments/school/${resolvedSchoolId}/count`);
-      console.log('📍 Request URL:', url);
       
-      const response = await fetch(url, {
-        method: 'GET',
-        headers,
-      });
+      const response = await fetch(url, { method: 'GET', headers });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
-        
-        
         const fallbackDepartments = await this.getDepartmentsBySchool(schoolId, 0, 1000);
         return fallbackDepartments.length;
       }
 
       const result = await response.json();
-      console.log('✅ Department count response:', result);
-      
       return result.data;
     } catch (error) {
-      console.error('❌ Error fetching department count:', error);
-      
       try {
         const departments = await this.getDepartmentsBySchool(schoolId, 0, 1000);
         return departments.length;
       } catch (fallbackError) {
-        console.error('❌ Fallback count failed:', fallbackError);
         return 0;
       }
     }
   }
 
- 
   async searchDepartments(searchTerm, page = 0, size = 50, sortBy = 'name', sortDir = 'asc') {
     try {
-      console.log(`🔍 Searching departments for: "${searchTerm}"`);
-      
       if (!searchTerm || searchTerm.trim() === '') {
         return await this.getAllDepartments(page, size, sortBy, sortDir);
       }
@@ -616,7 +510,6 @@ class DepartmentService {
     } catch (error) {
       console.error('❌ Error searching departments:', error);
       
-      
       try {
         const allDepartments = await this.getDepartmentsFromCurriculums();
         const filtered = allDepartments.filter(dept =>
@@ -624,12 +517,10 @@ class DepartmentService {
           (dept.code && dept.code.toLowerCase().includes(searchTerm.toLowerCase()))
         );
         
-       
         const start = page * size;
         const end = start + size;
         return filtered.slice(start, end);
       } catch (fallbackError) {
-        console.error('❌ Fallback search failed:', fallbackError);
         return [];
       }
     }
@@ -652,7 +543,6 @@ class DepartmentService {
     } catch (error) {
       console.error('❌ Error fetching departments for dropdown:', error);
       
-      
       try {
         const fallbackDepartments = await this.getDepartmentsFromCurriculums();
         return fallbackDepartments.map(dept => ({
@@ -664,13 +554,11 @@ class DepartmentService {
           curriculumCount: dept.curriculumCount || 0
         }));
       } catch (fallbackError) {
-        console.error('❌ Fallback for dropdown failed:', fallbackError);
         return [];
       }
     }
   }
 
- 
   async searchDepartmentsAdvanced(options = {}) {
     const {
       searchTerm = '',
@@ -688,9 +576,6 @@ class DepartmentService {
         return await this.searchDepartments(searchTerm, page, size, sortBy, sortDir);
       }
     } catch (error) {
-      console.error('❌ Error in advanced search:', error);
-      
-      
       try {
         const allDepartments = await this.getDepartmentsFromCurriculums(schoolId);
         let filtered = allDepartments;
@@ -702,18 +587,15 @@ class DepartmentService {
           );
         }
         
-        
         const start = page * size;
         const end = start + size;
         return filtered.slice(start, end);
       } catch (fallbackError) {
-        console.error('❌ Advanced search fallback failed:', fallbackError);
         return [];
       }
     }
   }
 
-  // Admin operations 
   async createDepartment(departmentData) {
     try {
       await this.checkAuthAndRefresh();
@@ -732,8 +614,6 @@ class DepartmentService {
       }
 
       const result = await response.json();
-      
-      
       this.clearCache();
       
       return result.data || result;
@@ -761,8 +641,6 @@ class DepartmentService {
       }
 
       const result = await response.json();
-      
-      
       this.clearCache();
       
       return result.data || result;
@@ -789,8 +667,6 @@ class DepartmentService {
       }
 
       const result = await response.json();
-      
-      
       this.clearCache();
       
       return result;
@@ -800,7 +676,6 @@ class DepartmentService {
     }
   }
 
-  // Utility methods
   async getSchoolDepartmentStatistics(schoolId) {
     try {
       const [departments, count] = await Promise.all([
@@ -820,89 +695,47 @@ class DepartmentService {
     }
   }
 
-  
   async diagnoseIssue() {
     console.log('🔍 DEPARTMENT SERVICE DIAGNOSIS');
     console.log('=====================================');
     
     try {
-      console.log('1. Base URL Check:');
-      console.log('   Base URL:', this.baseURL);
-      console.log('   Sample URL:', this.buildApiUrl('user/departments/get-all-departments'));
+      console.log('1. Base URL Check:', this.baseURL);
       
       console.log('2. Authentication Check:');
-      const token = localStorage.getItem('sessionToken');
-      console.log('   Token exists:', !!token);
+      const isValid = await this.checkAuthAndRefresh();
+      console.log('   Is Authenticated:', isValid);
       
-      if (!token) {
+      if (!isValid) {
         return { success: false, error: 'No authentication token found' };
       }
 
-      console.log('3. Auth Status:');
-      const authStatus = authService.getAuthStatus();
-      console.log('   Is Authenticated:', authStatus.isAuthenticated);
-      console.log('   Should Refresh:', authStatus.shouldRefresh);
-
-      console.log('4. School Mapping Check:');
+      console.log('3. School Mapping Check:');
       const mapping = await this.loadSchoolMapping();
       console.log('   Available school mappings:', Array.from(mapping.entries()));
 
-      console.log('5. Testing getAllDepartments...');
+      console.log('4. Testing getAllDepartments...');
       try {
         const allDepts = await this.getAllDepartments(0, 5);
         console.log('   ✅ Success! Loaded', allDepts.length, 'departments');
       } catch (error) {
         console.log('   ❌ Failed:', error.message);
-        console.log('   🔄 Trying fallback...');
-        const fallbackDepts = await this.getDepartmentsFromCurriculums();
-        console.log('   ✅ Fallback worked! Loaded', fallbackDepts.length, 'departments');
-      }
-
-      console.log('6. Testing getDepartmentsBySchool with resolution...');
-      try {
-        
-        const schoolCodes = Array.from(mapping.keys()).filter(key => typeof key === 'string' && key.length <= 5);
-        if (schoolCodes.length > 0) {
-          const testSchoolCode = schoolCodes[0];
-          console.log(`   Testing with school code: ${testSchoolCode}`);
-          const schoolDepts = await this.getDepartmentsBySchool(testSchoolCode, 0, 3);
-          console.log('   ✅ Success! Loaded', schoolDepts.length, 'school departments');
-        }
-      } catch (error) {
-        console.log('   ❌ Failed:', error.message);
-        console.log('   🔄 Trying fallback...');
-        const fallbackSchoolDepts = await this.getDepartmentsFromCurriculums('SET');
-        console.log('   ✅ Fallback worked! Loaded', fallbackSchoolDepts.length, 'departments');
       }
 
       return {
         success: true,
-        message: 'Diagnosis completed - check console for detailed results',
-        schoolMapping: Array.from(mapping.entries())
+        message: 'Diagnosis completed - check console for detailed results'
       };
       
     } catch (error) {
       console.error('❌ Diagnosis failed:', error);
-      return {
-        success: false,
-        error: error.message,
-        suggestions: [
-          'Check if your user account has proper permissions',
-          'Verify the API endpoints are correct',
-          'Check if school IDs need to be numeric',
-          'Try logging out and logging back in',
-          'Check if the refresh token is working',
-          'Contact your system administrator',
-          'The fallback strategy using curriculum data should still work'
-        ]
-      };
+      return { success: false, error: error.message };
     }
   }
 }
 
 const departmentService = new DepartmentService();
 
-//  debugging tools 
 if (typeof window !== 'undefined') {
   window.departmentService = departmentService;
   window.diagnoseDepartments = () => departmentService.diagnoseIssue();

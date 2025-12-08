@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import authService from '../services/authService';
 
@@ -18,33 +17,26 @@ export const useAuth = () => {
         setUser(userData);
         setIsAuthenticated(true);
         
-        // get fresh roles and permissions
         try {
-          console.log('🔄 Loading fresh user roles and permissions...');
+          
           const roleData = await authService.getUserRolesAndPermissions();
-          console.log('✅ Fresh role data loaded:', roleData);
           setPermissions(roleData.permissions || {});
           setRoles(roleData.roles || []);
         } catch (roleError) {
-          console.warn('⚠️ Failed to load fresh roles, using cached data:', roleError);
-          
+          console.warn('Using cached roles due to fetch error');
           const cachedPermissions = JSON.parse(localStorage.getItem('userPermissions') || '{}');
           const cachedRoles = JSON.parse(localStorage.getItem('userRoles') || '[]');
           setPermissions(cachedPermissions);
           setRoles(cachedRoles);
         }
       } else {
-        console.log('❌ User not authenticated');
         setUser(null);
         setPermissions({});
         setRoles([]);
         setIsAuthenticated(false);
       }
     } catch (error) {
-      console.error('❌ Error loading user data:', error);
       setUser(null);
-      setPermissions({});
-      setRoles([]);
       setIsAuthenticated(false);
     } finally {
       setIsLoading(false);
@@ -53,23 +45,24 @@ export const useAuth = () => {
 
   useEffect(() => {
     loadUserData();
+
+   
+    const handleLogout = () => {
+      console.log('UseAuth detected logout event');
+      setUser(null);
+      setPermissions({});
+      setRoles([]);
+      setIsAuthenticated(false);
+    };
+
+    window.addEventListener('authLogout', handleLogout);
+    return () => window.removeEventListener('authLogout', handleLogout);
   }, []);
 
-  const hasPermission = (permission) => {
-    return permissions[permission] === true;
-  };
-
-  const hasRole = (role) => {
-    return roles.includes(role);
-  };
-
-  const hasAnyRole = (rolesList) => {
-    return rolesList.some(role => roles.includes(role));
-  };
-
-  const refreshUserData = () => {
-    loadUserData();
-  };
+  const hasPermission = (permission) => permissions[permission] === true;
+  const hasRole = (role) => roles.includes(role);
+  const hasAnyRole = (rolesList) => rolesList.some(role => roles.includes(role));
+  const refreshUserData = () => loadUserData();
 
   const canManageUsers = hasPermission('canManageUsers') || hasRole('ADMIN');
   const canManageCurriculum = hasPermission('canManageCurriculum');
@@ -88,7 +81,6 @@ export const useAuth = () => {
     hasRole,
     hasAnyRole,
     refreshUserData,
-   
     canManageUsers,
     canManageCurriculum,
     canViewReports,
