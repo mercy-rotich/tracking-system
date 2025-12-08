@@ -6,8 +6,6 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 const CurriculumTable = ({
   curricula,
   isLoading,
-  
-  // Pagination
   currentPage,
   pageSize,
   totalElements,
@@ -18,14 +16,10 @@ const CurriculumTable = ({
   onPreviousPage,
   onNextPage,
   onPageSizeChange,
-  
-  // Actions
   onEdit,
   onDelete,
   onApprove,
   onReject,
-  
-  // Utilities
   getSchoolName,
   getProgramName,
   onRefresh
@@ -118,7 +112,6 @@ const CurriculumTable = ({
       programName: curriculum.programName || (getProgramName ? getProgramName(curriculum.programId) : 'Unknown Program')
     };
 
-    
     if (!enriched.title) enriched.title = 'Untitled Curriculum';
     if (!enriched.department) enriched.department = 'Unknown Department';
     if (!enriched.status) enriched.status = 'draft';
@@ -162,7 +155,6 @@ const CurriculumTable = ({
   return (
     <div className="curricula-table-container">
       <div className="curricula-table-info">
-        
         {currentPage > 0 && (
           <span className="curricula-table-page-info">
             Page {currentPage + 1} of {totalPages}

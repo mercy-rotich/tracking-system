@@ -245,28 +245,18 @@ const AdminCurriculaPage = () => {
     setShowDeleteModal(true);
   };
 
-
-
   const handleApprove = async (curriculum) => {
     try {
-      console.log('🔄 Handling curriculum approval:', curriculum.id);
-      
-      
       const result = await toggleCurriculumStatus(curriculum);
-      
       await refreshData();
       showNotification(`"${curriculum.title}" status has been toggled successfully!`, 'success');
     } catch (error) {
-      console.error('Error toggling curriculum status:', error);
       showNotification('Failed to update curriculum status. Please try again.', 'error');
     }
   };
 
   const handleReject = async (curriculum) => {
     try {
-      console.log('🔄 Handling curriculum rejection:', curriculum.id);
-      
-      // For rejection,  use the soft delete (inactivate) functionality
       const curriculumData = {
         name: curriculum.title,
         code: curriculum.code,
@@ -276,7 +266,6 @@ const AdminCurriculaPage = () => {
         academicLevelId: curriculumService.mapProgramToAcademicLevel(curriculum.programId)
       };
 
-      // Add optional dates
       if (curriculum.effectiveDate) {
         curriculumData.effectiveDate = curriculum.effectiveDate;
       }
@@ -289,31 +278,22 @@ const AdminCurriculaPage = () => {
       await refreshData();
       showNotification(`"${curriculum.title}" has been rejected and inactivated.`, 'success');
     } catch (error) {
-      console.error('Error rejecting curriculum:', error);
       showNotification('Failed to reject curriculum. Please try again.', 'error');
     }
   };
 
   const handlePutUnderReview = async (curriculum) => {
     try {
-      console.log('🔄 Putting curriculum under review:', curriculum.id);
-      
       const result = await putCurriculumUnderReview(curriculum);
-      
       await refreshData();
       showNotification(`"${curriculum.title}" has been put under review.`, 'success');
     } catch (error) {
-      console.error('Error putting curriculum under review:', error);
       showNotification('Failed to put curriculum under review. Please try again.', 'error');
     }
   };
 
- 
-
   const handleSaveCurriculum = async (formDataOrResult) => {
     try {
-      console.log('✅ Curriculum saved successfully:', formDataOrResult);
-      
       await refreshData();
       
       if (viewMode === 'schools') {
@@ -324,7 +304,6 @@ const AdminCurriculaPage = () => {
       showNotification(`Curriculum ${actionPast} successfully!`, 'success');
       
     } catch (error) {
-      console.error('Error in handleSaveCurriculum:', error);
       showNotification(`Failed to save curriculum: ${error.message}`, 'error');
     } finally {
       setShowAddModal(false);
@@ -338,8 +317,6 @@ const AdminCurriculaPage = () => {
       if (!selectedCurriculum) {
         throw new Error('No curriculum selected for deletion');
       }
-
-      console.log(`🗑️ Deleting curriculum (${deleteType}):`, selectedCurriculum);
 
       let result;
       if (deleteType === 'permanent') {
@@ -364,8 +341,6 @@ const AdminCurriculaPage = () => {
         result = await curriculumService.inactivateCurriculum(selectedCurriculum.id, curriculumData);
       }
 
-      console.log('✅ Curriculum deletion result:', result);
-
       await refreshData();
       
       if (viewMode === 'schools') {
@@ -376,7 +351,6 @@ const AdminCurriculaPage = () => {
       showNotification(`"${selectedCurriculum.title}" has been ${actionText}.`, 'success');
       
     } catch (error) {
-      console.error('Error deleting curriculum:', error);
       const actionText = deleteType === 'permanent' ? 'permanently delete' : 'inactivate';
       showNotification(`Failed to ${actionText} curriculum: ${error.message}`, 'error');
     } finally {
@@ -394,17 +368,14 @@ const AdminCurriculaPage = () => {
         await refetchDepartments();
       }
       
-      // Refresh expiring curriculums
       try {
         const expiring = await loadExpiringCurriculums();
         setExpiringCurriculums(expiring);
       } catch (expiringError) {
-        console.warn('Could not refresh expiring curriculums:', expiringError);
       }
       
       showNotification('Data refreshed successfully', 'success');
     } catch (error) {
-      console.error('Error refreshing data:', error);
       showNotification('Failed to refresh data', 'error');
     }
   };
@@ -416,13 +387,9 @@ const AdminCurriculaPage = () => {
     return schools.find(s => s.id === schoolId || s.code === schoolId);
   };
 
-  //EXPIRING CURRICULUMS HANDLER 
-
   const handleViewExpiringCurriculums = () => {
     if (expiringCurriculums.length > 0) {
-    
       setViewMode('table');
-      
       showNotification(`Viewing ${expiringCurriculums.length} expiring curricula`, 'info');
     }
     setShowExpiringAlert(false);

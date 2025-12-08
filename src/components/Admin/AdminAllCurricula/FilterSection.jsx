@@ -1,19 +1,13 @@
-
 import React from 'react';
 
 const FilterSection = ({
-  
   searchTerm,
   setSearchTerm,
   statusFilter,
   setStatusFilter,
   isSearching,
-  
-  
   viewMode,
   onViewModeChange,
-  
-  
   showAdvancedFilters,
   selectedSchool,
   setSelectedSchool,
@@ -23,8 +17,6 @@ const FilterSection = ({
   setSelectedDepartment,
   sortBy,
   setSortBy,
-  
-  
   schools = [],
   programs = [],
   departments = []
@@ -47,7 +39,6 @@ const FilterSection = ({
 
   return (
     <div className="filter-section">
-      {/* View Mode Toggle */}
       <div className="view-mode-toggle">
         <div className="view-toggle-buttons">
           <button 
@@ -67,7 +58,6 @@ const FilterSection = ({
         </div>
       </div>
 
-      {/* Main Filters */}
       <div className="controls-section">
         <div className="search-container">
           <i className={`fas ${isSearching ? 'fa-spinner fa-spin' : 'fa-search'} search-icon`}></i>
@@ -96,72 +86,61 @@ const FilterSection = ({
         </div>
       </div>
 
-      {/* Advanced Filters - Only for Table View */}
       {showAdvancedFilters && (
-        <div className="advanced-filters-section">
-          <div className="advanced-filters-content">
-            <div className="filter-group">
-              <label className="filter-label">School</label>
-              <select 
-                className="filter-select"
-                value={selectedSchool}
-                onChange={(e) => setSelectedSchool(e.target.value)}
-              >
-                <option value="all">All Schools</option>
-                {schools.map(school => (
-                  <option key={school.id} value={school.id}>
-                    {school.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <div className="advanced-filters">
+          <div className="filter-group">
+            <label>School</label>
+            <select 
+              value={selectedSchool} 
+              onChange={(e) => setSelectedSchool(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">All Schools</option>
+              {schools.map(school => (
+                <option key={school.id} value={school.id}>{school.name}</option>
+              ))}
+            </select>
+          </div>
 
-            <div className="filter-group">
-              <label className="filter-label">Program</label>
-              <select 
-                className="filter-select"
-                value={selectedProgram}
-                onChange={(e) => setSelectedProgram(e.target.value)}
-              >
-                <option value="all">All Programs</option>
-                {programs.map(program => (
-                  <option key={program.id} value={program.id}>
-                    {program.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="filter-group">
+            <label>Program</label>
+            <select 
+              value={selectedProgram} 
+              onChange={(e) => setSelectedProgram(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">All Programs</option>
+              {programs.map(program => (
+                <option key={program.id} value={program.id}>{program.name}</option>
+              ))}
+            </select>
+          </div>
 
-            <div className="filter-group">
-              <label className="filter-label">Department</label>
-              <select 
-                className="filter-select"
-                value={selectedDepartment}
-                onChange={(e) => setSelectedDepartment(e.target.value)}
-              >
-                <option value="all">All Departments</option>
-                {departments.map(dept => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="filter-group">
+            <label>Department</label>
+            <select 
+              value={selectedDepartment} 
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">All Departments</option>
+              {departments.map((dept, index) => (
+                <option key={index} value={dept}>{dept}</option>
+              ))}
+            </select>
+          </div>
 
-            <div className="filter-group">
-              <label className="filter-label">Sort By</label>
-              <select 
-                className="filter-select"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                {sortOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="filter-group">
+            <label>Sort By</label>
+            <select 
+              value={sortBy} 
+              onChange={(e) => setSortBy(e.target.value)}
+              className="filter-select"
+            >
+              {sortOptions.map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
           </div>
         </div>
       )}

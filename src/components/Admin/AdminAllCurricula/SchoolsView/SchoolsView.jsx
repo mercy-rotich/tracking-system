@@ -9,21 +9,17 @@ const SchoolsView = ({
   schools,
   programs,
   isLoading,
-  
-  // Filters
   searchTerm,
   selectedSchool,
   selectedProgram,
   selectedDepartment,
   statusFilter,
   sortBy,
-  
   onEdit,
   onDelete,
   onApprove,
   onReject,
   onRefresh,
-  
   curriculumService,
   getSchoolName,
   findSchool
@@ -37,21 +33,15 @@ const SchoolsView = ({
   const [programViewData, setProgramViewData] = useState([]);
   const [isLoadingSchoolsData, setIsLoadingSchoolsData] = useState(false);
   const [schoolMapping, setSchoolMapping] = useState(new Map());
-  
-  
   const [schoolDepartments, setSchoolDepartments] = useState(new Map());
   const [isLoadingDepartments, setIsLoadingDepartments] = useState(new Set());
   const [departmentErrors, setDepartmentErrors] = useState(new Map());
-  
-  
   const [programCurrentPage, setProgramCurrentPage] = useState(0);
   const [programPageSize] = useState(20);
   const [programTotalPages, setProgramTotalPages] = useState(0);
   const [programHasNext, setProgramHasNext] = useState(false);
   const [programHasPrevious, setProgramHasPrevious] = useState(false);
   const [programTotalElements, setProgramTotalElements] = useState(0);
-
-  
   const [showInteractionHint, setShowInteractionHint] = useState(true);
 
   useEffect(() => {
@@ -72,9 +62,6 @@ const SchoolsView = ({
       return;
     }
 
-    console.log(`🏢 Loading departments for school: ${schoolId}`);
-    
-    
     setIsLoadingDepartments(prev => new Set(prev).add(schoolId));
     
     try {
@@ -87,11 +74,7 @@ const SchoolsView = ({
         return newErrors;
       });
       
-      console.log(`✅ Loaded ${departments.length} departments for school ${schoolId}`);
-      
     } catch (error) {
-      console.error(`❌ Error loading departments for school ${schoolId}:`, error);
-      
       let errorMessage = 'Failed to load departments';
       if (error.message.includes('Unauthorized') || error.message.includes('401')) {
         errorMessage = 'Authentication required';
@@ -115,9 +98,7 @@ const SchoolsView = ({
     }
   };
 
-  
   const retryLoadDepartments = async (schoolId) => {
-    
     setDepartmentErrors(prev => {
       const newErrors = new Map(prev);
       newErrors.delete(schoolId);
@@ -129,21 +110,17 @@ const SchoolsView = ({
       return newDepts;
     });
     
-    
     await loadSchoolDepartments(schoolId);
   };
 
-  
   const getDepartmentsForSchool = (schoolId) => {
     return schoolDepartments.get(schoolId) || [];
   };
 
-  
   const isDepartmentsLoading = (schoolId) => {
     return isLoadingDepartments.has(schoolId);
   };
 
-  // Get department error for a school
   const getDepartmentError = (schoolId) => {
     return departmentErrors.get(schoolId);
   };
@@ -247,7 +224,6 @@ const SchoolsView = ({
       setSchoolsViewData(filteredCurricula);
       
     } catch (error) {
-      console.error('Error loading schools view data:', error);
       setSchoolsViewData([]);
     } finally {
       setIsLoadingSchoolsData(false);
@@ -294,7 +270,6 @@ const SchoolsView = ({
       rejected: schoolCurricula.filter(c => c.status === 'rejected').length
     };
     
-    // Get departments count from backend data
     const backendDepartments = getDepartmentsForSchool(schoolId);
     const curriculumDepartments = [...new Set(schoolCurricula.map(c => c.department))].filter(Boolean);
     const totalDepartments = Math.max(backendDepartments.length, curriculumDepartments.length);
@@ -336,29 +311,20 @@ const SchoolsView = ({
 
   const loadProgramViewData = async (schoolId, programId, page = 0) => {
     try {
-      console.log(`🔄 Loading program view data for school ${schoolId}, program ${programId}, page ${page}`);
-      
       const mappedId = schoolMapping.get(schoolId) || schoolId;
       
-
       const result = await curriculumService.getCurriculumsBySchool(mappedId, 0, 1000);
-      console.log(`📊 Loaded ${result.curriculums.length} total curricula for school ${mappedId}`);
       
-      // Filter by program first
       let filteredCurricula = result.curriculums.filter(c => c.programId === programId);
-      console.log(`📊 After program filter (${programId}): ${filteredCurricula.length} curricula`);
       
       if (selectedDepartment !== 'all') {
         filteredCurricula = filteredCurricula.filter(curriculum => curriculum.department === selectedDepartment);
-        console.log(`📊 After department filter (${selectedDepartment}): ${filteredCurricula.length} curricula`);
       }
       
       if (statusFilter !== 'all') {
         filteredCurricula = filteredCurricula.filter(curriculum => curriculum.status === statusFilter);
-        console.log(`📊 After status filter (${statusFilter}): ${filteredCurricula.length} curricula`);
       }
       
-    
       filteredCurricula.sort((a, b) => {
         switch (sortBy) {
           case 'newest':
@@ -374,23 +340,18 @@ const SchoolsView = ({
         }
       });
       
-      
       const startIndex = page * programPageSize;
       const endIndex = startIndex + programPageSize;
       const paginatedCurricula = filteredCurricula.slice(startIndex, endIndex);
       
-      console.log(`📊 Final paginated curricula (page ${page}): ${paginatedCurricula.length} of ${filteredCurricula.length} total`);
-      
       setProgramViewData(paginatedCurricula);
       
-     
       setProgramTotalElements(filteredCurricula.length);
       setProgramTotalPages(Math.ceil(filteredCurricula.length / programPageSize));
       setProgramHasNext(endIndex < filteredCurricula.length);
       setProgramHasPrevious(page > 0);
       
     } catch (error) {
-      console.error('❌ Error loading program view data:', error);
       setProgramViewData([]);
       setProgramTotalElements(0);
       setProgramTotalPages(0);
@@ -419,13 +380,8 @@ const SchoolsView = ({
   };
 
   const handleProgramClick = async (schoolId, programId) => {
-    console.log(`🖱️ Program clicked: school ${schoolId}, program ${programId}`);
-    
     const school = findSchool ? findSchool(schoolId) : schools.find(s => s.id === schoolId);
     const program = programs.find(p => p.id === programId);
-    
-    console.log(`🏫 School found:`, school);
-    console.log(`🎓 Program found:`, program);
     
     setShowingCurriculaFor({ schoolId, programId });
     setSelectedProgramView({ schoolId, programId });
@@ -437,7 +393,6 @@ const SchoolsView = ({
       { label: program?.name || 'Unknown Program', action: null }
     ]);
     
-    console.log(`🔄 Loading program view data...`);
     await loadProgramViewData(schoolId, programId, 0);
   };
 
@@ -460,7 +415,6 @@ const SchoolsView = ({
     return schoolCurricula.filter(c => c.programId === programId);
   };
 
-  // Program pagination handlers
   const goToProgramPage = async (page) => {
     if (page >= 0 && page < programTotalPages && showingCurriculaFor) {
       setProgramCurrentPage(page);
@@ -484,7 +438,6 @@ const SchoolsView = ({
     }
   };
 
-  // Utility functions
   const getTimeSince = (dateString) => {
     if (!dateString) return 'Unknown';
     const date = new Date(dateString);
@@ -586,7 +539,6 @@ const SchoolsView = ({
     );
   };
 
-  // UPDATED: Render academic programs with their departments using original styling
   const renderSchoolAcademicPrograms = (schoolId) => {
     const stats = getSchoolStatsEnhanced(schoolId);
     const schoolCurricula = stats.matchedCurricula || [];
@@ -637,21 +589,17 @@ const SchoolsView = ({
       );
     }
 
-    
     const enhancedPrograms = schoolPrograms.map(program => {
       const programCurricula = schoolCurricula.filter(c => c.programId === program.id);
       const curriculumDepartments = [...new Set(programCurricula.map(c => c.department))].filter(Boolean);
       
-    
       const matchedBackendDepts = backendDepartments.filter(backendDept => 
         curriculumDepartments.some(currDept => 
           backendDept.name.toLowerCase() === currDept.toLowerCase()
         )
       );
       
-  
       const allDepartments = [];
-      
       
       matchedBackendDepts.forEach(dept => {
         const curriculumCount = programCurricula.filter(c => c.department === dept.name).length;
@@ -662,7 +610,6 @@ const SchoolsView = ({
         });
       });
       
-  
       curriculumDepartments.forEach(deptName => {
         const alreadyAdded = allDepartments.some(d => d.name.toLowerCase() === deptName.toLowerCase());
         if (!alreadyAdded) {
@@ -750,7 +697,6 @@ const SchoolsView = ({
                 )}
               </div>
               
-              
               {program.enhancedDepartments.length > 0 && (
                 <div style={{ 
                   marginTop: '1rem', 
@@ -808,7 +754,6 @@ const SchoolsView = ({
                 </div>
               )}
               
-              {/* Call-to-action footer */}
               <div style={{
                 marginTop: '1rem',
                 padding: '0.75rem',
@@ -849,16 +794,9 @@ const SchoolsView = ({
     );
   };
 
-  // Program view rendering 
   if (showingCurriculaFor) {
-    console.log(`🔍 Rendering program view for:`, showingCurriculaFor);
-    console.log(`📊 Program view data:`, programViewData);
-    
     const school = findSchool ? findSchool(showingCurriculaFor.schoolId) : schools.find(s => s.id === showingCurriculaFor.schoolId);
     const program = programs.find(p => p.id === showingCurriculaFor.programId);
-
-    console.log(`🏫 School for program view:`, school);
-    console.log(`🎓 Program for program view:`, program);
 
     if (isLoading || isLoadingSchoolsData) {
       return (
@@ -872,7 +810,6 @@ const SchoolsView = ({
     }
 
     if (!programViewData || programViewData.length === 0) {
-      console.log(`⚠️ No program curricula found`);
       return (
         <div className="curricula-table-container" style={{ marginTop: '2rem' }}>
           {renderBreadcrumbs()}
@@ -911,7 +848,6 @@ const SchoolsView = ({
       );
     }
 
-    // Group curricula by department for the program view
     const groupedByDepartment = programViewData.reduce((acc, curriculum) => {
       const department = curriculum.department || 'Unknown Department';
       if (!acc[department]) {
@@ -922,7 +858,6 @@ const SchoolsView = ({
     }, {});
 
     const departmentNames = Object.keys(groupedByDepartment).sort();
-    console.log(`📊 Grouped by departments:`, departmentNames, groupedByDepartment);
 
     return (
       <div className="curricula-table-container" style={{ marginTop: '2rem' }}>
@@ -1025,7 +960,6 @@ const SchoolsView = ({
     );
   }
 
-  // Handle loading state
   if (isLoadingSchoolsData) {
     return (
       <div className="content-section">
@@ -1034,7 +968,6 @@ const SchoolsView = ({
     );
   }
 
-  // Handle empty schools state
   if (!schools || schools.length === 0) {
     return (
       <div className="empty-state">
@@ -1053,7 +986,6 @@ const SchoolsView = ({
     );
   }
 
-  // Handle empty curricula data state
   if (!schoolsViewData || schoolsViewData.length === 0) {
     return (
       <div className="empty-state">
@@ -1077,7 +1009,6 @@ const SchoolsView = ({
     return { ...school, stats };
   }).filter(school => school.stats.total > 0);
 
-  // Handle empty filtered schools state
   if (schoolsWithData.length === 0) {
     return (
       <div className="empty-state">
@@ -1096,10 +1027,8 @@ const SchoolsView = ({
     );
   }
 
-  // Main schools view rendering
   return (
     <div className="admin-schools-section">
-      {/* Global interaction hint */}
       {showInteractionHint && schoolsWithData.length > 0 && (
         <div className="global-interaction-hint">
           <div className="global-interaction-hint-content">
@@ -1154,7 +1083,6 @@ const SchoolsView = ({
                       {school.stats.programs} Academic levels • {school.stats.departments} departments • {school.stats.total} curricula
                     </div>
 
-                    {/* Interaction hint */}
                     <div className="admin-school-interaction-hint">
                       <i className="fas fa-mouse-pointer"></i>
                       <span>{isExpanded ? 'Click to collapse academic programs' : 'Click to view academic programs'}</span>
@@ -1177,7 +1105,6 @@ const SchoolsView = ({
                   </div>
                 </div>
 
-            
                 <div className="admin-school-actions">
                   <div className="admin-school-stats">
                     <span className="admin-stat-badge">{school.stats.total}</span>
@@ -1196,7 +1123,6 @@ const SchoolsView = ({
 
               {isExpanded && (
                 <div className="admin-school-expanded-content">
-                 
                   {renderSchoolAcademicPrograms(school.id)}
                 </div>
               )}
