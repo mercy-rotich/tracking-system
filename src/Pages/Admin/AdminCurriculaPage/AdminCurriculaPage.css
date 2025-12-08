@@ -71,6 +71,11 @@
     margin-left: 256px;
     padding: 5rem 2rem 2rem 2rem;
   }
+
+  .admin-layout.sidebar-collapsed .curricula-main-page,
+  .curricula-main-page.sidebar-collapsed {
+    margin-left: 80px;
+  }
 }
 
 @media (max-width: 768px) {

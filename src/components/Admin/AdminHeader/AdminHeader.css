@@ -28,9 +28,10 @@
     width: calc(100% - var(--sidebar-width));
   }
   
+  .admin-layout.sidebar-collapsed .admin-header,
   .admin-header.sidebar-collapsed {
-    left: 0;
-    width: 100%;
+    left: 80px;
+    width: calc(100% - 80px);
   }
 }
 
@@ -67,6 +68,31 @@
   .admin-header-content {
     gap: 1rem;
   }
+}
+
+/* Header Toggle Button */
+.header-toggle-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  margin-right: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.header-toggle-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Hide brand when sidebar is collapsed (since sidebar shows logo) */
+.admin-header.sidebar-collapsed .admin-header-brand {
+  display: none;
 }
 
 /* Brand Section */

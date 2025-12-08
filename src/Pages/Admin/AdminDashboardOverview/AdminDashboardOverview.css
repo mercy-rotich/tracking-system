@@ -25,6 +25,11 @@
     margin-left: 256px;
     padding: 5rem 1.5rem 2rem 1.5rem;
   }
+
+  .admin-layout.sidebar-collapsed .dashboard-main-content,
+  .dashboard-main-content.sidebar-collapsed {
+    margin-left: 80px;
+  }
 }
 
 @media (min-width: 1024px) {

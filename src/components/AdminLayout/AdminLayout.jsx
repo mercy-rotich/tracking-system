@@ -8,14 +8,14 @@ import SystemMonitoringPage from '../../Pages/Admin/SystemMonitoringPage/SystemM
 import Reports from '../../Pages/Admin/ReportsPage/Reports';
 
 const AdminLayout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
   return (
-    <div className="admin-layout">
+    <div className={`admin-layout ${!sidebarOpen ? 'sidebar-collapsed' : ''}`}>
       <AdminHeader onToggleSidebar={toggleSidebar} />
       <AdminSidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
       <main className="admin-main-content">

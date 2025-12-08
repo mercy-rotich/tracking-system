@@ -4,7 +4,7 @@ import authService from '../../../services/authService';
 import logo_image from '../../../assets/logo.jpg'
 import './AdminHeader.css';
 
-const AdminHeader = ({ onSearchSubmit, user, systemHealth, notifications }) => {
+const AdminHeader = ({ onSearchSubmit, user, systemHealth, notifications, onToggleSidebar }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
@@ -126,6 +126,15 @@ const AdminHeader = ({ onSearchSubmit, user, systemHealth, notifications }) => {
     <header className="admin-header">
       <div className="admin-header-container">
         <div className="admin-header-content">
+          {/* Sidebar Toggle Button */}
+          <button 
+            className="header-toggle-btn"
+            onClick={onToggleSidebar}
+            aria-label="Toggle Sidebar"
+          >
+            <i className="fas fa-bars"></i>
+          </button>
+
           {/* Logo and Brand */}
           <div className={`admin-header-brand ${isSearchExpanded ? 'hidden-mobile' : ''}`}>
             <div className="admin-brand-logo">

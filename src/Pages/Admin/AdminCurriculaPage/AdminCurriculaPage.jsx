@@ -401,7 +401,7 @@ const AdminCurriculaPage = () => {
 
   if (!isInitialized || (isLoading && !curricula.length)) {
     return (
-      <div className='dashboard-main-content'>
+      <div className='curricula-main-page'>
         <div className="curricula-page">
           <LoadingSpinner 
             message="Loading Curricula System..." 
@@ -413,7 +413,7 @@ const AdminCurriculaPage = () => {
   }
 
   return (
-    <div className='dashboard-main-content'>
+    <div className='curricula-main-page'>
       <div className="curricula-page">
         <NotificationBanner 
           notification={notification}

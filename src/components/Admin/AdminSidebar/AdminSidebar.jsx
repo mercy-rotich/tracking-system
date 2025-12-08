@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import authService from '../../../services/authService';
 import Sidebar from '../../common/Sidebar/Sidebar';
+import logo from '../../../assets/logo.jpg';
 
-const AdminSidebar = () => {
+const AdminSidebar = ({ isOpen, onToggle }) => {
   const [pendingCount] = useState(24);
 
   
@@ -12,7 +13,7 @@ const AdminSidebar = () => {
     header: {
       title: 'System Administrator',
       subtitle: 'Complete System Control',
-      logo: null 
+      logo: logo 
     },
     sections: [
       {
@@ -105,6 +106,8 @@ const AdminSidebar = () => {
       config={sidebarConfig}
       onLogout={handleLogout}
       className="admin-sidebar"
+      isOpen={isOpen}
+      onToggle={onToggle}
     />
   );
 };

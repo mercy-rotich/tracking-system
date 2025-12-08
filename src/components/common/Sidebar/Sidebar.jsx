@@ -6,14 +6,38 @@ const Sidebar = ({
   config, 
   onLogout = null,
   className = '',
-  children 
+  children,
+  isOpen: externalIsOpen,
+  onToggle: externalOnToggle
 }) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [isOpen, setIsOpen] = useState(!isMobile); 
+  const [internalIsOpen, setInternalIsOpen] = useState(!isMobile); 
+  
+  const isControlled = externalIsOpen !== undefined;
+  const isOpen = isControlled ? externalIsOpen : internalIsOpen;
+
+  const setIsOpen = (value) => {
+    if (isControlled) {
+      if (value !== isOpen && externalOnToggle) {
+        externalOnToggle();
+      }
+    } else {
+      setInternalIsOpen(value);
+    }
+  };
+
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+
+  const toggleSidebar = () => {
+    if (isControlled && externalOnToggle) {
+      externalOnToggle();
+    } else {
+      setInternalIsOpen(!isOpen);
+    }
+  };
 
   
   useEffect(() => {
@@ -26,9 +50,17 @@ const Sidebar = ({
      
       if (wasMobile !== mobile) {
         if (mobile) {
-          setIsOpen(false); 
+          if (isControlled && externalOnToggle && isOpen) {
+             externalOnToggle();
+          } else {
+             setInternalIsOpen(false);
+          }
         } else {
-          setIsOpen(true); 
+          if (isControlled && externalOnToggle && !isOpen) {
+             externalOnToggle();
+          } else {
+             setInternalIsOpen(true);
+          }
         }
       }
     };
@@ -44,7 +76,8 @@ const Sidebar = ({
 
   const updateLayoutClasses = useCallback(() => {
     const body = document.body;
-    const mainContent = document.querySelector('.main-content, .dashboard-main-content');
+    const mainContent = document.querySelector('.main-content, .dashboard-main-content, .curricula-main-page');
+    const adminHeader = document.querySelector('.admin-header');
     const toggleBtn = document.querySelector('.sidebar-toggle-btn');
     
    
@@ -53,6 +86,14 @@ const Sidebar = ({
         mainContent.classList.add('sidebar-collapsed');
       } else {
         mainContent.classList.remove('sidebar-collapsed');
+      }
+    }
+
+    if (adminHeader) {
+      if (!isMobile && !isOpen) {
+        adminHeader.classList.add('sidebar-collapsed');
+      } else {
+        adminHeader.classList.remove('sidebar-collapsed');
       }
     }
     
@@ -84,10 +125,6 @@ const Sidebar = ({
       updateLayoutClasses();
     }
   }, [isInitialized, updateLayoutClasses]);
-
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen);
-  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
