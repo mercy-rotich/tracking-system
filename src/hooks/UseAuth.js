@@ -24,8 +24,9 @@ export const useAuth = () => {
           setRoles(roleData.roles || []);
         } catch (roleError) {
           console.warn('Using cached roles due to fetch error');
-          const cachedPermissions = JSON.parse(localStorage.getItem('userPermissions') || '{}');
-          const cachedRoles = JSON.parse(localStorage.getItem('userRoles') || '[]');
+         
+          const cachedPermissions = JSON.parse(sessionStorage.getItem('userPermissions') || '{}');
+          const cachedRoles = JSON.parse(sessionStorage.getItem('userRoles') || '[]');
           setPermissions(cachedPermissions);
           setRoles(cachedRoles);
         }

@@ -2,8 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ImageCarousel } from '../ImageCarousel/ImageCarousel';
 import './LandingPageHero.css' 
 import { useNavigate } from 'react-router-dom';
+import { useCurriculum } from '../../../context/CurriculumContext'; //
 
 export const LandingPageHero = () => {
+  const { data, loading } = useCurriculum(); 
+  const navigate = useNavigate();
+  
   const [counters, setCounters] = useState({
     curricula: 0,
     schools: 0,
@@ -14,15 +18,40 @@ export const LandingPageHero = () => {
   const [hasAnimated, setHasAnimated] = useState(false);
   const statsRef = useRef(null);
 
+ 
   const statsData = [
-    { key: 'curricula', target: 247, icon: 'fas fa-book-open', label: 'Total Curricula' },
-    { key: 'schools', target: 8, icon: 'fas fa-building', label: 'Academic Schools' },
-    { key: 'programs', target: 24, icon: 'fas fa-graduation-cap', label: 'Academic levels' },
-    { key: 'departments', target: 72, icon: 'fas fa-users', label: 'Departments' }
+    { 
+      key: 'curricula', 
+      target: data?.totalCurricula || 0, 
+      icon: 'fas fa-book-open', 
+      label: 'Total Curricula' 
+    },
+    { 
+      key: 'schools', 
+      target: data?.totalSchools || 0, 
+      icon: 'fas fa-building', 
+      label: 'Academic Schools' 
+    },
+    { 
+      key: 'programs', 
+     
+      target: data?.totalPrograms || 3, 
+      icon: 'fas fa-graduation-cap', 
+      label: 'Academic Levels' 
+    },
+    { 
+      key: 'departments', 
+      target: data?.totalDepartments || 0, 
+      icon: 'fas fa-users', 
+      label: 'Departments' 
+    }
   ];
 
   const animateCounter = (key, target, duration = 2000) => {
-    let start = 0;
+    // Prevent animation if target is invalid or 0 (unless genuinely 0)
+    if (target === undefined || target === null) return;
+
+    let start = counters[key]; 
     const startTime = performance.now();
     
     const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
@@ -44,7 +73,8 @@ export const LandingPageHero = () => {
     
     requestAnimationFrame(updateCounter);
   };
-   const navigate = useNavigate()
+
+  // Initial Scroll Trigger
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -69,6 +99,18 @@ export const LandingPageHero = () => {
     return () => observer.disconnect();
   }, [hasAnimated]);
 
+ 
+  useEffect(() => {
+    if (hasAnimated && !loading) {
+      statsData.forEach((stat) => {
+       
+        if (counters[stat.key] !== stat.target) {
+            animateCounter(stat.key, stat.target, 1000); 
+        }
+      });
+    }
+  }, [data, hasAnimated, loading]);
+
   const handleMainCTA = (e) => {
     e.preventDefault();
     const button = e.currentTarget;
@@ -79,7 +121,6 @@ export const LandingPageHero = () => {
     
     setTimeout(() => {
       navigate('/app/dashboard')
-      
       button.innerHTML = originalHTML;
       button.style.pointerEvents = 'auto';
     }, 1500);
@@ -98,7 +139,7 @@ export const LandingPageHero = () => {
         <div className="landing-hero-content">
           <div className="landing-welcome-badge">
             <i className="fas fa-star"></i>
-            Welcome to Curriculum management System
+            Welcome to Curriculum Management System
           </div>
           
           <h1 className="landing-hero-title">
@@ -107,7 +148,7 @@ export const LandingPageHero = () => {
           
           <p className="landing-hero-subtitle">
             Streamline your academic curriculum management with our comprehensive digital platform. 
-            Designed specifically for MUST's academic excellence, featuring intelligent tracking, 
+            Designed specifically for academic excellence, featuring intelligent tracking, 
             seamless approvals, and detailed analytics.
           </p>
           
@@ -133,7 +174,12 @@ export const LandingPageHero = () => {
                   <i className={stat.icon}></i>
                 </div>
                 <span className="landing-hero-stat-number">
-                  {counters[stat.key]}
+                  {/* Show spinner if loading and value is still 0, otherwise show number */}
+                  {loading && counters[stat.key] === 0 ? (
+                      <i className="fas fa-spinner fa-spin" style={{ fontSize: '0.5em' }}></i>
+                  ) : (
+                      counters[stat.key]
+                  )}
                 </span>
                 <span className="landing-hero-stat-label">
                   {stat.label}

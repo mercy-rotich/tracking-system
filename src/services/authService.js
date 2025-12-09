@@ -11,11 +11,6 @@ class AuthService {
   }
 
   initializePageExitHandlers() {
-    // Logs out user when closing tab/browser
-    window.addEventListener('beforeunload', () => {
-      
-    });
-
     // Refreshes token when returning to the tab
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) {
@@ -110,7 +105,7 @@ class AuthService {
     };
 
     Object.entries(storage).forEach(([key, value]) => {
-      if (value) localStorage.setItem(key, value);
+      if (value) sessionStorage.setItem(key, value);
     });
   }
 
@@ -177,7 +172,8 @@ class AuthService {
     this.isRefreshing = true;
 
     try {
-      const refreshToken = localStorage.getItem('refreshToken');
+     
+      const refreshToken = sessionStorage.getItem('refreshToken');
       if (!refreshToken) throw new Error('No refresh token available');
 
       const response = await fetch(`${this.baseURL}/auth/refresh`, {
@@ -195,15 +191,16 @@ class AuthService {
 
       if (!newToken) throw new Error('Refresh response missing new token');
       
-      localStorage.setItem('sessionToken', newToken);
-      localStorage.setItem('authToken', newToken);
+     
+      sessionStorage.setItem('sessionToken', newToken);
+      sessionStorage.setItem('authToken', newToken);
       
       if (data.data?.refreshToken || data.refreshToken) {
-        localStorage.setItem('refreshToken', data.data?.refreshToken || data.refreshToken);
+        sessionStorage.setItem('refreshToken', data.data?.refreshToken || data.refreshToken);
       }
       
       if (data.data?.expiresIn || data.expiresIn) {
-        localStorage.setItem('tokenExpiry', this.calculateExpiry(data.data?.expiresIn || data.expiresIn));
+        sessionStorage.setItem('tokenExpiry', this.calculateExpiry(data.data?.expiresIn || data.expiresIn));
       }
 
       this.failedQueue.forEach(({ resolve }) => resolve(newToken));
@@ -222,7 +219,8 @@ class AuthService {
   }
 
   shouldRefreshToken() {
-    const tokenExpiry = localStorage.getItem('tokenExpiry');
+  
+    const tokenExpiry = sessionStorage.getItem('tokenExpiry');
     if (!tokenExpiry) return false;
     const timeUntilExpiry = new Date(tokenExpiry).getTime() - Date.now();
     return timeUntilExpiry < this.refreshBuffer;
@@ -260,7 +258,8 @@ class AuthService {
     });
 
     if (!response.ok) {
-      if (response.status === 401 && localStorage.getItem('refreshToken')) {
+      
+      if (response.status === 401 && sessionStorage.getItem('refreshToken')) {
         await this.refreshToken();
         return { valid: true, refreshed: true };
       }
@@ -276,7 +275,7 @@ class AuthService {
         await this.validateSession();
       } catch (error) {
         // Try refresh one last time before logout
-        if (localStorage.getItem('refreshToken')) {
+        if (sessionStorage.getItem('refreshToken')) {
           try {
             await this.refreshToken();
             return;
@@ -291,7 +290,7 @@ class AuthService {
 
   isAuthenticated() {
     const token = this.getToken();
-    const tokenExpiry = localStorage.getItem('tokenExpiry');
+    const tokenExpiry = sessionStorage.getItem('tokenExpiry');
     const user = this.getCurrentUser();
 
     // Basic validity check
@@ -318,8 +317,14 @@ class AuthService {
   }
 
   clearStorage() {
-    ['sessionToken', 'authToken', 'refreshToken', 'tokenExpiry', 'user', 'loginTime', 'userPermissions', 'userRoles']
-      .forEach(key => localStorage.removeItem(key));
+    const keys = ['sessionToken', 'authToken', 'refreshToken', 'tokenExpiry', 'user', 'loginTime', 'userPermissions', 'userRoles'];
+    
+    keys.forEach(key => {
+     
+      sessionStorage.removeItem(key);
+      // Clean up localStorage just in case to ensure full logout
+      localStorage.removeItem(key);
+    });
   }
 
   async getValidToken() {
@@ -339,7 +344,7 @@ class AuthService {
   }
 
   getToken() {
-    const token = localStorage.getItem('sessionToken') || localStorage.getItem('authToken');
+    const token = sessionStorage.getItem('sessionToken') || sessionStorage.getItem('authToken');
     if (!token || !this.validateTokenFormat(token)) {
       return null;
     }
@@ -348,10 +353,11 @@ class AuthService {
 
   getCurrentUser() {
     try {
-      const userStr = localStorage.getItem('user');
+     
+      const userStr = sessionStorage.getItem('user');
       return userStr ? JSON.parse(userStr) : null;
     } catch (error) {
-      localStorage.removeItem('user');
+      sessionStorage.removeItem('user');
       return null;
     }
   }
@@ -370,8 +376,9 @@ class AuthService {
       if (!response.ok) throw new Error(`Failed to fetch roles: ${response.status}`);
       const result = await response.json();
 
-      localStorage.setItem('userPermissions', JSON.stringify(result.data.permissions));
-      localStorage.setItem('userRoles', JSON.stringify(result.data.roles));
+      
+      sessionStorage.setItem('userPermissions', JSON.stringify(result.data.permissions));
+      sessionStorage.setItem('userRoles', JSON.stringify(result.data.roles));
 
       return result.data;
     } catch (error) {
@@ -382,21 +389,24 @@ class AuthService {
 
   hasPermission(permission) {
     try {
-      const permissions = JSON.parse(localStorage.getItem('userPermissions') || '{}');
+    
+      const permissions = JSON.parse(sessionStorage.getItem('userPermissions') || '{}');
       return permissions[permission] === true;
     } catch (e) { return false; }
   }
 
   hasRole(role) {
     try {
-      const roles = JSON.parse(localStorage.getItem('userRoles') || '[]');
+     
+      const roles = JSON.parse(sessionStorage.getItem('userRoles') || '[]');
       return roles.includes(role);
     } catch (e) { return false; }
   }
 
   hasAnyRole(rolesList) {
     try {
-      const userRoles = JSON.parse(localStorage.getItem('userRoles') || '[]');
+     
+      const userRoles = JSON.parse(sessionStorage.getItem('userRoles') || '[]');
       return rolesList.some(role => userRoles.includes(role));
     } catch (e) { return false; }
   }

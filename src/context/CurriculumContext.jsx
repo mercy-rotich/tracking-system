@@ -35,10 +35,11 @@ export const CurriculumProvider = ({ children }) => {
     { id: 'bachelor', name: "Bachelor's Degree", displayName: "Bachelor's Degree", icon: 'user-graduate', type: 'degree' },
     { id: 'masters', name: "Master's Degree", displayName: "Master's Degree", icon: 'user-tie', type: 'masters' }
   ];
+
   useEffect(() => {
     const initializeData = async () => {
       try {
-        console.log(' Initializing Public CurriculumProvider...');
+        console.log('🔄 Initializing Public CurriculumProvider...');
         setLoading(true);
         
         await Promise.all([
@@ -50,7 +51,6 @@ export const CurriculumProvider = ({ children }) => {
         console.log('✅ Public CurriculumProvider initialized');
       } catch (error) {
         console.error('❌ Error initializing CurriculumProvider:', error);
-        
         setIsInitialized(true);
       } finally {
         setLoading(false);
@@ -62,29 +62,21 @@ export const CurriculumProvider = ({ children }) => {
 
   const loadAllCurricula = async () => {
     try {
-      console.log(' Loading all public curricula...');
-      const result = await publicCurriculumService.getAllCurriculums(0, 500);
-      
+      const result = await publicCurriculumService.getAllCurriculums(0, 1000);
       setAllCurricula(result.curriculums);
       
-     
       setData(prevData => ({
         ...prevData,
         totalCurricula: result.total || result.curriculums.length
       }));
-      
-      console.log('✅ Loaded public curricula:', result.curriculums.length);
     } catch (error) {
       console.error('❌ Error loading curricula:', error);
-      
       setAllCurricula([]);
     }
   };
 
- 
   const loadSchoolsAndDepartments = async () => {
     try {
-      console.log(' Loading public schools and departments...');
       const [schoolsData, departmentsData] = await Promise.all([
         publicCurriculumService.getSchoolsFromCurriculums(),
         publicCurriculumService.getDepartmentsFromCurriculums()
@@ -92,37 +84,35 @@ export const CurriculumProvider = ({ children }) => {
       
       setSchools(schoolsData);
       setDepartments(departmentsData);
-      
-      console.log('✅ Public schools loaded:', schoolsData.length);
-      console.log('✅ Public departments loaded:', departmentsData.length);
     } catch (error) {
       console.error('❌ Error loading schools/departments:', error);
-      
       setSchools([]);
       setDepartments([]);
     }
   };
 
-
   const transformToUserFormat = () => {
-    if (!allCurricula.length || !schools.length) return [];
+  
+    if (!schools.length) return [];
 
     const schoolsWithPrograms = schools.map(school => {
       
-      const schoolCurricula = allCurricula.filter(c => 
-        c.schoolId?.toString() === school.id?.toString()
-      );
+     
+      const schoolCurricula = allCurricula.filter(c => {
+        const idMatch = c.schoolId?.toString() === school.id?.toString();
+        const nameMatch = c.schoolName?.toLowerCase() === school.name?.toLowerCase();
+        return idMatch || nameMatch;
+      });
 
-      // Group by programs
       const programsData = programs.map(program => {
         const programCurricula = schoolCurricula.filter(c => c.programId === program.id);
         
+       
         if (programCurricula.length === 0) return null;
 
-        // Group by departments within this program
         const departmentGroups = {};
         programCurricula.forEach(curriculum => {
-          const deptName = curriculum.department;
+          const deptName = curriculum.department || 'General';
           if (!departmentGroups[deptName]) {
             departmentGroups[deptName] = {
               name: deptName,
@@ -142,8 +132,7 @@ export const CurriculumProvider = ({ children }) => {
         };
       }).filter(Boolean);
 
-      if (programsData.length === 0) return null;
-
+      
       return {
         id: school.id,
         name: school.name,
@@ -152,7 +141,7 @@ export const CurriculumProvider = ({ children }) => {
         total: schoolCurricula.length,
         programs: programsData
       };
-    }).filter(Boolean);
+    }); 
 
     return schoolsWithPrograms;
   };
@@ -161,6 +150,9 @@ export const CurriculumProvider = ({ children }) => {
     const transformedSchools = transformToUserFormat();
     
     return transformedSchools.filter(school => {
+     
+      if (searchTerm === '' && activeFilter === 'all') return true;
+
       const matchesSearch = searchTerm === '' || 
         school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         school.programs.some(program => 
@@ -192,7 +184,6 @@ export const CurriculumProvider = ({ children }) => {
     }));
   };
 
-  // Get filtered curricula for the table view
   const getFilteredCurricula = (statusFilter = 'all', searchTerm = '') => {
     const allCurriculaWithMeta = getAllCurricula();
     
@@ -210,7 +201,6 @@ export const CurriculumProvider = ({ children }) => {
     });
   };
 
-
   const searchCurriculaByName = async (searchQuery, page = 0, size = 50) => {
     try {
       setLoading(true);
@@ -224,41 +214,6 @@ export const CurriculumProvider = ({ children }) => {
     }
   };
 
-  // Get curricula by school 
-  const getCurriculaBySchool = async (schoolId, page = 0, size = 50) => {
-    try {
-      setLoading(true);
-      const result = await publicCurriculumService.getCurriculumsBySchool(schoolId, page, size);
-      return result.curriculums;
-    } catch (error) {
-      console.error('❌ Error getting school curricula:', error);
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Get curricula by program 
-  const getCurriculaByProgram = async (programId, page = 0, size = 50) => {
-    try {
-      setLoading(true);
-      const academicLevelMap = { bachelor: 1, masters: 2, phd: 3 };
-      const academicLevelId = academicLevelMap[programId];
-      
-      if (academicLevelId) {
-        const result = await publicCurriculumService.getCurriculumsByAcademicLevel(academicLevelId, page, size);
-        return result.curriculums;
-      }
-      return [];
-    } catch (error) {
-      console.error('❌ Error getting program curricula:', error);
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  
   const getSchoolName = (schoolId) => {
     const school = schools.find(s => s.id?.toString() === schoolId?.toString());
     return school ? school.name : 'Unknown School';
@@ -270,14 +225,14 @@ export const CurriculumProvider = ({ children }) => {
   };
 
   React.useEffect(() => {
-    if (allCurricula.length > 0 && schools.length > 0) {
+    if (schools.length > 0) { 
       const transformedSchools = transformToUserFormat();
       
       setData(prevData => ({
         ...prevData,
         schools: transformedSchools,
         totalSchools: schools.length,
-        totalPrograms: programs.length * schools.length, // Approximation
+        totalPrograms: programs.length * schools.length, 
         totalDepartments: departments.length
       }));
     }
@@ -297,19 +252,7 @@ export const CurriculumProvider = ({ children }) => {
     }
   };
 
-  const testConnection = async () => {
-    try {
-      const result = await publicCurriculumService.testConnection();
-      console.log('🧪 Connection test result:', result);
-      return result;
-    } catch (error) {
-      console.error('❌ Connection test failed:', error);
-      return { success: false, error: error.message };
-    }
-  };
-
   const value = {
-    // State
     data,
     filteredSchools,
     searchTerm,
@@ -319,23 +262,14 @@ export const CurriculumProvider = ({ children }) => {
     loading,
     setLoading,
     isInitialized,
-    
-    // Raw data
     allCurricula,
     schools,
     departments,
     programs,
-    
-    // Functions
     getAllCurricula,
     getFilteredCurricula,
     searchCurriculaByName,
-    getCurriculaBySchool,
-    getCurriculaByProgram,
     refreshData,
-    testConnection,
-    
-    // Helpers
     getSchoolName,
     getProgramName
   };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useCurriculum } from '../../../context/CurriculumContext';
+import { useCurriculum } from '../../../context/CurriculumContext'; //
 import UserDashboardCards from '../../../components/Users/UserDashboardCards/UserDashboardCards';
 import UserSearchSection from '../../../components/Users/UserSearchSection/UserSearchSection';
 import SchoolsList from '../../../components/Users/SchoolsList/SchoolsList';
@@ -16,29 +16,23 @@ const UserDashboard = () => {
     loading,
     isInitialized,
     refreshData,
-    searchCurriculaByName,
-    testConnection
+    searchCurriculaByName
   } = useCurriculum();
   
   const [animatedCount, setAnimatedCount] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState(null);
 
  
   useEffect(() => {
-    const checkConnection = async () => {
-      const result = await testConnection();
-      setConnectionStatus(result);
-    };
     
-    checkConnection();
-  }, [testConnection]);
-
-  useEffect(() => {
-    if (!data.totalCurricula) return;
+    if (!data.totalCurricula) {
+        if (!loading && isInitialized) setAnimatedCount(0);
+        return;
+    }
     
     const target = data.totalCurricula;
-    const increment = target / 60; 
+    
+    const increment = Math.max(1, target / 50); 
     let current = 0;
 
     const timer = setInterval(() => {
@@ -48,14 +42,13 @@ const UserDashboard = () => {
         clearInterval(timer);
       }
       setAnimatedCount(Math.floor(current));
-    }, 30);
+    }, 20);
 
     return () => clearInterval(timer);
-  }, [data.totalCurricula]);
+  }, [data.totalCurricula, loading, isInitialized]);
 
   const handleSearch = async (value) => {
     setSearchTerm(value);
-    
     
     if (value.length >= 3) {
       setIsSearching(true);
@@ -76,24 +69,20 @@ const UserDashboard = () => {
   const handleRefresh = async () => {
     try {
       await refreshData();
-      
-      const result = await testConnection();
-      setConnectionStatus(result);
     } catch (error) {
       console.error('Refresh error:', error);
     }
   };
 
-
   const stats = {
-    totalCurricula: animatedCount,
-    totalSchools: data.schools.length,
-    totalPrograms: data.schools.reduce((sum, school) => sum + school.programs.length, 0),
-    totalDepartments: data.totalDepartments || data.schools.reduce((sum, school) => sum + school.departments, 0)
+    totalCurricula: animatedCount, 
+    totalSchools: data.totalSchools || 0,
+    totalPrograms: data.totalPrograms || 0,
+    totalDepartments: data.totalDepartments || 0
   };
 
- 
-  if (!isInitialized) {
+  // Initial Loading State
+  if (!isInitialized && loading) {
     return (
       <div className="user-dashboard">
         <div className="user-dashboard-loading">
@@ -109,17 +98,12 @@ const UserDashboard = () => {
     );
   }
 
-  
-  
-
   return (
     <div className="user-dashboard">
       {/* Header with refresh button */}
       <div className="user-dashboard-header">
         <div className="dashboard-title">
-          
           <p>Browse and explore academic curricula across all schools and programs</p>
-          
         </div>
         <button 
           className="dashboard-refresh-btn"
@@ -132,7 +116,7 @@ const UserDashboard = () => {
         </button>
       </div>
 
-      {/* Dashboard Cards */}
+      {/* Dashboard Cards with Real Stats */}
       <UserDashboardCards 
         totalCurricula={stats.totalCurricula}
         totalSchools={stats.totalSchools}
@@ -180,7 +164,7 @@ const UserDashboard = () => {
             {/* Show different messages based on data availability */}
             {data.totalCurricula === 0 ? (
               <div className="no-data-message">
-                <p>No curriculum data is currently available.</p>
+                <p>No curriculum data is currently available in the system.</p>
                 <div className="empty-actions">
                   <button 
                     className="refresh-btn-primary"
@@ -188,7 +172,7 @@ const UserDashboard = () => {
                     disabled={loading}
                   >
                     <i className={`fas fa-sync-alt ${loading ? 'fa-spin' : ''}`}></i>
-                    Try Loading Data
+                    Reload Data
                   </button>
                 </div>
               </div>
@@ -218,7 +202,7 @@ const UserDashboard = () => {
         </div>
       ) : null}
 
-      {/* Loading overlay for refresh */}
+      {/* Loading overlay for background refresh */}
       {loading && isInitialized && (
         <div className="user-dashboard-loading-overlay">
           <div className="loading-message">
