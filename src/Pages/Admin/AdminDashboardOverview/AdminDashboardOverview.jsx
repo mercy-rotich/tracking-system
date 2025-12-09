@@ -72,11 +72,9 @@ const AdminDashboardOverview = () => {
   // Screen size effect
   useEffect(() => {
     checkScreenSize();
-    
     const handleResize = () => {
       checkScreenSize();
     };
-
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [checkScreenSize]);
@@ -87,7 +85,6 @@ const AdminDashboardOverview = () => {
       setStatsLoading(true);
       console.log('🔄 Loading enhanced curriculum statistics for dashboard...');
       
-     
       const enhancedStats = await statisticsService.getMetricsForDashboard();
       
       setCurriculumStats(enhancedStats);
@@ -96,68 +93,47 @@ const AdminDashboardOverview = () => {
     } catch (error) {
       console.error('❌ Error loading enhanced curriculum statistics:', error);
       
-     
       try {
-        console.warn('⚠️ Enhanced stats failed, using fallback method...');
+        console.warn('⚠️ Enhanced stats failed, using fallback fetch loop...');
         
-        const result = await curriculumService.getAllCurriculums(0, 200);
-        const totalFromApi = result.pagination?.totalElements || result.curriculums.length;
+        const result = await curriculumService.fetchAllCurriculums();
+        const allCurriculums = result.curriculums || [];
+        const totalCount = allCurriculums.length;
         
-        const statusCounts = result.curriculums.reduce((acc, curr) => {
-          acc[curr.status] = (acc[curr.status] || 0) + 1;
+        const statusCounts = allCurriculums.reduce((acc, curr) => {
+          const status = (curr.status || 'draft').toLowerCase();
+          
+          if (status.includes('approv')) acc.approved++;
+          else if (status.includes('pending')) acc.pending++;
+          else if (status.includes('review')) acc.underReview++;
+          else if (status.includes('draft')) acc.draft++;
+          
           return acc;
-        }, {});
+        }, { approved: 0, pending: 0, underReview: 0, draft: 0 });
         
-        const sampleSize = result.curriculums.length;
-        let finalStats = {
-          total: totalFromApi,
-          approved: statusCounts.approved || 0,
-          inProgress: (statusCounts.pending || 0) + (statusCounts.draft || 0) + (statusCounts.underReview || statusCounts.under_review || 0),
-          overdue: 0,
-          approvalRate: totalFromApi > 0 ? Math.round((statusCounts.approved || 0) / totalFromApi * 100) : 0,
+        const finalStats = {
+          total: totalCount,
+          approved: statusCounts.approved,
+          inProgress: statusCounts.pending + statusCounts.draft + statusCounts.underReview,
+          overdue: 0, 
+          approvalRate: totalCount > 0 ? Math.round((statusCounts.approved / totalCount) * 100) : 0,
           breakdown: {
-            pending: statusCounts.pending || 0,
-            underReview: statusCounts.underReview || statusCounts.under_review || 0,
-            draft: statusCounts.draft || 0
+            pending: statusCounts.pending,
+            underReview: statusCounts.underReview,
+            draft: statusCounts.draft
           }
         };
         
-        // Extrapolate if we have a sample
-        if (sampleSize < totalFromApi && sampleSize > 50) {
-          const ratio = totalFromApi / sampleSize;
-          finalStats = {
-            total: totalFromApi,
-            approved: Math.round((statusCounts.approved || 0) * ratio),
-            inProgress: Math.round(((statusCounts.pending || 0) + (statusCounts.draft || 0) + (statusCounts.underReview || statusCounts.under_review || 0)) * ratio),
-            overdue: 0,
-            approvalRate: totalFromApi > 0 ? Math.round((statusCounts.approved || 0) / totalFromApi * 100) : 0,
-            breakdown: {
-              pending: Math.round((statusCounts.pending || 0) * ratio),
-              underReview: Math.round((statusCounts.underReview || statusCounts.under_review || 0) * ratio),
-              draft: Math.round((statusCounts.draft || 0) * ratio)
-            }
-          };
-        }
-        
         setCurriculumStats(finalStats);
-        console.log('✅ Fallback curriculum statistics loaded:', finalStats);
+        console.log('✅ Fallback stats calculated from full dataset:', finalStats);
         
       } catch (fallbackError) {
         console.error('❌ Fallback stats loading also failed:', fallbackError);
         showNotification('Failed to load curriculum statistics', 'error');
         
-        // Set default stats
         setCurriculumStats({
-          total: 0,
-          approved: 0,
-          inProgress: 0,
-          overdue: 0,
-          approvalRate: 0,
-          breakdown: {
-            pending: 0,
-            underReview: 0,
-            draft: 0
-          }
+          total: 0, approved: 0, inProgress: 0, overdue: 0, approvalRate: 0,
+          breakdown: { pending: 0, underReview: 0, draft: 0 }
         });
       }
     } finally {
@@ -182,20 +158,11 @@ const AdminDashboardOverview = () => {
 
   const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   }, []);
 
   const resetForm = useCallback(() => {
-    setFormData({
-      username: '',
-      email: '',
-      password: '',
-      firstName: '',
-      lastName: ''
-    });
+    setFormData({ username: '', email: '', password: '', firstName: '', lastName: '' });
   }, []);
 
   const showNotification = useCallback((message, type) => {
@@ -215,7 +182,6 @@ const AdminDashboardOverview = () => {
 
     try {
       const token = getAuthToken();
-      
       if (!token) {
         showNotification('Authentication token not found. Please log in again.', 'error');
         setIsLoading(false);
@@ -238,8 +204,6 @@ const AdminDashboardOverview = () => {
         resetForm();
       } else {
         const errorData = await response.json();
-        console.error('❌ API error response:', errorData);
-        
         if (response.status === 401) {
           showNotification('Session expired. Please log in again.', 'error');
         } else {
@@ -259,10 +223,8 @@ const AdminDashboardOverview = () => {
     resetForm();
   }, [resetForm]);
 
-  // Enhanced refresh stats function
   const refreshStats = useCallback(async () => {
     try {
-     
       await statisticsService.refreshStatistics();
       await loadCurriculumStats();
       showNotification('Statistics refreshed successfully', 'success');
@@ -272,7 +234,6 @@ const AdminDashboardOverview = () => {
     }
   }, [loadCurriculumStats]);
 
- 
   const buttonLayout = useMemo(() => {
     const buttons = [
       {
@@ -298,43 +259,21 @@ const AdminDashboardOverview = () => {
         text: isMobile ? 'Refresh' : 'Refresh Stats'
       }
     ];
-
     return buttons;
   }, [handleCreateUser, handleExportReport, refreshStats, statsLoading, isMobile]);
 
-  // Responsive grid configuration
   const gridConfig = useMemo(() => {
     switch (screenSize) {
       case 'mobile':
-        return {
-          workflowCols: '1fr',
-          activityCols: '1fr',
-          gap: '1rem'
-        };
+        return { workflowCols: '1fr', activityCols: '1fr', gap: '1rem' };
       case 'tablet':
-        return {
-          workflowCols: '1fr',
-          activityCols: '1fr',
-          gap: '1.5rem'
-        };
+        return { workflowCols: '1fr', activityCols: '1fr', gap: '1.5rem' };
       case 'desktop':
-        return {
-          workflowCols: '2fr 1fr',
-          activityCols: '1fr 1fr',
-          gap: '1.5rem'
-        };
+        return { workflowCols: '2fr 1fr', activityCols: '1fr 1fr', gap: '1.5rem' };
       case 'large':
-        return {
-          workflowCols: '2fr 1fr',
-          activityCols: '1fr 1fr',
-          gap: '2rem'
-        };
+        return { workflowCols: '2fr 1fr', activityCols: '1fr 1fr', gap: '2rem' };
       default:
-        return {
-          workflowCols: '2fr 1fr',
-          activityCols: '1fr 1fr',
-          gap: '1.5rem'
-        };
+        return { workflowCols: '2fr 1fr', activityCols: '1fr 1fr', gap: '1.5rem' };
     }
   }, [screenSize]);
 
@@ -378,8 +317,6 @@ const AdminDashboardOverview = () => {
                   <span>{button.text}</span>
                 </button>
               ))}
-              
-              
             </div>
           </div>
         </div>
@@ -392,25 +329,13 @@ const AdminDashboardOverview = () => {
         />
 
         {/* Workflow Status and Quick Actions */}
-        <div 
-          className="workflow-section"
-          style={{ 
-            gridTemplateColumns: gridConfig.workflowCols,
-            gap: gridConfig.gap
-          }}
-        >
+        <div className="workflow-section" style={{ gridTemplateColumns: gridConfig.workflowCols, gap: gridConfig.gap }}>
           <WorkflowBottlenecks curriculumStats={curriculumStats} />
           <QuickActions />
         </div>
 
         {/* Recent Activity and System Alerts */}
-        <div 
-          className="activity-section"
-          style={{ 
-            gridTemplateColumns: gridConfig.activityCols,
-            gap: gridConfig.gap
-          }}
-        >
+        <div className="activity-section" style={{ gridTemplateColumns: gridConfig.activityCols, gap: gridConfig.gap }}>
           <RecentActivity />
           <SystemAlerts />
         </div>
@@ -421,11 +346,7 @@ const AdminDashboardOverview = () => {
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2 className="modal-title">Create New User</h2>
-                <button 
-                  className="modal-close" 
-                  onClick={handleCloseModal}
-                  aria-label="Close modal"
-                >
+                <button className="modal-close" onClick={handleCloseModal} aria-label="Close modal">
                   <i className="fas fa-times" aria-hidden="true"></i>
                 </button>
               </div>
@@ -434,101 +355,34 @@ const AdminDashboardOverview = () => {
                 <div className="form-row">
                   <div className="form-group">
                     <label htmlFor="firstName">First Name</label>
-                    <input
-                      type="text"
-                      id="firstName"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="Enter first name"
-                      autoComplete="given-name"
-                    />
+                    <input type="text" id="firstName" name="firstName" value={formData.firstName} onChange={handleInputChange} required placeholder="Enter first name" autoComplete="given-name" />
                   </div>
                   <div className="form-group">
                     <label htmlFor="lastName">Last Name</label>
-                    <input
-                      type="text"
-                      id="lastName"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="Enter last name"
-                      autoComplete="family-name"
-                    />
+                    <input type="text" id="lastName" name="lastName" value={formData.lastName} onChange={handleInputChange} required placeholder="Enter last name" autoComplete="family-name" />
                   </div>
                 </div>
 
                 <div className="form-group">
                   <label htmlFor="username">Username</label>
-                  <input
-                    type="text"
-                    id="username"
-                    name="username"
-                    value={formData.username}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="Enter username"
-                    autoComplete="username"
-                  />
+                  <input type="text" id="username" name="username" value={formData.username} onChange={handleInputChange} required placeholder="Enter username" autoComplete="username" />
                 </div>
 
                 <div className="form-group">
                   <label htmlFor="email">Email</label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="Enter email address"
-                    autoComplete="email"
-                  />
+                  <input type="email" id="email" name="email" value={formData.email} onChange={handleInputChange} required placeholder="Enter email address" autoComplete="email" />
                 </div>
 
                 <div className="form-group">
                   <label htmlFor="password">Password</label>
-                  <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="Enter password"
-                    minLength="8"
-                    autoComplete="new-password"
-                  />
+                  <input type="password" id="password" name="password" value={formData.password} onChange={handleInputChange} required placeholder="Enter password" minLength="8" autoComplete="new-password" />
                   <small className="form-help">Password must be at least 8 characters long</small>
                 </div>
 
                 <div className="modal-actions">
-                  <button 
-                    type="button" 
-                    className="btn btn-cancel"
-                    onClick={handleCloseModal}
-                    disabled={isLoading}
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit" 
-                    className="btn btn-primary"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <i className="fas fa-spinner fa-spin" aria-hidden="true"></i>
-                        <span>Creating...</span>
-                      </>
-                    ) : (
-                      <>
-                        <i className="fas fa-user-plus" aria-hidden="true"></i>
-                        <span>Create User</span>
-                      </>
-                    )}
+                  <button type="button" className="btn btn-cancel" onClick={handleCloseModal} disabled={isLoading}>Cancel</button>
+                  <button type="submit" className="btn btn-primary" disabled={isLoading}>
+                    {isLoading ? (<><i className="fas fa-spinner fa-spin" aria-hidden="true"></i><span>Creating...</span></>) : (<><i className="fas fa-user-plus" aria-hidden="true"></i><span>Create User</span></>)}
                   </button>
                 </div>
               </form>

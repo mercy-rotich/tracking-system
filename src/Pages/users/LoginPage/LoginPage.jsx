@@ -4,6 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { Link } from 'react-router-dom';
 import './LoginPage.css';
 import logo_image from '../../../assets/logo.jpg';
+import LoadingSpinner from '../../../components/common/LoadingSpinner';
 
 const LoginPage = () => {
   const { login, isAuthenticated, loading } = useAuth();
@@ -74,16 +75,7 @@ const LoginPage = () => {
 
   
   if (loading) {
-    return (
-      <div className="login-container">
-        <div className="loading-overlay">
-          <div className="loading-spinner">
-            <i className="fas fa-spinner fa-spin"></i>
-            <p>Initializing...</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner message="Initializing..." />;
   }
 
   return (

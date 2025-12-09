@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import publicCurriculumService from '../services/publicCurriculumService';
 
 const CurriculumContext = createContext();
@@ -36,19 +36,17 @@ export const CurriculumProvider = ({ children }) => {
     { id: 'masters', name: "Master's Degree", displayName: "Master's Degree", icon: 'user-tie', type: 'masters' }
   ];
 
+  // --- INITIALIZATION ---
   useEffect(() => {
     const initializeData = async () => {
       try {
-        console.log('🔄 Initializing Public CurriculumProvider...');
+        console.log('🔄 Initializing Curriculum Context...');
         setLoading(true);
         
-        await Promise.all([
-          loadAllCurricula(),
-          loadSchoolsAndDepartments()
-        ]);
+        await refreshData();
         
         setIsInitialized(true);
-        console.log('✅ Public CurriculumProvider initialized');
+        console.log('✅ Curriculum Context initialized');
       } catch (error) {
         console.error('❌ Error initializing CurriculumProvider:', error);
         setIsInitialized(true);
@@ -60,54 +58,21 @@ export const CurriculumProvider = ({ children }) => {
     initializeData();
   }, []);
 
-  const loadAllCurricula = async () => {
-    try {
-      const result = await publicCurriculumService.getAllCurriculums(0, 1000);
-      setAllCurricula(result.curriculums);
-      
-      setData(prevData => ({
-        ...prevData,
-        totalCurricula: result.total || result.curriculums.length
-      }));
-    } catch (error) {
-      console.error('❌ Error loading curricula:', error);
-      setAllCurricula([]);
-    }
-  };
+  const processSchoolsData = (schoolsRaw, curriculumsRaw) => {
+    if (!schoolsRaw.length) return [];
 
-  const loadSchoolsAndDepartments = async () => {
-    try {
-      const [schoolsData, departmentsData] = await Promise.all([
-        publicCurriculumService.getSchoolsFromCurriculums(),
-        publicCurriculumService.getDepartmentsFromCurriculums()
-      ]);
-      
-      setSchools(schoolsData);
-      setDepartments(departmentsData);
-    } catch (error) {
-      console.error('❌ Error loading schools/departments:', error);
-      setSchools([]);
-      setDepartments([]);
-    }
-  };
-
-  const transformToUserFormat = () => {
-  
-    if (!schools.length) return [];
-
-    const schoolsWithPrograms = schools.map(school => {
-      
-     
-      const schoolCurricula = allCurricula.filter(c => {
-        const idMatch = c.schoolId?.toString() === school.id?.toString();
-        const nameMatch = c.schoolName?.toLowerCase() === school.name?.toLowerCase();
+    return schoolsRaw.map(school => {
+      // Filter curricula for this specific school
+      const schoolCurricula = curriculumsRaw.filter(c => {
+        const idMatch = c.schoolId && school.id && c.schoolId.toString() === school.id.toString();
+        const nameMatch = c.schoolName && school.name && 
+                          c.schoolName.toLowerCase().trim() === school.name.toLowerCase().trim();
         return idMatch || nameMatch;
       });
 
       const programsData = programs.map(program => {
         const programCurricula = schoolCurricula.filter(c => c.programId === program.id);
         
-       
         if (programCurricula.length === 0) return null;
 
         const departmentGroups = {};
@@ -132,7 +97,6 @@ export const CurriculumProvider = ({ children }) => {
         };
       }).filter(Boolean);
 
-      
       return {
         id: school.id,
         name: school.name,
@@ -141,16 +105,51 @@ export const CurriculumProvider = ({ children }) => {
         total: schoolCurricula.length,
         programs: programsData
       };
-    }); 
+    });
+  };
 
-    return schoolsWithPrograms;
+  // --- CORE DATA FETCHING ---
+  const refreshData = async () => {
+    try {
+      setLoading(true);
+      
+      const [curriculumResult, schoolsData, departmentsData] = await Promise.all([
+        publicCurriculumService.fetchAllCurriculums(),
+        publicCurriculumService.getAllSchoolsEnhanced(),
+        publicCurriculumService.getDepartmentsFromCurriculums()
+      ]);
+
+      const rawCurricula = curriculumResult.curriculums || [];
+      
+      setAllCurricula(rawCurricula);
+      setSchools(schoolsData);
+      setDepartments(departmentsData);
+
+     
+      const processedSchools = processSchoolsData(schoolsData, rawCurricula);
+
+      setData({
+        schools: processedSchools,
+        totalCurricula: rawCurricula.length,
+        totalSchools: schoolsData.length,
+        totalDepartments: departmentsData.length,
+        totalPrograms: schoolsData.length * 3 
+      });
+
+      console.log(`✅ Context Updated: ${rawCurricula.length} curricula, ${schoolsData.length} schools`);
+
+    } catch (error) {
+      console.error('❌ Error refreshing data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredSchools = React.useMemo(() => {
-    const transformedSchools = transformToUserFormat();
     
-    return transformedSchools.filter(school => {
-     
+    const currentSchools = data.schools || [];
+    
+    return currentSchools.filter(school => {
       if (searchTerm === '' && activeFilter === 'all') return true;
 
       const matchesSearch = searchTerm === '' || 
@@ -173,7 +172,7 @@ export const CurriculumProvider = ({ children }) => {
 
       return matchesSearch && matchesFilter;
     });
-  }, [allCurricula, schools, searchTerm, activeFilter]);
+  }, [data.schools, searchTerm, activeFilter]);
 
   const getAllCurricula = () => {
     return allCurricula.map(curriculum => ({
@@ -222,34 +221,6 @@ export const CurriculumProvider = ({ children }) => {
   const getProgramName = (programId) => {
     const program = programs.find(p => p.id === programId);
     return program ? program.name : 'Unknown Program';
-  };
-
-  React.useEffect(() => {
-    if (schools.length > 0) { 
-      const transformedSchools = transformToUserFormat();
-      
-      setData(prevData => ({
-        ...prevData,
-        schools: transformedSchools,
-        totalSchools: schools.length,
-        totalPrograms: programs.length * schools.length, 
-        totalDepartments: departments.length
-      }));
-    }
-  }, [allCurricula, schools, departments]);
-
-  const refreshData = async () => {
-    try {
-      setLoading(true);
-      await Promise.all([
-        loadAllCurricula(),
-        loadSchoolsAndDepartments()
-      ]);
-    } catch (error) {
-      console.error('❌ Error refreshing data:', error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const value = {

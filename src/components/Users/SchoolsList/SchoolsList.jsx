@@ -2,7 +2,7 @@ import React from 'react';
 import SchoolItem from '../SchoolItem/SchoolItem';
 import './SchoolsList.css';
 
-const SchoolsList = ({ schools, loading }) => {
+const SchoolsList = ({ schools, loading, onProgramClick }) => {
   if (loading) {
     return (
       <div className="schools-list-loading">
@@ -28,7 +28,8 @@ const SchoolsList = ({ schools, loading }) => {
          
           <SchoolItem 
             key={school.id || index} 
-            school={school} 
+            school={school}
+            onProgramClick={onProgramClick}
           />
         ))}
       </div>

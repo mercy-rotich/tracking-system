@@ -3,6 +3,7 @@ import { useCurriculum } from '../../../context/CurriculumContext'; //
 import UserDashboardCards from '../../../components/Users/UserDashboardCards/UserDashboardCards';
 import UserSearchSection from '../../../components/Users/UserSearchSection/UserSearchSection';
 import SchoolsList from '../../../components/Users/SchoolsList/SchoolsList';
+import Modal from '../../../components/Users/Modal/Modal';
 import './UserDashboard.css';
 
 const UserDashboard = () => {
@@ -21,6 +22,12 @@ const UserDashboard = () => {
   
   const [animatedCount, setAnimatedCount] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    title: '',
+    type: '',
+    data: null
+  });
 
  
   useEffect(() => {
@@ -72,6 +79,27 @@ const UserDashboard = () => {
     } catch (error) {
       console.error('Refresh error:', error);
     }
+  };
+
+  const handleProgramClick = (schoolName, program) => {
+    setModalState({
+      isOpen: true,
+      title: `${program.name} Programs - School of ${schoolName}`,
+      type: 'program-details',
+      data: {
+        schoolName,
+        program
+      }
+    });
+  };
+
+  const handleCloseModal = () => {
+    setModalState({
+      isOpen: false,
+      title: '',
+      type: '',
+      data: null
+    });
   };
 
   const stats = {
@@ -148,6 +176,7 @@ const UserDashboard = () => {
         <SchoolsList 
           schools={filteredSchools} 
           loading={loading}
+          onProgramClick={handleProgramClick}
         />
       ) : isInitialized && !loading ? (
         <div className="user-dashboard-empty">
@@ -211,6 +240,15 @@ const UserDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Modal */}
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={handleCloseModal}
+        title={modalState.title}
+        type={modalState.type}
+        data={modalState.data}
+      />
     </div>
   );
 };
