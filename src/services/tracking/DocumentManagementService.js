@@ -568,6 +568,38 @@ class DocumentManagementService {
       throw new Error(`Failed to get documents: ${error.message}`);
     }
   }
+  /**
+   * Get documents by step ID
+   * @param {number} stepId - Step ID
+   * @returns {Promise<Object>} Documents list
+   */
+  async getDocumentsByStep(stepId) {
+    try {
+      const numericStepId = Number(stepId);
+      if (!stepId || isNaN(numericStepId)) {
+        console.warn('⚠️ [Document Service] Invalid stepId for document fetch:', stepId);
+        return { success: false, data: [] };
+      }
+
+      console.log('🔄 [Document Service] Getting documents for step:', numericStepId);
+
+      const result = await this.apiClient.makeRequest('GET_DOCUMENTS_BY_STEP', {
+        pathParams: { stepId: numericStepId }
+      });
+
+      const transformedDocuments = this.transformer.transformDocuments(result.data);
+
+      return {
+        success: true,
+        message: result.message,
+        data: transformedDocuments
+      };
+
+    } catch (error) {
+      console.error(`❌ [Document Service] Failed to get docs for step ${stepId}:`, error);
+      return { success: false, data: [] };
+    }
+  }
 
   /**
    * Get document metadata by ID

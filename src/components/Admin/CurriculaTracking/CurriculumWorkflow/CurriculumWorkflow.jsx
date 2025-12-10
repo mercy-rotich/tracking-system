@@ -181,20 +181,26 @@ const CurriculumWorkflow = ({
                   <div className="tracking-curriculum-card-meta">
                     <div className="tracking-curriculum-card-school">
                       <i className="fas fa-university"></i>
-                      {curriculum.school}
+                      {curriculum.school || 'Unknown School'}
                     </div>
-                    <div className="tracking-curriculum-card-priority">
-                      <i className={`fas fa-flag tracking-priority-${curriculum.priority}`}></i>
-                      {curriculum.priority.charAt(0).toUpperCase() + curriculum.priority.slice(1)} Priority
-                    </div>
+                    {curriculum.priority && (
+                      <div className="tracking-curriculum-card-priority">
+                        <i className={`fas fa-flag tracking-priority-${curriculum.priority}`}></i>
+                        {curriculum.priority.charAt(0).toUpperCase() + curriculum.priority.slice(1)} Priority
+                      </div>
+                    )}
                   </div>
                   
                   <div className="tracking-curriculum-card-status">
-                    <span className={`tracking-status-badge tracking-status-${curriculum.status.replace('_', '-')}`}>
-                      {curriculum.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                    </span>
+                    {curriculum.status && (
+                      <span className={`tracking-status-badge tracking-status-${curriculum.status.replace('_', '-')}`}>
+                        {curriculum.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </span>
+                    )}
                     <div className="tracking-curriculum-card-stage">
-                      Current: {stages.find(s => s.key === curriculum.currentStage)?.title}
+                      Current: {curriculum.currentStage 
+                        ? (stages.find(s => s.key === curriculum.currentStage)?.title || 'Unknown Stage')
+                        : 'Not Started'}
                     </div>
                   </div>
                 </div>

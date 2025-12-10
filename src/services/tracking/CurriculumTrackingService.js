@@ -1,13 +1,10 @@
-// src/services/CurriculumTrackingService.js
-
-import {TrackingEndpointsRegistry} from '../tracking/TrackingEndpointsRegistry.js'
+import { TrackingEndpointsRegistry } from '../tracking/TrackingEndpointsRegistry.js'
 import { TrackingApiClient } from '../tracking/TrackingApiClient.js';
-
 
 class TrackingDataTransformer {
   constructor() {
     this.STAGE_ORDER = [
-      'initiation', 'school_board', 'dean_committee', 'senate', 
+      'initiation', 'school_board', 'dean_committee', 'senate',
       'qa_review', 'vice_chancellor', 'cue_review', 'site_inspection'
     ];
 
@@ -15,13 +12,15 @@ class TrackingDataTransformer {
       API_TO_FRONTEND: {
         'IDEATION': 'initiation',
         'CURRICULUM_IDEATION': 'initiation',
+        'SCHOOL_BOARD': 'school_board',
+        'SCHOOL_BOARD_APPROVAL': 'school_board',
         'DEPARTMENT_APPROVAL': 'school_board',
-        'SCHOOL_BOARD_APPROVAL': 'school_board', 
         'DEAN_APPROVAL': 'dean_committee',
         'DEAN_COMMITTEE': 'dean_committee',
         'SENATE_APPROVAL': 'senate',
         'SENATE': 'senate',
         'QA_REVIEW': 'qa_review',
+        'QA_INTERNAL_AUDIT': 'qa_review',
         'QUALITY_ASSURANCE': 'qa_review',
         'VICE_CHANCELLOR_APPROVAL': 'vice_chancellor',
         'VICE_CHANCELLOR': 'vice_chancellor',
@@ -29,7 +28,7 @@ class TrackingDataTransformer {
         'CUE_REVIEW': 'cue_review',
         'CUE_EXTERNAL_AUDIT': 'cue_review',
         'SITE_INSPECTION': 'site_inspection',
-        'ACCREDITED': 'site_inspection', 
+        'ACCREDITED': 'site_inspection',
         'COMPLETED': 'site_inspection'
       },
       STATUS_TO_FRONTEND: {
@@ -78,12 +77,12 @@ class TrackingDataTransformer {
   determinePriority(apiData) {
     const stage = apiData.currentStage;
     const isOverdue = this.isOverdue(apiData);
-    
+
     if (isOverdue) return 'high';
     if (['CUE_REVIEW', 'CUE_EXTERNAL_AUDIT', 'SITE_INSPECTION'].includes(stage)) return 'high';
     if (['VICE_CHANCELLOR_APPROVAL', 'SENATE_APPROVAL'].includes(stage)) return 'medium';
     if (apiData.isIdeationStage) return 'low';
-    
+
     return 'medium';
   }
 
@@ -110,7 +109,6 @@ class TrackingDataTransformer {
     const currentFrontendStage = this.mapApiStageToFrontend(apiData.currentStage);
     const currentIndex = this.STAGE_ORDER.indexOf(currentFrontendStage);
 
-    // Mark previous stages as completed
     for (let i = 0; i < currentIndex; i++) {
       stages[this.STAGE_ORDER[i]] = {
         ...stages[this.STAGE_ORDER[i]],
@@ -119,7 +117,6 @@ class TrackingDataTransformer {
       };
     }
 
-    // Set current stage
     if (currentIndex >= 0) {
       const mappedStatus = this.mapApiStatusToFrontend(apiData.status);
       stages[currentFrontendStage] = {
@@ -138,12 +135,39 @@ class TrackingDataTransformer {
   transformTrackingData(apiData) {
     if (!apiData) return null;
 
+    const stages = this.createStagesObject(apiData);
+
+    if (apiData.recentSteps && Array.isArray(apiData.recentSteps)) {
+      apiData.recentSteps.forEach(step => {
+        const frontendStageKey = this.mapApiStageToFrontend(step.stage);
+
+        if (stages[frontendStageKey]) {
+          const stepDocuments = (step.documents || []).map(doc => ({
+            id: doc.id,
+            name: doc.originalFilename,
+            originalFilename: doc.originalFilename,
+            type: doc.documentType,
+            url: doc.filePath,
+            uploadedBy: doc.uploadedByName,
+            date: doc.uploadedAt,
+            version: doc.versionNumber
+          }));
+
+          stages[frontendStageKey].documents = [
+            ...stages[frontendStageKey].documents,
+            ...stepDocuments
+          ];
+
+          if (step.notes) {
+            stages[frontendStageKey].notes = step.notes;
+          }
+        }
+      });
+    }
+
     return {
-      
       id: apiData.id,
       trackingId: apiData.trackingId,
-      
-      // Curriculum information 
       curriculumId: apiData.curriculumId,
       curriculumName: apiData.curriculumName,
       curriculumCode: apiData.curriculumCode,
@@ -154,8 +178,6 @@ class TrackingDataTransformer {
       proposedCurriculumCode: apiData.proposedCurriculumCode,
       proposedDurationSemesters: apiData.proposedDurationSemesters,
       curriculumDescription: apiData.curriculumDescription,
-      
-      // Academic structure 
       schoolId: apiData.schoolId,
       schoolName: apiData.schoolName,
       school: apiData.schoolName,
@@ -165,22 +187,16 @@ class TrackingDataTransformer {
       academicLevelId: apiData.academicLevelId,
       academicLevelName: apiData.academicLevelName,
       academicLevel: apiData.academicLevelName,
-      
-      // Workflow status
       currentStage: this.mapApiStageToFrontend(apiData.currentStage),
       currentStageDisplayName: apiData.currentStageDisplayName,
       originalCurrentStage: apiData.currentStage,
       status: this.mapApiStatusToFrontend(apiData.status),
       statusDisplayName: apiData.statusDisplayName,
       originalStatus: apiData.status,
-      
-      // People information 
       initiatedByName: apiData.initiatedByName,
       initiatedByEmail: apiData.initiatedByEmail,
       currentAssigneeName: apiData.currentAssigneeName,
       currentAssigneeEmail: apiData.currentAssigneeEmail,
-      
-      // Timeline data
       createdAt: apiData.createdAt,
       updatedAt: apiData.updatedAt,
       expectedCompletionDate: apiData.expectedCompletionDate,
@@ -189,28 +205,16 @@ class TrackingDataTransformer {
       lastUpdated: this.formatDate(apiData.updatedAt),
       proposedEffectiveDate: apiData.proposedEffectiveDate,
       proposedExpiryDate: apiData.proposedExpiryDate,
-      
-      // Calculated fields
       daysInCurrentStage: this.calculateDaysFromDate(apiData.updatedAt),
       totalDays: this.calculateDaysFromDate(apiData.createdAt),
       priority: this.determinePriority(apiData),
-      
-      // Status flags 
       isActive: apiData.isActive,
       isCompleted: apiData.isCompleted,
       isIdeationStage: apiData.isIdeationStage,
-      
-      // Workflow stages
-      stages: this.createStagesObject(apiData),
-      
-      // Additional content fields
+      stages: stages,
       initialNotes: apiData.initialNotes,
       recentSteps: apiData.recentSteps,
-      
-      // Preserve raw API data for debugging
       _rawApiData: apiData,
-      
-      // Metadata
       _transformedAt: new Date().toISOString(),
       _dataSource: 'api'
     };
@@ -218,11 +222,11 @@ class TrackingDataTransformer {
 
   transformApiResponse(response, dataKey = 'data') {
     const data = response[dataKey];
-    
+
     if (Array.isArray(data)) {
       return data.map(item => this.transformTrackingData(item));
     }
-    
+
     if (data && data.trackings && Array.isArray(data.trackings)) {
       return {
         trackings: data.trackings.map(item => this.transformTrackingData(item)),
@@ -238,17 +242,16 @@ class TrackingDataTransformer {
         }
       };
     }
-    
+
     return this.transformTrackingData(data);
   }
 }
 
-// Cache Manager Class
 class TrackingCacheManager {
   constructor() {
     this.cache = new Map();
     this.expiry = new Map();
-    this.CACHE_DURATION = 2 * 60 * 1000; 
+    this.CACHE_DURATION = 2 * 60 * 1000;
   }
 
   generateKey(endpoint, params = {}) {
@@ -284,7 +287,6 @@ class TrackingCacheManager {
   }
 }
 
-
 class CurriculumTrackingService {
   constructor() {
     this.baseURL = import.meta.env.VITE_BASE_URL;
@@ -292,7 +294,7 @@ class CurriculumTrackingService {
     this.apiClient = new TrackingApiClient(this.baseURL, this.endpointsRegistry);
     this.dataTransformer = new TrackingDataTransformer();
     this.cacheManager = new TrackingCacheManager();
-    
+
     console.log('🔄 Enhanced Curriculum Tracking Service initialized');
   }
 
@@ -300,13 +302,12 @@ class CurriculumTrackingService {
     const { useCache = true, cacheKey = null, ...apiOptions } = options;
 
     try {
-      // Check cache for GET requests
       const endpoint = this.endpointsRegistry.getEndpoint(endpointName);
-      const finalCacheKey = cacheKey || this.cacheManager.generateKey(endpointName, { 
-        ...apiOptions.pathParams, 
-        ...apiOptions.queryParams 
+      const finalCacheKey = cacheKey || this.cacheManager.generateKey(endpointName, {
+        ...apiOptions.pathParams,
+        ...apiOptions.queryParams
       });
-      
+
       if (endpoint.method === 'GET' && useCache) {
         const cached = this.cacheManager.get(finalCacheKey);
         if (cached) {
@@ -316,9 +317,8 @@ class CurriculumTrackingService {
       }
 
       const result = await this.apiClient.makeRequest(endpointName, apiOptions);
-      
       const transformedData = this.dataTransformer.transformApiResponse(result);
-      
+
       const finalResult = {
         ...result,
         data: transformedData
@@ -328,7 +328,6 @@ class CurriculumTrackingService {
         this.cacheManager.set(finalCacheKey, finalResult);
       }
 
-      // Clear cache for write operations
       if (endpoint.method !== 'GET') {
         this.cacheManager.clear();
       }
@@ -341,25 +340,23 @@ class CurriculumTrackingService {
     }
   }
 
-  // CRUD Operations
-  async getTrackingById(trackingId) {
+  async getTrackingById(trackingId, useCache = true) {
     return this.makeRequest('GET_BY_ID', {
-      pathParams: { id: trackingId }
+      pathParams: { id: trackingId },
+      useCache: useCache
     });
   }
 
   async updateTracking(trackingId, updateData) {
-    console.log('🔄 [Tracking Service] Updating tracking:', { trackingId, updateData });
-    
     const allowedFields = [
-      'proposedCurriculumName', 'proposedCurriculumCode', 
+      'proposedCurriculumName', 'proposedCurriculumCode',
       'proposedDurationSemesters', 'curriculumDescription',
       'schoolId', 'departmentId', 'academicLevelId',
       'proposedEffectiveDate', 'proposedExpiryDate', 'initialNotes'
     ];
-    
+
     const formData = this.apiClient.createFormData(updateData, allowedFields);
-    
+
     return this.makeRequest('UPDATE_TRACKING', {
       pathParams: { id: trackingId },
       body: formData,
@@ -367,9 +364,7 @@ class CurriculumTrackingService {
     });
   }
 
-  // Status Management
   async deactivateTracking(trackingId) {
-    console.log('🔄 [Tracking Service] Deactivating tracking:', trackingId);
     return this.makeRequest('DEACTIVATE_TRACKING', {
       pathParams: { id: trackingId },
       useCache: false
@@ -377,7 +372,6 @@ class CurriculumTrackingService {
   }
 
   async reactivateTracking(trackingId) {
-    console.log('🔄 [Tracking Service] Reactivating tracking:', trackingId);
     return this.makeRequest('REACTIVATE_TRACKING', {
       pathParams: { id: trackingId },
       useCache: false
@@ -385,14 +379,12 @@ class CurriculumTrackingService {
   }
 
   async toggleTrackingStatus(trackingId, isActive) {
-    return isActive 
+    return isActive
       ? this.deactivateTracking(trackingId)
       : this.reactivateTracking(trackingId);
   }
 
-  // Assignment Management
   async assignTracking(trackingId, userId) {
-    console.log('🔄 [Tracking Service] Assigning tracking:', { trackingId, userId });
     return this.makeRequest('ASSIGN_TRACKING', {
       pathParams: { id: trackingId, userId: userId },
       useCache: false
@@ -447,8 +439,6 @@ class CurriculumTrackingService {
   }
 
   async getTrackingsForViewMode(viewMode, identifier = null, page = 0, size = 20) {
-    console.log('🔄 [Tracking Service] Getting trackings for view mode:', viewMode);
-
     switch (viewMode) {
       case 'my-initiated':
         return this.getMyInitiatedTrackings(page, size);
@@ -476,25 +466,16 @@ class CurriculumTrackingService {
   }
 
   async getAllCurricula(page = 0, size = 20) {
-    try {
-      console.log('🔄 [Tracking Service] Getting all curriculum trackings...');
-      return await this.getTrackingsByStage('IDEATION', page, size);
-    } catch (error) {
-      console.warn('⚠️ [Tracking Service] Could not get from IDEATION stage, returning empty result');
-      return {
-        success: true,
-        message: 'No trackings found',
-        data: { trackings: [], pagination: { currentPage: page, totalPages: 0, totalElements: 0, pageSize: size } }
-      };
-    }
+    return this.makeRequest('GET_ALL_TRACKINGS', {
+      queryParams: { page, size }
+    });
   }
 
-  // Action methods
   extractNumericId(curriculum) {
     if (curriculum.id && typeof curriculum.id === 'number') {
       return curriculum.id;
     }
-    
+
     if (curriculum.id && typeof curriculum.id === 'string' && /^\d+$/.test(curriculum.id)) {
       return parseInt(curriculum.id);
     }
@@ -503,10 +484,9 @@ class CurriculumTrackingService {
       if (curriculum._rawApiData && curriculum._rawApiData.id) {
         return curriculum._rawApiData.id;
       }
-      
+
       const numMatch = curriculum.trackingId.match(/\d+/);
       if (numMatch) {
-        console.warn(`⚠️ [Tracking Service] Using extracted number ${numMatch[0]} from trackingId ${curriculum.trackingId}`);
         return parseInt(numMatch[0]);
       }
     }
@@ -516,13 +496,12 @@ class CurriculumTrackingService {
 
   async performStageAction(curriculumIdentifier, stage, action, data = {}) {
     try {
-      console.log('🔄 [Tracking Service] Performing stage action:', { curriculumIdentifier, stage, action, data });
-      
       const backendAction = this.mapFrontendActionToBackend(action);
       const notes = data.feedback || data.notes || '';
       const documents = data.documents || [];
-      
-      return await this.performTrackingAction(curriculumIdentifier, backendAction, notes, documents);
+      const returnToStage = data.returnToStage || null;
+
+      return await this.performTrackingAction(curriculumIdentifier, backendAction, notes, documents, returnToStage);
     } catch (error) {
       console.error('❌ [Tracking Service] Failed to perform stage action:', error);
       throw error;
@@ -532,18 +511,17 @@ class CurriculumTrackingService {
   mapFrontendActionToBackend(frontendAction) {
     const actionMappings = {
       'approve': 'APPROVE',
-      'reject': 'REJECT', 
+      'reject': 'REJECT',
       'hold': 'HOLD',
+      'return': 'RETURN',
       'resume': 'RESUME',
-      'request_changes': 'REQUEST_CHANGES'
+      'request_changes': 'RETURN'
     };
     return actionMappings[frontendAction] || frontendAction.toUpperCase();
   }
 
-  async performTrackingAction(trackingIdentifier, action, notes = '', documents = []) {
+  async performTrackingAction(trackingIdentifier, action, notes = '', documents = [], returnToStage = null) {
     try {
-      console.log('🔄 [Tracking Service] Performing tracking action:', { trackingIdentifier, action, notes });
-
       let numericId;
       if (typeof trackingIdentifier === 'object') {
         numericId = this.extractNumericId(trackingIdentifier);
@@ -558,12 +536,15 @@ class CurriculumTrackingService {
       const formData = new FormData();
       formData.append('trackingId', String(numericId));
       formData.append('action', action.toUpperCase());
-      
+
       if (notes) formData.append('notes', notes);
 
-      documents.forEach((file, index) => {
+      if (returnToStage) {
+        formData.append('returnToStage', returnToStage);
+      }
+
+      documents.forEach((file) => {
         formData.append('documents', file);
-        console.log(`📎 [Tracking Service] Added action document ${index + 1}: ${file.name}`);
       });
 
       return this.makeRequest('PERFORM_ACTION', {
@@ -577,13 +558,54 @@ class CurriculumTrackingService {
     }
   }
 
+  async validateStageTransition(trackingId, targetStage) {
+    try {
+      if (!trackingId || !targetStage) return false;
+
+      const response = await fetch(`${this.baseURL}/tracking/${trackingId}/validate-transition/${targetStage}`, {
+        method: 'POST',
+        headers: await this.apiClient.getHeaders()
+      });
+
+      if (!response.ok) return false;
+      const result = await response.json();
+      return result.data === true;
+    } catch (error) {
+      console.error('❌ [Tracking Service] Transition validation failed:', error);
+      return false;
+    }
+  }
+
+  async uploadDocumentVersion(documentId, file, description) {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      if (description) formData.append('description', description);
+
+      const response = await fetch(`${this.baseURL}/tracking/documents/${documentId}/version`, {
+        method: 'POST',
+        headers: {
+          ...(await this.apiClient.getHeaders(false)) 
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload new version');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('❌ [Tracking Service] Failed to upload document version:', error);
+      throw error;
+    }
+  }
+
   async initiateCurriculumTracking(trackingData, documents = []) {
     try {
-      console.log('🔄 [Tracking Service] Initiating curriculum tracking:', trackingData);
-
       const requiredFields = [
-        'schoolId', 'departmentId', 'academicLevelId', 
-        'proposedCurriculumName', 'proposedCurriculumCode', 
+        'schoolId', 'departmentId', 'academicLevelId',
+        'proposedCurriculumName', 'proposedCurriculumCode',
         'proposedDurationSemesters', 'curriculumDescription'
       ];
 
@@ -593,7 +615,7 @@ class CurriculumTrackingService {
       }
 
       const formData = new FormData();
-      
+
       requiredFields.forEach(field => {
         formData.append(field, String(trackingData[field]));
       });
@@ -604,9 +626,8 @@ class CurriculumTrackingService {
         }
       });
 
-      documents.forEach((file, index) => {
+      documents.forEach((file) => {
         formData.append('documents', file);
-        console.log(`📎 [Tracking Service] Added document ${index + 1}: ${file.name}`);
       });
 
       return this.makeRequest('INITIATE', {
@@ -620,11 +641,8 @@ class CurriculumTrackingService {
     }
   }
 
-  // Statistics and reporting
   async getTrackingStatistics() {
     try {
-      console.log('🔄 [Tracking Service] Getting tracking statistics...');
-
       const cacheKey = 'tracking_statistics';
       const cached = this.cacheManager.get(cacheKey);
       if (cached) return cached;
@@ -646,7 +664,7 @@ class CurriculumTrackingService {
 
       if (allTrackings.status === 'fulfilled' && allTrackings.value.data.trackings) {
         const trackings = allTrackings.value.data.trackings;
-        
+
         stats.byStatus = trackings.reduce((acc, tracking) => {
           acc[tracking.status] = (acc[tracking.status] || 0) + 1;
           return acc;
@@ -685,65 +703,36 @@ class CurriculumTrackingService {
 
   async searchTrackings(searchParams = {}, page = 0, size = 20) {
     try {
-      console.log('🔄 [Tracking Service] Searching trackings:', { searchParams, page, size });
+      console.log('🔄 [Tracking Service] Server-side search with params:', searchParams);
 
-      let allTrackings = [];
-      
-      if (searchParams.schoolId) {
-        const schoolResult = await this.getTrackingBySchool(searchParams.schoolId, 0, 1000);
-        allTrackings = schoolResult.data.trackings || schoolResult.data || [];
-      } else if (searchParams.stage) {
-        const stageResult = await this.getTrackingsByStage(searchParams.stage, 0, 1000);
-        allTrackings = stageResult.data.trackings || stageResult.data || [];
-      } else {
-        const allResult = await this.getAllCurricula(0, 1000);
-        allTrackings = allResult.data.trackings || allResult.data || [];
+      const criteria = {
+        searchTerm: searchParams.search || null,
+        schoolId: searchParams.schoolId || null,
+        departmentId: searchParams.department || null,
+        status: searchParams.status || null,
+        currentStage: searchParams.stage ? searchParams.stage.toUpperCase() : null,
+        isActive: true,
+        isOverdue: searchParams.isOverdue || null,
+        isIdeationStage: searchParams.isIdeationStage || null
+      };
+
+      const response = await fetch(`${this.baseURL}/tracking/search?page=${page}&size=${size}`, {
+        method: 'POST',
+        headers: await this.apiClient.getHeaders(),
+        body: JSON.stringify(criteria)
+      });
+
+      if (!response.ok) {
+        throw new Error('Search failed');
       }
 
-      let filteredTrackings = allTrackings;
-
-      if (searchParams.search) {
-        const searchTerm = searchParams.search.toLowerCase();
-        filteredTrackings = filteredTrackings.filter(tracking =>
-          tracking.title?.toLowerCase().includes(searchTerm) ||
-          tracking.trackingId?.toLowerCase().includes(searchTerm) ||
-          tracking.department?.toLowerCase().includes(searchTerm) ||
-          tracking.school?.toLowerCase().includes(searchTerm)
-        );
-      }
-
-      if (searchParams.status) {
-        filteredTrackings = filteredTrackings.filter(tracking =>
-          tracking.status === searchParams.status
-        );
-      }
-
-      if (searchParams.department) {
-        filteredTrackings = filteredTrackings.filter(tracking =>
-          tracking.department === searchParams.department
-        );
-      }
-
-      const startIndex = page * size;
-      const endIndex = startIndex + size;
-      const paginatedTrackings = filteredTrackings.slice(startIndex, endIndex);
+      const result = await response.json();
+      const transformedData = this.dataTransformer.transformApiResponse(result);
 
       return {
         success: true,
-        message: `Found ${filteredTrackings.length} matching trackings`,
-        data: {
-          trackings: paginatedTrackings,
-          pagination: {
-            currentPage: page,
-            totalPages: Math.ceil(filteredTrackings.length / size),
-            totalElements: filteredTrackings.length,
-            pageSize: size,
-            hasNext: endIndex < filteredTrackings.length,
-            hasPrevious: page > 0,
-            first: page === 0,
-            last: endIndex >= filteredTrackings.length
-          }
-        },
+        message: 'Search completed successfully',
+        data: transformedData,
         searchParams
       };
 
@@ -755,8 +744,6 @@ class CurriculumTrackingService {
 
   async downloadTrackingDocument(documentId, filename = null) {
     try {
-      console.log('🔄 [Tracking Service] Downloading document:', documentId);
-
       if (!documentId) {
         throw new Error('Document ID is required');
       }
@@ -772,7 +759,7 @@ class CurriculumTrackingService {
       }
 
       const blob = await response.blob();
-      
+
       let downloadFilename = filename;
       if (!downloadFilename) {
         const contentDisposition = response.headers.get('Content-Disposition');
@@ -793,8 +780,6 @@ class CurriculumTrackingService {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(downloadUrl);
 
-      console.log('✅ [Tracking Service] Document downloaded successfully:', downloadFilename);
-
       return {
         success: true,
         message: 'Document downloaded successfully',
@@ -809,8 +794,6 @@ class CurriculumTrackingService {
 
   async exportTrackings(format = 'json', filters = {}) {
     try {
-      console.log('🔄 [Tracking Service] Exporting trackings:', { format, filters });
-
       const searchResult = await this.searchTrackings(filters, 0, 10000);
       const trackings = searchResult.data.trackings || [];
 
@@ -851,8 +834,8 @@ class CurriculumTrackingService {
     if (trackings.length === 0) return '';
 
     const headers = [
-      'Tracking ID', 'Title', 'Display Title', 'Display Code', 'School', 'Department', 
-      'Academic Level', 'Current Stage', 'Status', 'Priority', 'Initiated By', 
+      'Tracking ID', 'Title', 'Display Title', 'Display Code', 'School', 'Department',
+      'Academic Level', 'Current Stage', 'Status', 'Priority', 'Initiated By',
       'Initiated By Email', 'Current Assignee', 'Current Assignee Email',
       'Created Date', 'Expected Completion', 'Days in Stage', 'Total Days',
       'Is Active', 'Is Completed', 'Is Ideation Stage', 'Proposed Duration',
@@ -893,7 +876,6 @@ class CurriculumTrackingService {
     return csvContent;
   }
 
-  // Service utilities
   clearAllCaches() {
     this.cacheManager.clear();
     console.log('🧹 [Tracking Service] All caches cleared');
@@ -916,29 +898,21 @@ class CurriculumTrackingService {
   }
 }
 
-
 const curriculumTrackingService = new CurriculumTrackingService();
 
-// Development debugging tools
 if (typeof window !== 'undefined') {
   window.curriculumTrackingService = curriculumTrackingService;
-  
-  
   window.testUpdateTracking = (id, data) => curriculumTrackingService.updateTracking(id, data);
   window.testDeactivateTracking = (id) => curriculumTrackingService.deactivateTracking(id);
   window.testReactivateTracking = (id) => curriculumTrackingService.reactivateTracking(id);
   window.testAssignTracking = (id, userId) => curriculumTrackingService.assignTracking(id, userId);
   window.testToggleStatus = (id, isActive) => curriculumTrackingService.toggleTrackingStatus(id, isActive);
-  
-  
-  window.testTrackingsByAssignee = (assigneeId, page, size) => 
+  window.testTrackingsByAssignee = (assigneeId, page, size) =>
     curriculumTrackingService.getTrackingsByAssignee(assigneeId, page, size);
-  window.testTrackingsByInitiator = (initiatorId, page, size) => 
+  window.testTrackingsByInitiator = (initiatorId, page, size) =>
     curriculumTrackingService.getTrackingsByInitiator(initiatorId, page, size);
-  window.testTrackingsByDepartment = (departmentId, page, size) => 
+  window.testTrackingsByDepartment = (departmentId, page, size) =>
     curriculumTrackingService.getTrackingsByDepartment(departmentId, page, size);
-  
-  // Utility functions
   window.getTrackingServiceInfo = () => curriculumTrackingService.getServiceInfo();
   window.clearTrackingCache = () => curriculumTrackingService.clearAllCaches();
   window.inspectTrackingEndpoints = () => curriculumTrackingService.endpointsRegistry.endpoints;
