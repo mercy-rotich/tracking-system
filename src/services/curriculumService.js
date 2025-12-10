@@ -26,14 +26,14 @@ class CurriculumService {
     }
   }
 
-  // --- CORE OPTIMIZATION: PARALLEL FETCHING ---
+
   
   async fetchAllCurriculums() {
     try {
       console.log('🚀 [Admin Service] Starting parallel data fetch...');
       const pageSize = 100;
 
-      // 1. Fetch Page 0
+      // 1. Fetch Page 0 to get metadata
       const firstResult = await this.makeRequest('/users/curriculums/get-all', {
         params: { page: 0, size: pageSize }
       });
@@ -81,10 +81,12 @@ class CurriculumService {
     }
   }
 
-  // --- SCHOOL DISCOVERY ---
+  
 
   async getAllSchoolsEnhanced() {
     try {
+      console.log('🔄 [Admin Service] Loading schools (Trusted Backend Mode)...');
+      
       let schoolsFromApi = [];
       try {
         const apiResult = await this.makeRequest('/schools/get-all');
@@ -93,18 +95,25 @@ class CurriculumService {
         console.warn('⚠️ Schools API failed, relying on curriculum extraction');
       }
       
-      const curriculumResult = await this.fetchAllCurriculums();
       const mergedSchools = new Map();
       
       schoolsFromApi.forEach((school, index) => {
+       
         const id = school.id ? school.id.toString() : `api_school_${index}`;
+        
         mergedSchools.set(id, {
-          id: id, actualId: school.id, name: school.name,
-          code: school.code, deanId: school.deanId,
-          icon: this.getSchoolIcon(school.name), source: 'api'
+          id: id, 
+          actualId: school.id, 
+          name: school.name,
+          code: school.code, 
+          deanId: school.deanId,
+          icon: this.getSchoolIcon(school.name), 
+          source: 'api'
         });
       });
       
+    
+      const curriculumResult = await this.fetchAllCurriculums();
       curriculumResult.curriculums.forEach(c => {
         if (c.schoolId && c.schoolName) {
           const id = c.schoolId.toString();
@@ -122,6 +131,7 @@ class CurriculumService {
       
       return Array.from(mergedSchools.values());
     } catch (error) {
+      console.error('❌ Error loading schools:', error);
       return [];
     }
   }

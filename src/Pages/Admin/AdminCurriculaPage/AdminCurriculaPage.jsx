@@ -249,6 +249,18 @@ const AdminCurriculaPage = () => {
     try {
       const result = await toggleCurriculumStatus(curriculum);
       await refreshData();
+      
+      if (viewMode === 'table') {
+        await loadCurriculaData({
+          currentPage, pageSize, searchTerm, selectedSchool,
+          selectedProgram, selectedDepartment, statusFilter, sortBy
+        }).then((result) => {
+          if (result?.pagination) {
+            updatePagination(result.pagination);
+          }
+        });
+      }
+      
       showNotification(`"${curriculum.title}" status has been toggled successfully!`, 'success');
     } catch (error) {
       showNotification('Failed to update curriculum status. Please try again.', 'error');
@@ -276,6 +288,18 @@ const AdminCurriculaPage = () => {
       const result = await curriculumService.inactivateCurriculum(curriculum.id, curriculumData);
       
       await refreshData();
+      
+      if (viewMode === 'table') {
+        await loadCurriculaData({
+          currentPage, pageSize, searchTerm, selectedSchool,
+          selectedProgram, selectedDepartment, statusFilter, sortBy
+        }).then((result) => {
+          if (result?.pagination) {
+            updatePagination(result.pagination);
+          }
+        });
+      }
+      
       showNotification(`"${curriculum.title}" has been rejected and inactivated.`, 'success');
     } catch (error) {
       showNotification('Failed to reject curriculum. Please try again.', 'error');
@@ -286,6 +310,18 @@ const AdminCurriculaPage = () => {
     try {
       const result = await putCurriculumUnderReview(curriculum);
       await refreshData();
+      
+      if (viewMode === 'table') {
+        await loadCurriculaData({
+          currentPage, pageSize, searchTerm, selectedSchool,
+          selectedProgram, selectedDepartment, statusFilter, sortBy
+        }).then((result) => {
+          if (result?.pagination) {
+            updatePagination(result.pagination);
+          }
+        });
+      }
+      
       showNotification(`"${curriculum.title}" has been put under review.`, 'success');
     } catch (error) {
       showNotification('Failed to put curriculum under review. Please try again.', 'error');
@@ -298,6 +334,23 @@ const AdminCurriculaPage = () => {
       
       if (viewMode === 'schools') {
         await refetchDepartments();
+      }
+      
+      if (viewMode === 'table') {
+        await loadCurriculaData({
+          currentPage,
+          pageSize,
+          searchTerm,
+          selectedSchool,
+          selectedProgram,
+          selectedDepartment,
+          statusFilter,
+          sortBy
+        }).then((result) => {
+          if (result?.pagination) {
+            updatePagination(result.pagination);
+          }
+        });
       }
       
       const actionPast = showAddModal ? 'created' : 'updated';

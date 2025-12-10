@@ -54,9 +54,9 @@ export const useCurriculumData = () => {
   };
 
   // --- CALCULATE STATS ---
-  const loadStatsOverview = async () => {
+  const loadStatsOverview = async (forceRefresh = false) => {
     try {
-      const allCurricula = await getFullDataset();
+      const allCurricula = await getFullDataset(forceRefresh);
       
       const statusCounts = allCurricula.reduce((acc, curr) => {
         const status = curr.status || 'draft';
@@ -106,7 +106,7 @@ export const useCurriculumData = () => {
   }) => {
     setIsLoading(true);
     try {
-      const allItems = await getFullDataset();
+      const allItems = await getFullDataset(true);
       
       let filtered = allItems;
 
@@ -190,7 +190,7 @@ export const useCurriculumData = () => {
       console.log('🔄 Refreshing admin data...');
       setAllCurriculaCache(null); 
       await Promise.all([
-        loadStatsOverview(),
+        loadStatsOverview(true),
         loadSchoolsAndDepartments(),
         loadExpiringCurriculums()
       ]);
@@ -199,7 +199,7 @@ export const useCurriculumData = () => {
     }
   };
 
-  const refreshStatistics = async () => { await loadStatsOverview(); };
+  const refreshStatistics = async () => { await loadStatsOverview(true); };
   
   const toggleCurriculumStatus = async (curriculum) => {
       const result = await curriculumService.toggleCurriculumStatus(curriculum.id, curriculum);
