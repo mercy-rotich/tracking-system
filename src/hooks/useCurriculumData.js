@@ -5,7 +5,6 @@ import statisticsService from '../services/statisticsService';
 
 export const useCurriculumData = () => {
   const [curricula, setCurricula] = useState([]);
-  const [allCurriculaCache, setAllCurriculaCache] = useState(null); 
   const [schools, setSchools] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [programs] = useState([
@@ -19,24 +18,13 @@ export const useCurriculumData = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [expiringCurriculums, setExpiringCurriculums] = useState([]);
 
-  // --- HELPER: Cached Full Dataset ---
   const getFullDataset = useCallback(async (forceRefresh = false) => {
-   
-    if (!forceRefresh && allCurriculaCache && allCurriculaCache.length > 0) {
-      return allCurriculaCache;
-    }
-    
-   
-    const result = await curriculumService.fetchAllCurriculums();
-    const data = result.curriculums || [];
-    setAllCurriculaCache(data);
-    return data;
-  }, [allCurriculaCache]);
+    const result = await curriculumService.fetchAllCurriculums(forceRefresh);
+    return result.curriculums || [];
+  }, []);
 
-  // --- LOAD SCHOOLS & DEPARTMENTS ---
   const loadSchoolsAndDepartments = async () => {
     try {
-      // Parallel fetch for schools and departments
       const [schoolsData, departmentsData] = await Promise.all([
         curriculumService.getAllSchoolsEnhanced(),
         departmentService.getAllDepartmentsSimple().catch(() => curriculumService.getDepartmentsFromCurriculums())
@@ -46,14 +34,12 @@ export const useCurriculumData = () => {
       setDepartments(departmentsData);
       return { schools: schoolsData };
     } catch (error) {
-      console.error('❌ Error loading schools/departments:', error);
       setSchools([]);
       setDepartments([]);
       throw error;
     }
   };
 
-  // --- CALCULATE STATS ---
   const loadStatsOverview = async (forceRefresh = false) => {
     try {
       const allCurricula = await getFullDataset(forceRefresh);
@@ -78,7 +64,6 @@ export const useCurriculumData = () => {
       return finalStats;
 
     } catch (error) {
-      console.error('❌ Error calculating stats:', error);
       return stats;
     }
   };
@@ -93,7 +78,6 @@ export const useCurriculumData = () => {
     }
   };
 
-  // --- MAIN TABLE LOADER ---
   const loadCurriculaData = async ({
     currentPage,
     pageSize,
@@ -106,11 +90,10 @@ export const useCurriculumData = () => {
   }) => {
     setIsLoading(true);
     try {
-      const allItems = await getFullDataset(true);
+      const allItems = await getFullDataset();
       
       let filtered = allItems;
 
-      // Client-side filtering is extremely fast for < 5000 items
       if (searchTerm && searchTerm.trim()) {
         const lowerTerm = searchTerm.toLowerCase().trim();
         filtered = filtered.filter(c => 
@@ -177,7 +160,6 @@ export const useCurriculumData = () => {
       };
       
     } catch (error) {
-      console.error('❌ Error processing curricula:', error);
       setCurricula([]);
       throw error;
     } finally {
@@ -187,15 +169,13 @@ export const useCurriculumData = () => {
 
   const refreshData = async () => {
     try {
-      console.log('🔄 Refreshing admin data...');
-      setAllCurriculaCache(null); 
+      curriculumService.clearCache();
       await Promise.all([
         loadStatsOverview(true),
         loadSchoolsAndDepartments(),
         loadExpiringCurriculums()
       ]);
     } catch (error) {
-      console.error('❌ Error refreshing data:', error);
     }
   };
 
@@ -203,13 +183,13 @@ export const useCurriculumData = () => {
   
   const toggleCurriculumStatus = async (curriculum) => {
       const result = await curriculumService.toggleCurriculumStatus(curriculum.id, curriculum);
-      setAllCurriculaCache(null); 
+      curriculumService.clearCache(); 
       return result;
   };
   
   const putCurriculumUnderReview = async (curriculum) => {
       const result = await curriculumService.putCurriculumUnderReview(curriculum.id, curriculum);
-      setAllCurriculaCache(null);
+      curriculumService.clearCache();
       return result;
   };
 

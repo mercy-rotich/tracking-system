@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './WorkflowStage.css';
 
 const WorkflowStage = ({ 
@@ -15,7 +15,47 @@ const WorkflowStage = ({
   onAssignTracking,    
   onToggleStatus       
 }) => {
-  const [showDetails, setShowDetails] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(isActive);
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const stageRef = useRef(null);
+  const dropdownRef = useRef(null);
+
+  // Auto-scroll to active stage on mount
+  useEffect(() => {
+    if (isActive && stageRef.current) {
+      setTimeout(() => {
+        stageRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }, 300);
+    }
+  }, [isActive]);
+
+  // Auto-expand if stage needs action
+  useEffect(() => {
+    const needsAction = ['under_review', 'on_hold'].includes(getStageStatus());
+    if (needsAction || isActive) {
+      setIsExpanded(true);
+    }
+  }, [stageData, isActive]);
+
+  // Click outside handler to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowActionsMenu(false);
+      }
+    };
+
+    if (showActionsMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showActionsMenu]);
 
   const getStageStatus = () => {
     if (!stageData) return 'pending';
@@ -70,6 +110,7 @@ const WorkflowStage = ({
   const status = getStageStatus();
   const statusInfo = getStatusInfo(status);
   const canTakeAction = ['under_review', 'on_hold'].includes(status);
+  const needsAction = status === 'under_review';
 
   const formatDate = (dateString) => {
     if (!dateString) return null;
@@ -77,16 +118,6 @@ const WorkflowStage = ({
       month: 'short',
       day: 'numeric',
       year: 'numeric'
-    });
-  };
-
-  const formatDateTime = (dateString) => {
-    if (!dateString) return null;
-    return new Date(dateString).toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
     });
   };
 
@@ -99,46 +130,7 @@ const WorkflowStage = ({
     return diffDays;
   };
 
-  const getTimelineInfo = () => {
-    if (status === 'completed' && stageData?.completedDate) {
-      return {
-        type: 'completed',
-        date: formatDate(stageData.completedDate),
-        dateTime: formatDateTime(stageData.completedDate),
-        days: null
-      };
-    }
-    
-    if (status === 'under_review' && stageData?.startedDate) {
-      return {
-        type: 'in_progress',
-        date: formatDate(stageData.startedDate),
-        dateTime: formatDateTime(stageData.startedDate),
-        days: getDaysInStage()
-      };
-    }
-    
-    if (status === 'pending' && stageData?.estimatedStart) {
-      return {
-        type: 'estimated',
-        date: formatDate(stageData.estimatedStart),
-        dateTime: formatDateTime(stageData.estimatedStart),
-        days: null
-      };
-    }
-    
-    return null;
-  };
-
-  const timelineInfo = getTimelineInfo();
-
-  const getAssigneeInfo = () => {
-    const assignee = stageData?.assignedTo || curriculum.currentAssigneeName;
-    const assigneeEmail = curriculum.currentAssigneeEmail;
-    return { assignee, assigneeEmail };
-  };
-
-  const { assignee, assigneeEmail } = getAssigneeInfo();
+  const daysInStage = getDaysInStage();
 
   const truncateText = (text, maxLength = 60) => {
     if (!text) return null;
@@ -147,12 +139,17 @@ const WorkflowStage = ({
 
   return (
     <div 
-      className={`tracking-stage-card ${
+      ref={stageRef}
+      className={`tracking-stage-card tracking-stage-card-enhanced ${
         isActive ? 'tracking-stage-card-active' : ''
-      } tracking-stage-card-${status}`}
+      } tracking-stage-card-${status} ${isExpanded ? 'tracking-stage-card-expanded' : 'tracking-stage-card-collapsed'}`}
     >
-      {/* Stage Header */}
-      <div className="tracking-stage-header">
+      {/* COMPACT HEADER - Always Visible */}
+      <div 
+        className="tracking-stage-header tracking-stage-header-clickable"
+        onClick={() => setIsExpanded(!isExpanded)}
+        style={{ cursor: 'pointer' }}
+      >
         <div className="tracking-stage-number">
           {status === 'completed' ? (
             <i className="fas fa-check"></i>
@@ -165,28 +162,28 @@ const WorkflowStage = ({
           <div className="tracking-stage-title">
             <i className={stage.icon} style={{ color: stage.color }}></i>
             {stage.title}
+            {needsAction && (
+              <span className="tracking-stage-action-badge">
+                ACTION NEEDED
+              </span>
+            )}
           </div>
           <div className="tracking-stage-description">
             {stage.description}
           </div>
         </div>
-        
-        <div 
-          className="tracking-stage-status-indicator"
-          style={{ 
-            backgroundColor: statusInfo.bgColor,
-            color: statusInfo.color,
-            border: `2px solid ${statusInfo.borderColor}`
-          }}
-        >
-          <i className={statusInfo.icon}></i>
-        </div>
-      </div>
 
-      {/* Stage Content */}
-      <div className="tracking-stage-content">
-        {/* Status Badge */}
-        <div className="tracking-stage-status-section">
+        {/* Quick Status Summary */}
+        <div className="tracking-stage-quick-status">
+          {/* Days Badge */}
+          {daysInStage && (
+            <div className={`tracking-stage-days-badge ${daysInStage > 14 ? 'tracking-stage-days-warning' : ''}`}>
+              <i className="fas fa-clock"></i>
+              <span>{daysInStage}d</span>
+            </div>
+          )}
+
+          {/* Status Badge */}
           <div 
             className="tracking-stage-status-badge"
             style={{ 
@@ -198,466 +195,226 @@ const WorkflowStage = ({
             <i className={statusInfo.icon}></i>
             {statusInfo.label}
           </div>
-          
+
+          {/* Expand/Collapse Icon */}
+          <i className={`fas fa-chevron-${isExpanded ? 'up' : 'down'} tracking-stage-expand-icon`}></i>
+        </div>
+      </div>
+
+      
+      {isExpanded && (
+        <div className="tracking-stage-content tracking-stage-content-expanded">
+          {/* Current Stage Indicator */}
           {isActive && (
-            <div className="tracking-stage-current-badge">
+            <div className="tracking-stage-current-indicator">
               <i className="fas fa-arrow-right"></i>
               Current Stage
             </div>
           )}
-        </div>
 
-        {/* Timeline Information */}
-        {timelineInfo && (
-          <div className="tracking-stage-timeline">
-            <div className="tracking-timeline-item">
-              <div className="tracking-timeline-label">
-                {timelineInfo.type === 'completed' && (
-                  <>
-                    <i className="fas fa-check-circle"></i>
-                    Completed on
-                  </>
-                )}
-                {timelineInfo.type === 'in_progress' && (
-                  <>
-                    <i className="fas fa-play-circle"></i>
-                    Started on
-                  </>
-                )}
-                {timelineInfo.type === 'estimated' && (
-                  <>
-                    <i className="fas fa-calendar-alt"></i>
-                    Estimated start
-                  </>
-                )}
+          {/* Essential Info Grid - Simplified */}
+          <div className="tracking-stage-info-grid">
+            {/* Timeline Information */}
+            {(stageData?.startedDate || stageData?.completedDate) && (
+              <div className="tracking-stage-info-card tracking-stage-timeline-card">
+                <div className="tracking-info-card-label">
+                  <i className={`fas fa-${status === 'completed' ? 'check-circle' : 'play-circle'}`}></i>
+                  {status === 'completed' ? 'Completed' : 'Started'}
+                </div>
+                <div className="tracking-info-card-value">
+                  {formatDate(status === 'completed' ? stageData.completedDate : stageData.startedDate)}
+                  {daysInStage && status !== 'completed' && (
+                    <span className="tracking-info-card-sub">({daysInStage} day{daysInStage !== 1 ? 's' : ''})</span>
+                  )}
+                </div>
               </div>
-              <div className="tracking-timeline-date" title={timelineInfo.dateTime}>
-                {timelineInfo.date}
-                {timelineInfo.days && (
-                  <span className="tracking-timeline-duration">
-                    ({timelineInfo.days} day{timelineInfo.days !== 1 ? 's' : ''})
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+            )}
 
-        {/* Assignee Information */}
-        {assignee && (
-          <div className="tracking-stage-assignee">
-            <div className="tracking-assignee-label">
-              <i className="fas fa-user"></i>
-              Assigned to
-            </div>
-            <div className="tracking-assignee-name" title={assigneeEmail}>
-              {assignee}
-            </div>
-            {assigneeEmail && (
-              <div style={{ 
-                fontSize: '0.7rem', 
-                color: 'var(--tracking-text-muted)', 
-                marginTop: '0.25rem',
-                wordBreak: 'break-all'
-              }}>
-                {assigneeEmail}
+            {/* Assignee Information */}
+            {(stageData?.assignedTo || curriculum.currentAssigneeName) && (
+              <div className="tracking-stage-info-card tracking-stage-assignee-card">
+                <div className="tracking-info-card-label">
+                  <i className="fas fa-user"></i>
+                  Assigned To
+                </div>
+                <div className="tracking-info-card-value">
+                  {stageData?.assignedTo || curriculum.currentAssigneeName}
+                </div>
+              </div>
+            )}
+
+            {/* Documents Count */}
+            {stageData?.documents && stageData.documents.length > 0 && (
+              <div className="tracking-stage-info-card tracking-stage-documents-card">
+                <div className="tracking-info-card-label">
+                  <i className="fas fa-paperclip"></i>
+                  Documents
+                </div>
+                <div className="tracking-info-card-value">
+                  {stageData.documents.length} file{stageData.documents.length !== 1 ? 's' : ''}
+                </div>
               </div>
             )}
           </div>
-        )}
 
-        {/* Documents Section */}
-        {stageData?.documents && stageData.documents.length > 0 && (
-          <div className="tracking-stage-documents">
-            <div className="tracking-documents-label">
-              <i className="fas fa-paperclip"></i>
-              {stageData.documents.length} document{stageData.documents.length !== 1 ? 's' : ''}
+          {/* Notes Preview */}
+          {(stageData?.notes || stageData?.feedback) && (
+            <div className="tracking-stage-notes-compact">
+              <div className="tracking-notes-compact-label">
+                <i className="fas fa-sticky-note"></i>
+                {stageData?.feedback ? 'Feedback' : 'Notes'}
+              </div>
+              <div className="tracking-notes-compact-content">
+                {truncateText(stageData?.feedback || stageData?.notes, 100)}
+              </div>
             </div>
-            <div className="tracking-documents-list">
-              {stageData.documents.slice(0, 2).map((doc, index) => (
-                <div key={index} className="tracking-document-item" title={doc}>
-                  <i className="fas fa-file-alt"></i>
-                  <span>{truncateText(doc, 25)}</span>
-                </div>
-              ))}
-              {stageData.documents.length > 2 && (
-                <div className="tracking-document-item tracking-document-more">
+          )}
+
+          {/* PRIMARY WORKFLOW ACTIONS - Contextual */}
+          {canTakeAction && (
+            <div className="tracking-stage-primary-actions">
+              {status === 'under_review' && (
+                <>
+                  <button
+                    className="tracking-stage-action-btn tracking-action-approve"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onStageAction(curriculum.id, stage.key, 'approve');
+                    }}
+                  >
+                    <i className="fas fa-check"></i>
+                    Approve
+                  </button>
+                  
+                  <button
+                    className="tracking-stage-action-btn tracking-action-hold"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onStageAction(curriculum.id, stage.key, 'hold');
+                    }}
+                  >
+                    <i className="fas fa-pause"></i>
+                    Hold
+                  </button>
+                  
+                  <button
+                    className="tracking-stage-action-btn tracking-action-reject"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onStageAction(curriculum.id, stage.key, 'reject');
+                    }}
+                  >
+                    <i className="fas fa-times"></i>
+                    Reject
+                  </button>
+                </>
+              )}
+
+              {status === 'on_hold' && (
+                <button
+                  className="tracking-stage-action-btn tracking-action-resume"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onStageAction(curriculum.id, stage.key, 'resume');
+                  }}
+                  style={{ flex: 1 }}
+                >
+                  <i className="fas fa-play"></i>
+                  Resume Stage
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* SECONDARY ACTIONS - Dropdown Menu */}
+          <div className="tracking-stage-secondary-actions-wrapper">
+            <div className="tracking-stage-quick-actions">
+              <button
+                className="tracking-stage-action-btn tracking-action-secondary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewDetails(curriculum, stage.key);
+                }}
+              >
+                <i className="fas fa-eye"></i>
+                Details
+              </button>
+              
+              <button
+                className="tracking-stage-action-btn tracking-action-secondary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onUploadDocument(curriculum, stage.key);
+                }}
+              >
+                <i className="fas fa-upload"></i>
+                Upload
+              </button>
+
+              <div className="tracking-stage-more-actions" ref={dropdownRef}>
+                <button
+                  className="tracking-stage-action-btn tracking-action-secondary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowActionsMenu(!showActionsMenu);
+                  }}
+                >
                   <i className="fas fa-ellipsis-h"></i>
-                  <span>+{stageData.documents.length - 2} more</span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+                  More
+                </button>
 
-        {/* Notes/Feedback Preview */}
-        {(stageData?.notes || stageData?.feedback || curriculum.initialNotes) && (
-          <div className="tracking-stage-notes-preview">
-            <div className="tracking-notes-label">
-              <i className="fas fa-sticky-note"></i>
-              {stageData?.feedback ? 'Feedback' : 'Notes'}
-            </div>
-            <div className="tracking-notes-content">
-              {truncateText(
-                stageData?.feedback || stageData?.notes || curriculum.initialNotes,
-                80
-              )}
-            </div>
-            {(stageData?.feedback || stageData?.notes) && curriculum.initialNotes && (
-              <div style={{ 
-                fontSize: '0.6875rem', 
-                color: 'var(--tracking-text-muted)', 
-                marginTop: '0.25rem',
-                borderTop: '1px solid var(--tracking-border-light)',
-                paddingTop: '0.25rem'
-              }}>
-                <strong>Initial:</strong> {truncateText(curriculum.initialNotes, 40)}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/*  Curriculum Information for Current Stage */}
-        {isActive && (
-          <div style={{ 
-            gridColumn: '1 / -1',
-            marginTop: '0.5rem',
-            padding: '0.75rem',
-            backgroundColor: 'rgba(0, 214, 102, 0.05)',
-            border: '1px solid rgba(0, 214, 102, 0.1)',
-            borderRadius: '6px',
-            fontSize: '0.75rem'
-          }}>
-            <div className="tracking-curriculum-quick-info">
-              <div style={{ marginBottom: '0.5rem' }}>
-                <strong>Initiated by:</strong> {curriculum.initiatedByName}
-                {curriculum.initiatedByEmail && (
-                  <div style={{ color: 'var(--tracking-text-muted)', marginLeft: '0.5rem', fontSize: '0.6875rem' }}>
-                    📧 {curriculum.initiatedByEmail}
+                {showActionsMenu && (
+                  <div className="tracking-stage-actions-dropdown">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAddNotes(curriculum, stage.key);
+                        setShowActionsMenu(false);
+                      }}
+                    >
+                      <i className="fas fa-sticky-note"></i>
+                      Add Notes
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditTracking(curriculum);
+                        setShowActionsMenu(false);
+                      }}
+                    >
+                      <i className="fas fa-edit"></i>
+                      Edit Tracking
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAssignTracking(curriculum);
+                        setShowActionsMenu(false);
+                      }}
+                    >
+                      <i className="fas fa-user-plus"></i>
+                      Reassign
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleStatus(curriculum);
+                        setShowActionsMenu(false);
+                      }}
+                      style={{
+                        color: curriculum.isActive ? '#f59e0b' : '#10b981'
+                      }}
+                    >
+                      <i className={`fas fa-${curriculum.isActive ? 'pause' : 'play'}`}></i>
+                      {curriculum.isActive ? 'Deactivate' : 'Activate'}
+                    </button>
                   </div>
                 )}
               </div>
-              
-              {curriculum.proposedCurriculumCode && (
-                <div style={{ marginBottom: '0.25rem' }}>
-                  <strong>Code:</strong> {curriculum.proposedCurriculumCode}
-                </div>
-              )}
-              
-              {curriculum.proposedDurationSemesters && (
-                <div style={{ marginBottom: '0.25rem' }}>
-                  <strong>Duration:</strong> {curriculum.proposedDurationSemesters} semesters
-                </div>
-              )}
-              
-              {curriculum.priority && (
-                <div>
-                  <strong>Priority:</strong> 
-                  <span style={{ 
-                    color: curriculum.priority === 'high' ? 'var(--tracking-danger)' :
-                           curriculum.priority === 'medium' ? 'var(--tracking-warning)' :
-                           'var(--tracking-text-muted)',
-                    marginLeft: '0.25rem',
-                    fontWeight: '600'
-                  }}>
-                    {curriculum.priority.charAt(0).toUpperCase() + curriculum.priority.slice(1)}
-                  </span>
-                </div>
-              )}
             </div>
           </div>
-        )}
-      </div>
-
-      {/*  Action Buttons */}
-      <div className="tracking-stage-actions">
-        {/* Primary Workflow Actions */}
-        {canTakeAction && (
-          <div className="tracking-stage-primary-actions">
-            <button
-              className="tracking-stage-action-btn tracking-action-approve"
-              onClick={() => onStageAction(curriculum.id, stage.key, 'approve')}
-              title="Approve this stage"
-            >
-              <i className="fas fa-check"></i>
-              Approve
-            </button>
-            
-            <button
-              className="tracking-stage-action-btn tracking-action-hold"
-              onClick={() => onStageAction(curriculum.id, stage.key, 'hold')}
-              title="Put this stage on hold"
-            >
-              <i className="fas fa-pause"></i>
-              Hold
-            </button>
-            
-            <button
-              className="tracking-stage-action-btn tracking-action-reject"
-              onClick={() => onStageAction(curriculum.id, stage.key, 'reject')}
-              title="Reject this stage"
-            >
-              <i className="fas fa-times"></i>
-              Reject
-            </button>
-          </div>
-        )}
-
-        {/* Document and Notes Actions */}
-        <div className="tracking-stage-secondary-actions">
-          <button
-            className="tracking-stage-action-btn tracking-action-secondary"
-            onClick={() => onViewDetails(curriculum, stage.key)}
-            title="View detailed information"
-          >
-            <i className="fas fa-eye"></i>
-            View Details
-          </button>
-          
-          <button
-            className="tracking-stage-action-btn tracking-action-secondary"
-            onClick={() => onUploadDocument(curriculum, stage.key)}
-            title="Upload documents"
-          >
-            <i className="fas fa-upload"></i>
-            Upload
-          </button>
-          
-          <button
-            className="tracking-stage-action-btn tracking-action-secondary"
-            onClick={() => onAddNotes(curriculum, stage.key)}
-            title="Add notes or feedback"
-          >
-            <i className="fas fa-sticky-note"></i>
-            Notes
-          </button>
         </div>
-
-        {/*  Management Actions Row */}
-        <div className="tracking-stage-management-actions" style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '0.375rem',
-          marginTop: '0.5rem'
-        }}>
-          <button
-            className="tracking-stage-action-btn tracking-action-secondary"
-            onClick={() => onEditTracking && onEditTracking(curriculum)}
-            title="Edit tracking information"
-            style={{ fontSize: '0.75rem' }}
-          >
-            <i className="fas fa-edit"></i>
-            Edit Tracking
-          </button>
-          
-          <button
-            className="tracking-stage-action-btn tracking-action-secondary"
-            onClick={() => onAssignTracking && onAssignTracking(curriculum)}
-            title="Assign to user"
-            style={{ fontSize: '0.75rem' }}
-          >
-            <i className="fas fa-user-plus"></i>
-            Assign user
-          </button>
-          
-          <button
-            className="tracking-stage-action-btn tracking-action-secondary"
-            onClick={() => onToggleStatus && onToggleStatus(curriculum)}
-            title={curriculum.isActive ? "Deactivate tracking" : "Activate tracking"}
-            style={{ 
-              fontSize: '0.75rem',
-              color: curriculum.isActive ? 'var(--tracking-warning)' : 'var(--tracking-success)',
-              borderColor: curriculum.isActive ? 'var(--tracking-warning)' : 'var(--tracking-success)'
-            }}
-          >
-            <i className={`fas fa-${curriculum.isActive ? 'pause' : 'play'}`}></i>
-            {curriculum.isActive ? 'Deactivate' : 'Activate'}
-          </button>
-        </div>
-
-        {/* Resume Action for On Hold */}
-        {status === 'on_hold' && (
-          <div className="tracking-stage-resume-action">
-            <button
-              className="tracking-stage-action-btn tracking-action-resume"
-              onClick={() => onStageAction(curriculum.id, stage.key, 'resume')}
-            >
-              <i className="fas fa-play"></i>
-              Resume Stage
-            </button>
-          </div>
-        )}
-
-        {/* Show More Details Toggle */}
-        {(curriculum.curriculumDescription || curriculum.recentSteps || curriculum.proposedEffectiveDate) && (
-          <div style={{ marginTop: '0.5rem' }}>
-            <button
-              className="tracking-stage-action-btn tracking-action-secondary"
-              onClick={() => setShowDetails(!showDetails)}
-              style={{ width: '100%', fontSize: '0.75rem' }}
-            >
-              <i className={`fas fa-chevron-${showDetails ? 'up' : 'down'}`}></i>
-              {showDetails ? 'Hide' : 'Show'} Additional Details
-            </button>
-          </div>
-        )}
-
-        {/* Additional Details Section */}
-        {showDetails && (
-          <div style={{ 
-            marginTop: '0.75rem',
-            padding: '0.75rem',
-            backgroundColor: 'var(--tracking-bg-secondary)',
-            borderRadius: '6px',
-            fontSize: '0.75rem',
-            lineHeight: '1.4'
-          }}>
-            {curriculum.curriculumDescription && (
-              <div style={{ marginBottom: '0.75rem' }}>
-                <div style={{ fontWeight: '600', color: 'var(--tracking-text-primary)', marginBottom: '0.25rem' }}>
-                  <i className="fas fa-file-text" style={{ marginRight: '0.25rem' }}></i>
-                  Description:
-                </div>
-                <div style={{ color: 'var(--tracking-text-secondary)' }}>
-                  {truncateText(curriculum.curriculumDescription, 150)}
-                </div>
-              </div>
-            )}
-
-            {curriculum.recentSteps && (
-              <div style={{ marginBottom: '0.75rem' }}>
-                <div style={{ fontWeight: '600', color: 'var(--tracking-text-primary)', marginBottom: '0.25rem' }}>
-                  <i className="fas fa-history" style={{ marginRight: '0.25rem' }}></i>
-                  Recent Steps:
-                </div>
-                <div style={{ color: 'var(--tracking-text-secondary)' }}>
-                  {truncateText(curriculum.recentSteps, 150)}
-                </div>
-              </div>
-            )}
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
-              {curriculum.proposedEffectiveDate && (
-                <div>
-                  <div style={{ fontWeight: '600', color: 'var(--tracking-text-primary)', marginBottom: '0.25rem' }}>
-                    <i className="fas fa-calendar-check" style={{ marginRight: '0.25rem' }}></i>
-                    Effective Date:
-                  </div>
-                  <div style={{ color: 'var(--tracking-text-secondary)' }}>
-                    {formatDate(curriculum.proposedEffectiveDate)}
-                  </div>
-                </div>
-              )}
-
-              {curriculum.proposedExpiryDate && (
-                <div>
-                  <div style={{ fontWeight: '600', color: 'var(--tracking-text-primary)', marginBottom: '0.25rem' }}>
-                    <i className="fas fa-calendar-times" style={{ marginRight: '0.25rem' }}></i>
-                    Expiry Date:
-                  </div>
-                  <div style={{ color: 'var(--tracking-text-secondary)' }}>
-                    {formatDate(curriculum.proposedExpiryDate)}
-                  </div>
-                </div>
-              )}
-
-              {curriculum.expectedCompletionDate && (
-                <div>
-                  <div style={{ fontWeight: '600', color: 'var(--tracking-text-primary)', marginBottom: '0.25rem' }}>
-                    <i className="fas fa-target" style={{ marginRight: '0.25rem' }}></i>
-                    Expected Completion:
-                  </div>
-                  <div style={{ color: 'var(--tracking-text-secondary)' }}>
-                    {formatDate(curriculum.expectedCompletionDate)}
-                  </div>
-                </div>
-              )}
-
-              {curriculum.actualCompletionDate && (
-                <div>
-                  <div style={{ fontWeight: '600', color: 'var(--tracking-text-primary)', marginBottom: '0.25rem' }}>
-                    <i className="fas fa-check-circle" style={{ marginRight: '0.25rem' }}></i>
-                    Actual Completion:
-                  </div>
-                  <div style={{ color: 'var(--tracking-success)' }}>
-                    {formatDate(curriculum.actualCompletionDate)}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Status Flags */}
-            <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--tracking-border)' }}>
-              <div style={{ fontWeight: '600', color: 'var(--tracking-text-primary)', marginBottom: '0.5rem' }}>
-                <i className="fas fa-info-circle" style={{ marginRight: '0.25rem' }}></i>
-                Status Information:
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
-                {curriculum.isActive && (
-                  <span style={{ 
-                    padding: '0.125rem 0.375rem', 
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)', 
-                    color: 'var(--tracking-success)',
-                    borderRadius: '4px',
-                    fontSize: '0.6875rem',
-                    fontWeight: '600'
-                  }}>
-                    <i className="fas fa-check"></i> Active
-                  </span>
-                )}
-                {curriculum.isCompleted && (
-                  <span style={{ 
-                    padding: '0.125rem 0.375rem', 
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)', 
-                    color: 'var(--tracking-success)',
-                    borderRadius: '4px',
-                    fontSize: '0.6875rem',
-                    fontWeight: '600'
-                  }}>
-                    <i className="fas fa-check-circle"></i> Completed
-                  </span>
-                )}
-                {curriculum.isIdeationStage && (
-                  <span style={{ 
-                    padding: '0.125rem 0.375rem', 
-                    backgroundColor: 'rgba(0, 214, 102, 0.1)', 
-                    color: 'var(--tracking-primary)',
-                    borderRadius: '4px',
-                    fontSize: '0.6875rem',
-                    fontWeight: '600'
-                  }}>
-                    <i className="fas fa-lightbulb"></i> Ideation
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Timeline Summary */}
-            <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--tracking-border)' }}>
-              <div style={{ fontWeight: '600', color: 'var(--tracking-text-primary)', marginBottom: '0.5rem' }}>
-                <i className="fas fa-clock" style={{ marginRight: '0.25rem' }}></i>
-                Timeline Summary:
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
-                <div>
-                  <strong>Total Days:</strong> {curriculum.totalDays}
-                </div>
-                <div>
-                  <strong>Days in Stage:</strong> {curriculum.daysInCurrentStage}
-                </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <strong>Created:</strong> {formatDateTime(curriculum.createdAt)}
-                </div>
-                {curriculum.updatedAt !== curriculum.createdAt && (
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <strong>Last Updated:</strong> {formatDateTime(curriculum.updatedAt)}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 };

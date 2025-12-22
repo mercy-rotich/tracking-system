@@ -31,104 +31,114 @@ const TrackingFilters = ({
   const hasActiveFilters = Object.values(filters).some(value => value !== '');
 
   return (
-    <div className="tracking-filters tracking-card">
-      <div className="tracking-card-header">
-        <h3 className="tracking-section-title">
-          <i className="fas fa-filter tracking-icon"></i>
-          Filter Curricula
-        </h3>
-        {hasActiveFilters && (
-          <button
-            className="tracking-btn tracking-btn-outline tracking-btn-sm"
-            onClick={onClearFilters}
-          >
-            <i className="fas fa-times"></i>
-            Clear Filters
-          </button>
-        )}
+    <div className="tracking-filters-container">
+      {/* Compact Search Bar */}
+      <div className="tracking-search-bar-compact">
+        <div className="tracking-search-wrapper">
+          <i className="fas fa-search tracking-search-icon-main"></i>
+          <input
+            type="text"
+            className="tracking-search-input-main"
+            placeholder="Search by title, tracking ID, school, or department..."
+            value={filters.search}
+            onChange={(e) => onFilterChange('search', e.target.value)}
+          />
+          {filters.search && (
+            <button
+              className="tracking-search-clear"
+              onClick={() => onFilterChange('search', '')}
+              title="Clear search"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Filter Card - Collapsible */}
+      <div className="tracking-filters tracking-card">
+        <div className="tracking-card-header">
+          <h3 className="tracking-section-title">
+            <i className="fas fa-filter tracking-icon"></i>
+            Advanced Filters
+          </h3>
+          {hasActiveFilters && (
+            <button
+              className="tracking-btn tracking-btn-outline tracking-btn-sm"
+              onClick={onClearFilters}
+            >
+              <i className="fas fa-times"></i>
+              Clear All
+            </button>
+          )}
+        </div>
       
-      <div className="tracking-card-body">
-        <div className="tracking-filters-grid">
-          {/* Search Input */}
-          <div className="tracking-form-group">
-            <label className="tracking-form-label">Search</label>
-            <div className="tracking-search-container">
-              <i className="fas fa-search tracking-search-icon"></i>
-              <input
-                type="text"
-                className="tracking-form-control tracking-search-input"
-                placeholder="Search by title or tracking ID..."
-                value={filters.search}
-                onChange={(e) => onFilterChange('search', e.target.value)}
-              />
+        <div className="tracking-card-body">
+          <div className="tracking-filters-grid">
+            {/* School Filter */}
+            <div className="tracking-form-group">
+              <label className="tracking-form-label">School</label>
+              <select
+                className="tracking-form-control tracking-select"
+                value={filters.school}
+                onChange={(e) => onFilterChange('school', e.target.value)}
+              >
+                <option value="">All Schools</option>
+                {schools.map(school => (
+                  <option key={school} value={school}>{school}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Department Filter */}
+            <div className="tracking-form-group">
+              <label className="tracking-form-label">Department</label>
+              <select
+                className="tracking-form-control tracking-select"
+                value={filters.department}
+                onChange={(e) => onFilterChange('department', e.target.value)}
+              >
+                <option value="">All Departments</option>
+                {departments.map(department => (
+                  <option key={department} value={department}>{department}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Stage Filter */}
+            <div className="tracking-form-group">
+              <label className="tracking-form-label">Current Stage</label>
+              <select
+                className="tracking-form-control tracking-select"
+                value={filters.stage}
+                onChange={(e) => onFilterChange('stage', e.target.value)}
+              >
+                <option value="">All Stages</option>
+                {stages.map(stage => (
+                  <option key={stage} value={stage}>
+                    {stageLabels[stage] || stage}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Status Filter */}
+            <div className="tracking-form-group">
+              <label className="tracking-form-label">Status</label>
+              <select
+                className="tracking-form-control tracking-select"
+                value={filters.status}
+                onChange={(e) => onFilterChange('status', e.target.value)}
+              >
+                <option value="">All Statuses</option>
+                {statuses.map(status => (
+                  <option key={status} value={status}>
+                    {statusLabels[status] || status}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
-
-          {/* School Filter */}
-          <div className="tracking-form-group">
-            <label className="tracking-form-label">School</label>
-            <select
-              className="tracking-form-control tracking-select"
-              value={filters.school}
-              onChange={(e) => onFilterChange('school', e.target.value)}
-            >
-              <option value="">All Schools</option>
-              {schools.map(school => (
-                <option key={school} value={school}>{school}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Department Filter */}
-          <div className="tracking-form-group">
-            <label className="tracking-form-label">Department</label>
-            <select
-              className="tracking-form-control tracking-select"
-              value={filters.department}
-              onChange={(e) => onFilterChange('department', e.target.value)}
-            >
-              <option value="">All Departments</option>
-              {departments.map(department => (
-                <option key={department} value={department}>{department}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Stage Filter */}
-          <div className="tracking-form-group">
-            <label className="tracking-form-label">Current Stage</label>
-            <select
-              className="tracking-form-control tracking-select"
-              value={filters.stage}
-              onChange={(e) => onFilterChange('stage', e.target.value)}
-            >
-              <option value="">All Stages</option>
-              {stages.map(stage => (
-                <option key={stage} value={stage}>
-                  {stageLabels[stage] || stage}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Status Filter */}
-          <div className="tracking-form-group">
-            <label className="tracking-form-label">Status</label>
-            <select
-              className="tracking-form-control tracking-select"
-              value={filters.status}
-              onChange={(e) => onFilterChange('status', e.target.value)}
-            >
-              <option value="">All Statuses</option>
-              {statuses.map(status => (
-                <option key={status} value={status}>
-                  {statusLabels[status] || status}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
 
         {/* Active Filters Display */}
         {hasActiveFilters && (
@@ -200,6 +210,7 @@ const TrackingFilters = ({
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

@@ -3,8 +3,14 @@ import authService from "./authService";
 class CurriculumService {
   constructor() {
     this.baseURL = import.meta.env.VITE_BASE_URL;
-    console.log('🔄 Curriculum Service initialized');
     this.schoolMappingCache = new Map();
+    this.cache = {
+      curriculums: null,
+      schools: null,
+      expiring: null,
+      lastFetch: 0,
+      TTL: 5 * 60 * 1000 
+    };
   }
 
   buildApiUrl(endpoint) {
@@ -21,19 +27,21 @@ class CurriculumService {
         'Authorization': `Bearer ${token}`,
       };
     } catch (error) {
-      console.error('❌ Failed to get valid token:', error);
       throw new Error('Authentication required. Please log in again.');
     }
   }
 
+  async fetchAllCurriculums(forceRefresh = false) {
+    const now = Date.now();
+    if (!forceRefresh && this.cache.curriculums && (now - this.cache.lastFetch < this.cache.TTL)) {
+      return {
+        curriculums: this.cache.curriculums,
+        total: this.cache.curriculums.length
+      };
+    }
 
-  
-  async fetchAllCurriculums() {
     try {
-      console.log('🚀 [Admin Service] Starting parallel data fetch...');
       const pageSize = 100;
-
-      // 1. Fetch Page 0 to get metadata
       const firstResult = await this.makeRequest('/users/curriculums/get-all', {
         params: { page: 0, size: pageSize }
       });
@@ -42,10 +50,7 @@ class CurriculumService {
       let allItems = firstData.curriculums || firstData.content || [];
       const totalPages = firstData.totalPages || 1;
 
-      // 2. Fetch remaining pages in parallel
       if (totalPages > 1) {
-        console.log(`⚡ Fetching remaining ${totalPages - 1} pages concurrently...`);
-        
         const pagePromises = [];
         for (let i = 1; i < totalPages; i++) {
           pagePromises.push(
@@ -56,10 +61,7 @@ class CurriculumService {
                const d = res.data || res;
                return d.curriculums || d.content || [];
             })
-            .catch(err => {
-               console.error(`Page ${i} failed`, err);
-               return [];
-            })
+            .catch(() => [])
           );
         }
 
@@ -69,38 +71,43 @@ class CurriculumService {
         });
       }
 
-      console.log(`✅ [Admin Service] Loaded total ${allItems.length} curriculums`);
+      this.cache.curriculums = allItems.map(c => this.transformCurriculumData(c));
+      this.cache.lastFetch = Date.now();
 
       return {
-        curriculums: allItems.map(c => this.transformCurriculumData(c)),
-        total: allItems.length
+        curriculums: this.cache.curriculums,
+        total: this.cache.curriculums.length
       };
     } catch (error) {
-      console.error('❌ Failed to fetch all curriculums:', error);
       return { curriculums: [], total: 0 };
     }
   }
 
-  
+  clearCache() {
+    this.cache.curriculums = null;
+    this.cache.schools = null;
+    this.cache.expiring = null;
+    this.cache.lastFetch = 0;
+  }
 
-  async getAllSchoolsEnhanced() {
+  async getAllSchoolsEnhanced(forceRefresh = false) {
+    const now = Date.now();
+    if (!forceRefresh && this.cache.schools && (now - this.cache.lastFetch < this.cache.TTL)) {
+      return this.cache.schools;
+    }
+
     try {
-      console.log('🔄 [Admin Service] Loading schools (Trusted Backend Mode)...');
-      
       let schoolsFromApi = [];
       try {
         const apiResult = await this.makeRequest('/schools/get-all');
         schoolsFromApi = Array.isArray(apiResult) ? apiResult : (apiResult.data || []);
       } catch (e) {
-        console.warn('⚠️ Schools API failed, relying on curriculum extraction');
       }
       
       const mergedSchools = new Map();
       
       schoolsFromApi.forEach((school, index) => {
-       
         const id = school.id ? school.id.toString() : `api_school_${index}`;
-        
         mergedSchools.set(id, {
           id: id, 
           actualId: school.id, 
@@ -112,7 +119,6 @@ class CurriculumService {
         });
       });
       
-    
       const curriculumResult = await this.fetchAllCurriculums();
       curriculumResult.curriculums.forEach(c => {
         if (c.schoolId && c.schoolName) {
@@ -129,14 +135,29 @@ class CurriculumService {
         }
       });
       
-      return Array.from(mergedSchools.values());
+      const finalSchools = Array.from(mergedSchools.values());
+      this.cache.schools = finalSchools;
+      return finalSchools;
     } catch (error) {
-      console.error('❌ Error loading schools:', error);
       return [];
     }
   }
 
-  // --- REQUEST HANDLER ---
+  async getExpiringCurriculums(forceRefresh = false) {
+    const now = Date.now();
+    if (!forceRefresh && this.cache.expiring && (now - this.cache.lastFetch < this.cache.TTL)) {
+      return { data: this.cache.expiring };
+    }
+
+    try {
+      const r = await this.makeRequest('/admin/curriculums/expiring-soon');
+      const data = Array.isArray(r.data) ? r.data.map(c => this.transformCurriculumData(c)) : [];
+      this.cache.expiring = data;
+      return { data };
+    } catch (error) {
+      return { data: [] };
+    }
+  }
 
   async makeRequest(endpoint, options = {}) {
     const { method = 'GET', body = null, params = {} } = options;
@@ -157,9 +178,7 @@ class CurriculumService {
     return await response.json();
   }
 
-  // --- API METHODS (Pass-throughs) ---
   async getCurriculumStats() { const r = await this.makeRequest('/admin/curriculums/stats'); return {data: r.data}; }
-  async getExpiringCurriculums() { const r = await this.makeRequest('/admin/curriculums/expiring-soon'); return {data: Array.isArray(r.data)? r.data.map(c=>this.transformCurriculumData(c)):[]}; }
   async toggleCurriculumStatus(id, data) { return this.makeRequest(`/admin/curriculums/toggle-status/${id}`, {method:'PUT', body:data}); }
   async putCurriculumUnderReview(id, data) { return this.makeRequest(`/admin/curriculums/review/${id}`, {method:'PUT', body:data}); }
   async createCurriculum(data) { return this.makeRequest('/admin/curriculums/create', {method:'POST', body:data}); }
